@@ -31,6 +31,14 @@ export class TemplateParser {
     // FIXME: Should this return when }} is encounterd regardless of anything else?
     // If so the single name case and the key value case can merge
     for (const ch of this.src) {
+      // Need to consume comments
+      if (ch == "<" && this.consumeIf("!")) {
+        // FIXME: Needs a test
+        let index = this.consumeComment();
+        while (this.src.index() != index) {
+          this.src.next();
+        }
+      }
       if (phase === ParsingStage.Value && ch === "{" && this.consumeIf("{")) {
         // If true, this marks the beginning of a new template and tell the function to recur
         value = this.parse(false);
@@ -92,7 +100,6 @@ export class TemplateParser {
         }
       }
     }
-    // console.log(("Whats here " + tmplt.get("Key").unwrap()) as string);
     return tmplt;
   }
 
@@ -106,6 +113,27 @@ export class TemplateParser {
     } else {
       return false;
     }
+  }
+
+  /**Returns the index where the comment string the source may currently be yielding ends*/
+  consumeComment(): number {
+    // Clone the source
+    let src: Peekable<string> = this.src.clone();
+
+    console.log(typeof src);
+    console.log(src);
+    // Check the next two chars, if they are both '-' then this is a comment and we can eat it.
+    if (src.next().value == "-" && src.next().value == "-") {
+      // Consume characters until a '-' is reached, check if the next two chars are
+      for (const ch of src) {
+        // If the character is a "-" confirm whether the next two chars are "-" and ">" and break if so
+        if (ch == "-" && src.next().value == "-" && src.next().value == ">") {
+          break;
+        }
+      }
+    }
+
+    return src.index();
   }
 }
 

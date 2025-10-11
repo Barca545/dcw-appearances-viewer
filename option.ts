@@ -9,7 +9,11 @@ export class Some<T> implements OptionInterface<T> {
     return this.value;
   }
 
-  unwrap_or(fallback: T): T {
+  unwrap_or(_: T): T {
+    return this.value;
+  }
+
+  unwrap_or_else(_: () => T): T {
     return this.value;
   }
 
@@ -24,8 +28,12 @@ export class None<T> implements OptionInterface<T> {
   }
 
   // FIXME: If I want correct typing here none needs to be typed
-  unwrap_or(fallback: T): T {
-    return fallback;
+  unwrap_or(normal: T): T {
+    return normal;
+  }
+
+  unwrap_or_else(f: () => T): T {
+    return f();
   }
 
   isSome(): boolean {
@@ -41,6 +49,8 @@ interface OptionInterface<T> {
   isSome(): boolean;
 
   unwrap_or(fallback: T): T;
+
+  unwrap_or_else(f: () => T): T;
 
   // /**Takes the value from an Option leaving a None in it's place. */
   // take(): Option<T>;

@@ -1,6 +1,9 @@
+import { templateStringToListEntry } from "./helpers.js";
+import { xmlToJSON } from "./parser.js";
+import { ListEntry } from "./pub-sort.js";
 import { AppearancesResponse } from "./types.js";
 
-export async function getAppearances(charName: string): Promise<string[]> {
+export async function getAppearances(char: string): Promise<string[]> {
   let cmcontinue: string | undefined = "";
   let appearances = [];
 
@@ -9,7 +12,7 @@ export async function getAppearances(charName: string): Promise<string[]> {
       action: "query",
       list: "categorymembers",
       // Sanitize the name
-      cmtitle: `Category:${charName.replaceAll(/\s/g, "_")}/Appearances`,
+      cmtitle: `Category:${char.replaceAll(/\s/g, "_")}/Appearances`,
       cmlimit: "50",
       format: "json",
     });
@@ -41,6 +44,7 @@ export async function getAppearances(charName: string): Promise<string[]> {
 }
 
 // FIXME: Should return an object fitting the export
+/**Returns a string containing the XML file containing the site response. */
 export async function getAppearancePages(titles: string[]): Promise<string> {
   // Sanitize the titles to get rid of spaces
   titles = titles.map((title) => {
@@ -84,4 +88,25 @@ export async function getAppearancePages(titles: string[]): Promise<string> {
   }
 
   return res.text();
+}
+
+/**
+ * Fetches the apearance data for the requested character and parses it into a list of ListEntrys.
+ * @param path
+ * @returns
+ */
+export async function fetchList(char: string): Promise<ListEntry[]> {
+  // Fetch the file and convert it into a json
+  const res = await getAppearancePages(await getAppearances(char));
+
+  const json = xmlToJSON(res);
+
+  // Convert each appearance into a list entry
+  let appearances: ListEntry[] = [];
+  for (const entry of json.mediawiki.page) {
+    appearances.push(
+      templateStringToListEntry(entry.revision.text._text as string)
+    );
+  }
+  return appearances;
 }

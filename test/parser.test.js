@@ -1003,6 +1003,14 @@ test("XML to JSON", (_t) => {
   assert(isEqual(list, expected));
 });
 
+test("Eats comments", (_t) => {
+  const template = "{{Name|Key= Hello <!-- this should be ignored--> World!}}";
+  const parsed = new TemplateParser(template).parse(true);
+  const res = parsed.get("Key").unwrap();
+
+  return assert(isEqual(res, "Hello World!"));
+});
+
 // function assert_eq(a, b) {
 //   if (isEqual(a, b)) {
 //     return true;

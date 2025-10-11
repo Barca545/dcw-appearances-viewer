@@ -114,7 +114,6 @@ export class Template {
 
   toString() {
     // TODO: This has to loop through the key value pairs and append them. just printing data returns the Map
-    // console.log(JSON.stringify(Object.fromEntries(this.#data)));
     let data = "";
     for (const element of this.data) {
       if (data.length > 0) {
@@ -157,4 +156,8 @@ export class OptionMap<K, V> {
       return new Some(res);
     }
   }
+}
+
+export interface Clone<T> {
+  clone(): T;
 }
