@@ -2,6 +2,8 @@ import XML from "xml-js";
 import { Peekable } from "./iter.js";
 import { AppearancesDataResponse, Template } from "./types.js";
 
+// TODO: If this ends up not being robust enough doing something with tokenizing and then a real parser would be the next step
+
 export class TemplateParser {
   readonly src: Peekable<string>;
 
@@ -38,6 +40,8 @@ export class TemplateParser {
         while (this.src.index() != index) {
           this.src.next();
         }
+        // This is needed so it doesn't continue to the end and append the symbol
+        continue;
       }
       if (phase === ParsingStage.Value && ch === "{" && this.consumeIf("{")) {
         // If true, this marks the beginning of a new template and tell the function to recur
@@ -120,8 +124,6 @@ export class TemplateParser {
     // Clone the source
     let src: Peekable<string> = this.src.clone();
 
-    console.log(typeof src);
-    console.log(src);
     // Check the next two chars, if they are both '-' then this is a comment and we can eat it.
     if (src.next().value == "-" && src.next().value == "-") {
       // Consume characters until a '-' is reached, check if the next two chars are
@@ -141,11 +143,6 @@ enum ParsingStage {
   Identifier,
   Key,
   Value,
-}
-
-// TODO: Delete writing console.log() got annoying
-function dbg(message: any) {
-  console.log(message);
 }
 
 export function xmlToJSON(src: string): AppearancesDataResponse {

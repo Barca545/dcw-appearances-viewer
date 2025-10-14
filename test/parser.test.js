@@ -1004,16 +1004,94 @@ test("XML to JSON", (_t) => {
 });
 
 test("Eats comments", (_t) => {
-  const template = "{{Name|Key= Hello <!-- this should be ignored--> World!}}";
+  const template = "{{Name|Key= Hello World<!-- this should be ignored-->!}}";
   const parsed = new TemplateParser(template).parse(true);
   const res = parsed.get("Key").unwrap();
 
   return assert(isEqual(res, "Hello World!"));
 });
 
-// function assert_eq(a, b) {
-//   if (isEqual(a, b)) {
-//     return true;
-//   }
+test("Parse Comic Template w/ Pubday only", (_t) => {
+  let template = `{{DC Database:Comic Template
+| OneShot             = Justice Society
+| Title               = Last Days of the Justice Society Special
+| Image               = Last Days of the Justice Society Special 1.jpg
+| Volume              = 1
+| Issue               = 1
+| Month               = 1
+| Year                = 1986
+| Pubday              = 24
+| Pubmonth            = 4
+| Pubyear             = 1986
 
-// }
+| Executive Editor    = Dick Giordano
+| CoverArtist1        = David Ross 
+| CoverArtist2        = Mike Gustovich
+
+| Editor1_1           = Roy Thomas
+| Writer1_1           = Roy Thomas
+| Writer1_2           = Dann Thomas
+
+| Penciler1_1         = Mike Gustovich
+| Inker1_1            = David Ross
+| Colorist1_1         = Carl Gafford
+| Letterer1_1         = David Cody Weiss 
+
+| Quotation           = [[Ragnarok (event)|This]] is an [[Time Loop|eternal]] battle, [[Sylvester Pemberton (New Earth)|my young friend]]... a struggle thatcan never really be finished-- never really be won. 
+| Speaker             = [[Kent Nelson (New Earth)|Doctor Fate (Kent Nelson)]]
+
+| StoryTitle1         = Last Days of the Justice Society
+| Synopsis1           = 
+| Appearing1          = 
+| Notes               = 
+| Trivia              = 
+}}`;
+
+  const parsed = new TemplateParser(template).parse(true);
+
+  const res = parsed.get("Day").unwrap_or(parsed.get("Pubday").unwrap_or(""));
+
+  return assert(isEqual(res, "24"));
+});
+
+test("Parse Comic Title in Template", (_t) => {
+  let template = `{{DC Database:Comic Template
+| OneShot             = Justice Society
+| Title               = Last Days of the Justice Society Special
+| Image               = Last Days of the Justice Society Special 1.jpg
+| Volume              = 1
+| Issue               = 1
+| Month               = 1
+| Year                = 1986
+| Pubday              = 24
+| Pubmonth            = 4
+| Pubyear             = 1986
+
+| Executive Editor    = Dick Giordano
+| CoverArtist1        = David Ross 
+| CoverArtist2        = Mike Gustovich
+
+| Editor1_1           = Roy Thomas
+| Writer1_1           = Roy Thomas
+| Writer1_2           = Dann Thomas
+
+| Penciler1_1         = Mike Gustovich
+| Inker1_1            = David Ross
+| Colorist1_1         = Carl Gafford
+| Letterer1_1         = David Cody Weiss 
+
+| Quotation           = [[Ragnarok (event)|This]] is an [[Time Loop|eternal]] battle, [[Sylvester Pemberton (New Earth)|my young friend]]... a struggle thatcan never really be finished-- never really be won. 
+| Speaker             = [[Kent Nelson (New Earth)|Doctor Fate (Kent Nelson)]]
+
+| StoryTitle1         = Last Days of the Justice Society
+| Synopsis1           = 
+| Appearing1          = 
+| Notes               = 
+| Trivia              = 
+}}`;
+
+  const parsed = new TemplateParser(template).parse(true);
+  const res = parsed.get("Title").unwrap();
+
+  return assert(isEqual(res, "Last Days of the Justice Society Special"));
+});

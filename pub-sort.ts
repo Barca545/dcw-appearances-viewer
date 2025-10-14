@@ -18,8 +18,6 @@ export class ListEntry {
 
 /**Sort List entries by their dates in ascending order */
 export function pubDateSort(list: ListEntry[]): ListEntry[] {
-  // console.log(list);
-  console.log(typeof list);
   // Sort the list
   return list.sort((a, b) => isBiggerDate(a.date, b.date));
 }

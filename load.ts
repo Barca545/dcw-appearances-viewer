@@ -1,8 +1,6 @@
 import fs from "fs";
 import convert from "xml-js";
 import { ListEntry } from "./pub-sort.js";
-import { TemplateParser } from "./parser.js";
-import { OptionMap } from "./types.js";
 import { templateStringToListEntry } from "./helpers.js";
 
 /**
