@@ -2,8 +2,9 @@
   "version": "0.0.1",
   "name": "dc_wiki_appearances_sort",
   "type": "module",
+  "main": "main.cjs",
   "scripts": {
-    "start": "tsx index.ts",
+    "start": "npm run build && electron .",
     "test": "tsc --noEmit && tsx --test",
     "build": "tsc"
   },
@@ -15,10 +16,10 @@
   },
   "devDependencies": {
     "@types/lodash-es": "^4.17.12",
+    "electron": "^38.2.2",
     "lodash-es": "^4.17.21",
     "tsx": "^4.20.5"
   },
-  "main": "index.ts",
   "directories": {
     "test": "test"
   },

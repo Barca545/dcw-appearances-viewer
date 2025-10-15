@@ -95,9 +95,9 @@ export async function getAppearancePages(titles: string[]): Promise<string> {
  * @param path
  * @returns
  */
-export async function fetchList(char: string): Promise<ListEntry[]> {
+export async function fetchList(character: string): Promise<ListEntry[]> {
   // Fetch the file and convert it into a json
-  const res = await getAppearancePages(await getAppearances(char));
+  const res = await getAppearancePages(await getAppearances(character));
 
   const json = xmlToJSON(res);
 

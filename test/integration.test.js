@@ -105,31 +105,13 @@ test("Load, Parse, & Sort", (_t) => {
 
   // Sort the list
   const result = pubDateSort(list);
-  // TODO: This one is pulling from pubmonth not the cover dates
-  // If "Fall" or something should also search if pub dates have to be used, use all of them
-  // This shows the necessity of standardizing dates when making list entries
-
-  fs.writeFileSync(process.cwd() + "/test/expected", JSON.stringify(expected));
-  fs.writeFileSync(process.cwd() + "/test/result", JSON.stringify(result));
 
   return assert(isEqual(result, expected));
 });
 
 test("Fetch, Parse, & Sort", async (_t) => {
-  // const titles = await getAppearances("Selina Kyle (Earth-Two)");
-  // fs.writeFileSync(
-  //   process.cwd() + "/test/fetched appearances",
-  //   await getAppearancePages(titles)
-  // );
-  // Need a fetch as JSON function
-  // const json = xmlToJSON(await getAppearancePages(titles));
-  // const list = loadList(json);
   const list = await fetchList("Selina Kyle (Earth-Two)");
   const result = pubDateSort(list);
-
-  // Somehow not storing the day for Last Days of the Justice Society Special Vol 1 1 and is saying the field is null not 24
-  fs.writeFileSync(process.cwd() + "/test/expected", JSON.stringify(expected));
-  fs.writeFileSync(process.cwd() + "/test/result", JSON.stringify(result));
 
   return assert(isEqual(result, expected));
 });

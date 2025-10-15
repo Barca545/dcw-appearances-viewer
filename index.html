@@ -1,0 +1,50 @@
+<!-- Ideally all the toggles will use sliders https://www.w3schools.com/howto/howto_css_switch.asp -->
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="script-src 'self' 'unsafe-inline';"
+    />
+    <title>Appearance Sorter</title>
+    <link rel="stylesheet" type="text/css" href="./styles.css" />
+  </head>
+  <body>
+    <button id="toggle-dark-mode">Toggle Dark Mode</button>
+    <button id="reset-to-system">System Theme</button>
+    <p>Current theme source: <strong id="theme-source">System</strong></p>
+    <!-- Basically how this should work is screen lets you choose to either open a file or search from online then lets you sort the results -->
+    <!-- This would probably be on a different page but basically clicking it would call the fetch script with the data you entered  -->
+    <!-- big question is where/how to store the response. Electron is chrome so there should be temp memory-->
+
+    <search id="appearance-search">
+      <label>Get Appearances</label>
+      <input type="search" id="target-character-search" />
+      <button type="button" form="appearance-search" id="submit">Search</button>
+      <select form="appearance-search" id="sort-type">
+        <!-- I want this to require a selection and the display value should not be an actual field -->
+        <option value="none">None Selected</option>
+        <option value="pub-date">Publication Date</option>
+      </select>
+      <label>Ascending</label>
+      <input type="checkbox" id="ascending" />
+      <label>Names Only</label>
+      <input type="checkbox" id="names-only" />
+      <section>
+        <h3>Results:</h3>
+        <ul id="results">
+          <!-- search result content -->
+          <!-- Should return the appearances inside a collapsible ie details and summary-->
+        </ul>
+        <output id="no-results">
+          <!-- no results content -->
+        </output>
+      </section>
+    </search>
+
+    <script src="renderer.js"></script>
+  </body>
+</html>
