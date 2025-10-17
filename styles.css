@@ -11,3 +11,13 @@
     color: black;
   }
 }
+
+/* Probably want some more padding here so they're not entirely flush with the side */
+
+.result-title {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+/* TODO: The toggles should be made to look like toggle switches */
