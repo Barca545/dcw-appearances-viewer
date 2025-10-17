@@ -1,6 +1,7 @@
 import XML from "xml-js";
 import { Peekable } from "./iter.js";
 import { AppearancesDataResponse, Template } from "./types.js";
+import { writeFileSync, writeSync } from "fs";
 
 // TODO: If this ends up not being robust enough doing something with tokenizing and then a real parser would be the next step
 
@@ -146,8 +147,12 @@ enum ParsingStage {
 }
 
 export function xmlToJSON(src: string): AppearancesDataResponse {
+  const cleaned = src.replace(
+    /&(?!amp;|lt;|gt;|quot;|apos;|#\d+;|#x[0-9A-Fa-f]+;)/g,
+    "&amp;"
+  );
   return JSON.parse(
-    XML.xml2json(src, {
+    XML.xml2json(cleaned, {
       compact: true,
       spaces: 4,
     })

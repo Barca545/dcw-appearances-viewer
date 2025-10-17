@@ -1,4 +1,18 @@
-<!-- Ideally all the toggles will use sliders https://www.w3schools.com/howto/howto_css_switch.asp -->
+<!-- TODO: Toggles should use sliders https://www.w3schools.com/howto/howto_css_switch.asp -->
+<!-- TODO: Is there a way to get a list of all the earths? Maybe query that before startup -->
+<!-- TODO: Need to add loading from a document. Does that mean I need multiple pages?  -->
+<!-- TODO: Be cool if the lists could be saved  -->
+<!-- TODO: Other kinds of sorting  -->
+<!-- TODO: Sort by needs a default value  -->
+<!-- TODO: The titles should be hyperlinks-->
+<!-- TODO: Could stand to be a *bit* prettier  -->
+<!-- TODO: Result body should be the summary + characters. Maybe eventually add more granularity in what is shown.-->
+<!-- TODO: Hot reloading? during dev works but not for ts because it does not recompile-->
+<!-- TODO: Implement ascending vs descending -->
+<!-- TODO: Show the name of the character above the results  -->
+<!-- TODO: Move the bit where it sets sort order to the results section -->
+<!-- TODO: Support for multiple tabs  -->
+<!-- TODO: The filters need to trigger a rerender whenever they're changed  add event handlers for "onchange"-->
 
 <!DOCTYPE html>
 <html>
@@ -13,43 +27,61 @@
     <link rel="stylesheet" type="text/css" href="./styles.css" />
   </head>
   <body>
-    <button id="toggle-dark-mode">Toggle Dark Mode</button>
+    <label class="toggle" for="toggle-dark-mode">
+      <input type="checkbox" id="toggle-dark-mode" />
+      <span class="slider"></span>
+    </label>
     <button id="reset-to-system">System Theme</button>
-    <p>Current theme source: <strong id="theme-source">System</strong></p>
     <!-- Basically how this should work is screen lets you choose to either open a file or search from online then lets you sort the results -->
     <!-- This would probably be on a different page but basically clicking it would call the fetch script with the data you entered  -->
     <!-- big question is where/how to store the response. Electron is chrome so there should be temp memory-->
 
-    <search id="appearance-search">Character</search>
-    <label>Get Appearances</label>
-    <input type="search" id="character-selection" />
-    <button type="button" form="appearance-search" id="submit">Search</button>
-    <!-- TODO: Need a way to search for alternate earths -->
-    <select id="universe-select">
-      <option selected value="(Prime Earth)">Prime Earth</option>
-      <option value="(New Earth)">New Earth</option>
-      <option value="(Earth-One)">Earth-One</option>
-      <option value="(Earth-Two)">Earth-Two</option>
-    </select>
-    <select form="appearance-search" id="sort-type">
-      <!-- I want this to require a selection and the display value should not be an actual field -->
-      <option value="none">None Selected</option>
-      <option value="pub-date">Publication Date</option>
-    </select>
-    <label>Ascending</label>
-    <input type="checkbox" id="ascending" />
-    <label>Names Only</label>
-    <input type="checkbox" id="names-only" />
-    <section id="results">
+    <label for="character-selection">Get Appearances</label>
+    <form id="character-search-form">
+      <input
+        type="search"
+        id="character-selection"
+        name="character-selection"
+        placeholder="Character Name"
+        required
+      />
+      <button type="submit" name="search-submit" id="search-submit" />
+      <!--TODO: Probably give it the value and then onfocus behavior that removes the value  -->
+      <input
+        list="earths"
+        id="earth"
+        name="universe-select"
+        value="(Prime Earth)"
+      />
+      <datalist id="earths">
+        <option value="(Prime Earth)" selected>Prime Earth</option>
+        <option value="(New Earth)">New Earth</option>
+        <option value="(Earth-One)">Earth-One</option>
+        <option value="(Earth-Two)">Earth-Two</option>
+      </datalist>
+      <!--TODO: Confirm button works -->
+      <button type="submit">Submit</button>
+    </form>
+    <section>
       <h3>Results:</h3>
-      <!--TODO: The names should be hyperlinks-->
-
-      <!--TODO: Result body should be the summary + characters. Maybe eventually add more granularity in what is shown.-->
+      <form id="display-style">
+        <select name="sort-type" id="sort-type" required>
+          <option value="pub-date" selected>Publication Date</option>
+          <option value="alphabet">A-Z</option>
+        </select>
+        <label for="input">Ascending</label>
+        <input type="hidden" name="ascending" value="0" />
+        <input type="checkbox" name="ascending" id="ascending" />
+        <label>Names Only</label>
+        <input type="hidden" name="names-only" value="0" />
+        <input type="checkbox" name="names-only" id="names-only" value="1" />
+      </form>
+      <!-- TODO: I don't love having the templates just floating here, there has to be a better way to store them -->
       <template id="template-results-full">
         <details class="result-details">
           <summary class="result-summary">
             <div class="result-title">
-              <span class="result-name"> <!----></span>
+              <span class="result-name"></span>
               <span class="result-date"> </span>
             </div>
           </summary>
@@ -57,19 +89,17 @@
             <!--Synopsis goes here-->
           </div>
         </details>
-        <template id="template-results-partial">
-          <div class="result-title">
-            <span class="result-name"></span>
-            <span class="result-date"> </span>
-          </div>
-        </template>
       </template>
-      <!-- TODO: When to use output -->
-      <!-- <output id="no-results">
-        
-      </output> -->
+      <template id="template-results-partial">
+        <div class="result-title">
+          <span class="result-name"></span>
+          <span class="result-date"> </span>
+        </div>
+      </template>
+      <section id="results">
+        <!--This empty div is where the results will go-->
+      </section>
     </section>
-
-    <script src="renderer.js"></script>
+    <script type="module" src="renderer.js"></script>
   </body>
 </html>

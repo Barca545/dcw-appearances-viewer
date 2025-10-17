@@ -1,6 +1,8 @@
 const { app, BrowserWindow, ipcMain } = require("electron");
 const { nativeTheme } = require("electron/main");
 const path = require("node:path");
+const { createCharacterName } = require("./init.cjs");
+const { fetchList } = require("./target/fetch");
 
 const createWindow = () => {
   const win = new BrowserWindow({
@@ -31,6 +33,14 @@ ipcMain.handle("dark-mode:toggle", () => {
 
 ipcMain.handle("dark-mode:system", () => {
   nativeTheme.themeSource = "system";
+});
+
+ipcMain.handle("form-data", async (e, data) => {
+  const character = createCharacterName(data);
+  // This needs to be here because renderer can't import
+  // Send back to the renderer (clientside)
+  // TODO: Need a proper error for if the name is wrong
+  return await fetchList(character);
 });
 
 // Activate the app when no windows are available should open a new one.

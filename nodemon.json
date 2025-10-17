@@ -1,0 +1,6 @@
+{
+  "ext": "js,cjs,ts,json,html,css",
+  "ignore": ["dist"],
+  "exec": "electron .",
+  "delay": "1000"
+}

@@ -7,7 +7,7 @@ export function createFullResultsList(entries: ListEntry[]) {
   );
 
   const parent = document.querySelector("#results") as Element;
-
+  let children = [];
   for (const entry of entries) {
     let clone = template?.content
       .querySelector(".result-details")
@@ -23,29 +23,35 @@ export function createFullResultsList(entries: ListEntry[]) {
     let synopsis = clone.querySelector(".result-body") as Element;
     synopsis.textContent =
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
-    console.log(clone);
-    parent.append(clone);
-
-    console.log(parent);
+    // parent.append(clone);
+    children.push(clone);
   }
-  console.log(parent);
+
+  parent.replaceChildren(...children);
 }
 
 export function createPartialResultsList(entries: ListEntry[]) {
   const template = document.querySelector<HTMLTemplateElement>(
     "#template-results-partial"
   );
+
   let parent = document.querySelector("#results") as Element;
+
+  let children = [];
   for (const entry of entries) {
     let clone = template?.content
       .querySelector(".result-title")
       ?.cloneNode(true) as Element;
+
     // Set the name
     let name = clone?.querySelector(".result-name") as Element;
     name.textContent = entry.title;
     // Set the date
     let date = clone?.querySelector(".result-date") as Element;
     date.textContent = `${entry.date.month}/${entry.date.day}/${entry.date.year}`;
-    parent.appendChild(clone);
+    // parent.appendChild(clone);
+    children.push(clone);
   }
+
+  parent.replaceChildren(...children);
 }
