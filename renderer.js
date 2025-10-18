@@ -31,7 +31,6 @@ function handleSubmit() {
       const data = Object.fromEntries(msg.entries());
 
       window.form.submit(data).then(
-        // TODO: All this logic should actually be in a helper function because it will need to be replicated for when the display is changed
         (appearances) => {
           sessionStorage.setItem(
             "Appearance Data",
@@ -48,36 +47,7 @@ function handleSubmit() {
               element.links
             );
           });
-          // TODO: AAAALLLLL of this can be shifted into a helper function and also called on change
-          // This is where stuff like checking for display order and ascending/descending should happen
           reflow(appearances);
-          // const display = document.getElementById("display-style");
-
-          // switch (display.querySelector("#sort-type").value) {
-          //   case "pub-date": {
-          //     appearances = pubDateSort(appearances);
-          //     break;
-          //   }
-          //   case "A-Z": {
-          //     // TODO: This type of sorting needs to be checked for correctness
-          //     appearances = appearances.sort((a, b) => {
-          //       if (a.title < b.title) {
-          //         return -1;
-          //       }
-          //       if (a.title > b.title) {
-          //         return 1;
-          //       }
-          //       return 0;
-          //     });
-          //     break;
-          //   }
-          // }
-          // // Determine how much data to show
-          // if (display.querySelector("#names-only").checked) {
-          //   createPartialResultsList(appearances);
-          // } else {
-          //   createFullResultsList(appearances);
-          // }
         },
         () => {
           // TODO: Create a dialog saying lookup failed
