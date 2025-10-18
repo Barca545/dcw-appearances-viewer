@@ -1,18 +1,14 @@
 <!-- TODO: Toggles should use sliders https://www.w3schools.com/howto/howto_css_switch.asp -->
 <!-- TODO: Is there a way to get a list of all the earths? Maybe query that before startup -->
-<!-- TODO: Need to add loading from a document. Does that mean I need multiple pages?  -->
+<!-- TODO: Need to add loading from a document. Does that mean I need multiple?  -->
 <!-- TODO: Be cool if the lists could be saved  -->
-<!-- TODO: Other kinds of sorting  -->
 <!-- TODO: Sort by needs a default value  -->
 <!-- TODO: The titles should be hyperlinks-->
 <!-- TODO: Could stand to be a *bit* prettier  -->
-<!-- TODO: Result body should be the summary + characters. Maybe eventually add more granularity in what is shown.-->
 <!-- TODO: Hot reloading? during dev works but not for ts because it does not recompile-->
 <!-- TODO: Implement ascending vs descending -->
 <!-- TODO: Show the name of the character above the results  -->
-<!-- TODO: Move the bit where it sets sort order to the results section -->
 <!-- TODO: Support for multiple tabs  -->
-<!-- TODO: The filters need to trigger a rerender whenever they're changed  add event handlers for "onchange"-->
 
 <!DOCTYPE html>
 <html>
@@ -53,13 +49,12 @@
         name="universe-select"
         value="(Prime Earth)"
       />
-      <datalist id="earths">
-        <option value="(Prime Earth)" selected>Prime Earth</option>
+      <datalist id="earths" placeholer="Prime Earth">
+        <option value="(Prime Earth)">Prime Earth</option>
         <option value="(New Earth)">New Earth</option>
         <option value="(Earth-One)">Earth-One</option>
         <option value="(Earth-Two)">Earth-Two</option>
       </datalist>
-      <!--TODO: Confirm button works -->
       <button type="submit">Submit</button>
     </form>
     <section>
@@ -70,11 +65,17 @@
           <option value="alphabet">A-Z</option>
         </select>
         <label for="input">Ascending</label>
-        <input type="hidden" name="ascending" value="0" />
-        <input type="checkbox" name="ascending" id="ascending" />
+        <label class="toggle" f>
+          <input type="hidden" name="ascending" value="0" />
+          <input type="checkbox" name="ascending" id="ascending" value="1" />
+          <span class="slider"></span>
+        </label>
         <label>Names Only</label>
-        <input type="hidden" name="names-only" value="0" />
-        <input type="checkbox" name="names-only" id="names-only" value="1" />
+        <label class="toggle" f>
+          <input type="hidden" name="names-only" value="0" />
+          <input type="checkbox" name="names-only" id="names-only" value="1" />
+          <span class="slider"></span>
+        </label>
       </form>
       <!-- TODO: I don't love having the templates just floating here, there has to be a better way to store them -->
       <template id="template-results-full">

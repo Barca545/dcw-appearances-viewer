@@ -35,7 +35,7 @@ ipcMain.handle("dark-mode:system", () => {
   nativeTheme.themeSource = "system";
 });
 
-ipcMain.handle("form-data", async (e, data) => {
+ipcMain.handle("form-data", async (_, data) => {
   const character = createCharacterName(data);
   // This needs to be here because renderer can't import
   // Send back to the renderer (clientside)

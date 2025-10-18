@@ -31,6 +31,7 @@ export function createFullResultsList(entries: ListEntry[]) {
 }
 
 export function createPartialResultsList(entries: ListEntry[]) {
+  console.log("reached 3");
   const template = document.querySelector<HTMLTemplateElement>(
     "#template-results-partial"
   );
@@ -54,4 +55,5 @@ export function createPartialResultsList(entries: ListEntry[]) {
   }
 
   parent.replaceChildren(...children);
+  console.log(parent);
 }
