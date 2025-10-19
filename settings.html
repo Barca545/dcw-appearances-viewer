@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="script-src 'self' 'unsafe-inline';"
+    />
+    <title>Settings</title>
+    <link rel="stylesheet" type="text/css" href="./styles.css" />
+  </head>
+  <!-- TODO: Ideally this script would load in from an external source but resolving that right now is annoying and low priority -->
+  <script>
+    window.addEventListener("DOMContentLoaded", async () => {
+      document
+        .getElementById("toggle-dark-mode")
+        .addEventListener("click", async () => {
+          const isDarkMode = await window.api.darkMode.toggle();
+        });
+
+      document
+        .getElementById("reset-to-system")
+        .addEventListener("click", async () => {
+          await window.api.darkMode.system();
+        });
+    });
+  </script>
+  <!-- TODO: I want to add a universal script here that injects the nav stuff into this page and every page -->
+  <body>
+    <form id="settings">
+      <div id="theme settings">
+        <label class="toggle" for="toggle-dark-mode">
+          <input type="checkbox" id="toggle-dark-mode" />
+          <span class="slider"></span>
+        </label>
+        <button id="reset-to-system">System Theme</button>
+      </div>
+      <div id="choose-earth-settings">
+        WARNING: The Earth Names in the dropdown are created programatically and
+        some are likely incorrect. If you identify one is wrong please sumbit a
+        bug report...somehow.
+        <span>
+          <!-- TODO: Why don't these have labels -->
+          <input type="radio" name="choose-type" value="user" />
+          <input type="radio" name="choose-type" value="dropdown" />
+        </span>
+      </div>
+      <div>
+        Open projects in new window
+        <input type="checkbox" id="open-settings" name="open-settings" />
+      </div>
+      <!-- TODO: Rig this up so it saves to the config.json  -->
+      <button id="save-settings" class="save-button" name="save-settings">
+        Save
+      </button>
+      <button id="save-settings" class="save-button" name="save-settings">
+        Save and close
+      </button>
+    </form>
+  </body>
+</html>

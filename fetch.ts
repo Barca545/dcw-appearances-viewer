@@ -1,7 +1,7 @@
 import { templateStringToListEntry } from "./helpers.js";
 import { xmlToJSON } from "./parser.js";
 import { ListEntry } from "./pub-sort.js";
-import { AppearancesResponse } from "./types.js";
+import { CategoryMembersResponse } from "./types.js";
 
 export async function getAppearances(char: string): Promise<string[]> {
   let cmcontinue: string | undefined = "";
@@ -31,7 +31,7 @@ export async function getAppearances(char: string): Promise<string[]> {
       throw new Error(`HTTP error! status: ${res.status}`);
     }
 
-    let data: AppearancesResponse = await res.json();
+    let data: CategoryMembersResponse = await res.json();
 
     appearances.push(...data.query.categorymembers);
 
@@ -39,6 +39,56 @@ export async function getAppearances(char: string): Promise<string[]> {
   }
 
   return appearances.map((appearance) => {
+    return appearance.title;
+  });
+}
+
+export async function getRealitiesList(): Promise<any[]> {
+  let cmcontinue: string | undefined = "";
+  let universes = [];
+
+  while (cmcontinue != undefined) {
+    let params = new URLSearchParams({
+      action: "query",
+      list: "categorymembers",
+      // Sanitize the name
+      cmtitle: `Category:realities`,
+      cmlimit: "50",
+      format: "json",
+    });
+
+    if (cmcontinue) params.set("cmcontinue", cmcontinue);
+
+    const url = new URL(`https://dc.fandom.com/api.php?${params.toString()}`);
+
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent": "Node.js https request",
+      },
+    });
+
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+
+    let data: CategoryMembersResponse = await res.json();
+
+    universes.push(...data.query.categorymembers);
+
+    cmcontinue = data.continue?.cmcontinue;
+  }
+
+  // Filter the words to remove the unwanted prepends
+  // Remove parentheses
+  // Remove the word category
+  universes.forEach((world) => {
+    if (world.title.startsWith("Category:")) {
+      console.log(world.title);
+    }
+    world.title.replace(/\(|\)/g, "");
+  });
+
+  return universes.map((appearance) => {
     return appearance.title;
   });
 }

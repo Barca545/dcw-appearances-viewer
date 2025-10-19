@@ -53,7 +53,8 @@ interface NameSpace {
   _text?: string;
 }
 
-export interface AppearancesResponse {
+/** The response to  */
+export interface CategoryMembersResponse {
   batchcomplete: string;
   continue: {
     cmcontinue: string;

@@ -4,7 +4,7 @@
   "type": "module",
   "main": "main.cjs",
   "scripts": {
-    "start": "npm run build && nodemon --exec electron .",
+    "start": "npm run build && nodemon --exec electron . --trace-warnings",
     "test": "tsc --noEmit && tsx --test",
     "build": "tsc"
   },
