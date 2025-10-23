@@ -44,21 +44,20 @@
       <h3>Results:</h3>
       <form id="display-style">
         <select name="sort-type" id="sort-type" required>
-          <option value="pub-date" selected>Publication Date</option>
-          <option value="alphabet">A-Z</option>
+          <option value="PUB" selected>Publication Date</option>
+          <option value="A-Z">A-Z</option>
         </select>
         <label for="input">Ascending</label>
         <label class="toggle" f>
-          <input type="hidden" name="ascending" value="0" />
+          <!-- FIXME: I think this toggle is inverted -->
           <input type="checkbox" name="ascending" id="ascending" value="1" />
           <span class="slider"></span>
         </label>
-        <label>Names Only</label>
-        <label class="toggle" f>
-          <input type="hidden" name="names-only" value="0" />
-          <input type="checkbox" name="names-only" id="names-only" value="1" />
-          <span class="slider"></span>
-        </label>
+        <label>Density</label>
+        <select name="density" value="density">
+          <option name="dense" value="DENSE">Names Only</option>
+          <option name="normal" value="NORM" selected>Normal</option>
+        </select>
       </form>
       <!-- TODO: I don't love having the templates just floating here, there has to be a better way to store them -->
       <template id="template-results-full">

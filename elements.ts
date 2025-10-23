@@ -1,7 +1,8 @@
 import { ListEntry } from "./pub-sort.js";
+// FIXME: Currently these are used in reflow but are purely rendering. These need to be render side
 
 /**Fills out a template to create a list of results with their synopses */
-export function createFullResultsList(entries: ListEntry[]) {
+export function createResultsList(entries: ListEntry[]) {
   const template = document.querySelector<HTMLTemplateElement>(
     "#template-results-full"
   );
@@ -30,7 +31,7 @@ export function createFullResultsList(entries: ListEntry[]) {
   parent.replaceChildren(...children);
 }
 
-export function createPartialResultsList(entries: ListEntry[]) {
+export function createDenseResultsList(entries: ListEntry[]) {
   console.log("reached 3");
   const template = document.querySelector<HTMLTemplateElement>(
     "#template-results-partial"

@@ -162,3 +162,29 @@ export class OptionMap<K, V> {
 export interface Clone<T> {
   clone(): T;
 }
+
+export class FilterOptions {
+  sortOrder: "PUB" | "A-Z";
+  density: "NORM" | "DENSE";
+  ascending: boolean;
+
+  /**Create a new set of FilterOptions with the default parameters (density = "NORM", order = "PUB"). */
+  constructor() {
+    this.density = "NORM";
+    this.sortOrder = "PUB";
+    this.ascending = true;
+  }
+
+  setDensity(dense: "NORM" | "DENSE") {
+    this.density = dense;
+    return this;
+  }
+  setOrder(ord: "PUB" | "A-Z") {
+    this.sortOrder = ord;
+    return this;
+  }
+  setAscending(asc: boolean) {
+    this.ascending = asc;
+    return this;
+  }
+}

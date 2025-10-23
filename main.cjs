@@ -5,6 +5,12 @@ const { createCharacterName } = require("./init.cjs");
 const { fetchList } = require("./target/fetch");
 const { loadList } = require("./target/load");
 const fs = require("node:fs");
+const { FilterOptions } = require("./target/types");
+const {
+  createResultsList,
+  createDenseResultsList,
+} = require("./target/elements.js");
+const { pubDateSort } = require("./target/pub-sort");
 
 // TODO: Do the list creation and manipulation "serverside" and display the results on the renderer.
 // A little bit more awkward to pass the button presses back and forth but ultimately makes saving more reliable.
@@ -22,15 +28,16 @@ const fs = require("node:fs");
 // FIXME: Need to clean main up and create submodules, in general need to organize project
 // FIXME: Keep the data serverside not clientside
 // TODO: When I move reorganize I should make as much as possible TS files
-
-const isMac = process.platform === "darwin";
-
-// TODO: Should this just be an array?
-let windows = new Set();
 // TODO: It'd be nice if I could set it up so the file name became the window's title but it's not urgent
-let save_path;
+// TODO: Landing page buttons broke
 
+// Declaring all the globals the program will use
+const isMac = process.platform === "darwin";
+let windows = new Set();
+
+let savePath;
 let fileData;
+let filterOptions = new FilterOptions();
 
 // TODO: Is there a way to watch a file for changes without actually needing to hold edit access?
 let settings = JSON.parse(fs.readFileSync("settings.json"));
@@ -80,8 +87,6 @@ async function newWindow(src = "index1.html") {
     win = null;
   });
 
-  // TODO: Building the menu can be done in the window creation process apparently
-  // TODO: There might be a way to generate this programatically
   // FIXME: Unsure if this way of creating the menu is bad. Other sources seem to just use one menu and  have it just act on the focused window
   const menu = Menu.buildFromTemplate([
     ...(isMac ? [{ role: "appMenu" }] : []),
@@ -90,6 +95,7 @@ async function newWindow(src = "index1.html") {
       submenu: [
         {
           label: "New",
+          accelerator: "CommandOrControl+N",
           click: () => win.loadFile(path.join(__dirname, "application.html")),
         },
         // TODO: This needs to open the file manager
@@ -106,22 +112,21 @@ async function newWindow(src = "index1.html") {
           accelerator: "CommandOrControl+S",
           click: () => saveFile(win),
         },
-        // TODO: This needs to open the file manager to save and stuff
         { label: "Save As", click: () => saveFile(win, true) },
+        { type: "separator" },
+        {
+          label: "Settings",
+          // Settings can launch a new window which is how MS word handles it
+          click: () => newChildWindow(win, "settings.html", true),
+        },
         { type: "separator" },
         isMac ? { role: "close" } : { role: "quit" },
       ],
     },
     { role: "editMenu" },
     { role: "viewMenu" },
-    {
-      label: "Settings",
-      // Settings can launch a new window which is how MS word handles it
-      click: () => newChildWindow(win, "settings.html", true),
-    },
   ]);
   win.setMenu(menu);
-
   return win;
 }
 
@@ -187,11 +192,17 @@ async function init() {
 
   ipcMain.handle("form-data", async (_, data) => {
     const character = createCharacterName(data);
-    console.log(character);
+    fileData = await fetchList(character);
     // This needs to be here because renderer can't import
     // Send back to the renderer (clientside)
     // TODO: Use an alert to show a proper error for if the name is wrong (basically if fetch comes back empty)
-    return await fetchList(character);
+    return fileData;
+  });
+
+  ipcMain.handle("filterOptions", (_, options) => {
+    filterOptions = options;
+    fileData = reflow(fileData);
+    return fileData;
   });
 
   windows.add(win);
@@ -199,7 +210,7 @@ async function init() {
 
 async function saveFile(win, saveas) {
   // If there is no save_path set one or if this is explicitly a save as command
-  if (saveas || typeof save_path === "undefined" || save_path === null) {
+  if (saveas || typeof savePath === "undefined" || savePath === null) {
     const res = await dialog.showSaveDialog({
       defaultPath: __dirname,
       // FIXME: Can't be this and openFile figure out the difference
@@ -210,20 +221,15 @@ async function saveFile(win, saveas) {
     // Early return if the user cancels
     if (res.canceled || !res.filePath) return;
 
-    save_path = res.filePath;
+    savePath = res.filePath;
   }
 
-  // TODO: This needs to fetch data from the other document and convert it to a text list
   // It's possible it should also store metadata for reloading a session
-  // This lets me run JS renderer side. So I need to define a function to get the data and then call it here
-  // TODO: Now that I want to move all the data stuff to this end this becomes unnessecary
-  fileData = win.webContents.executeJavaScript(`console.log("Hello World!")`);
+  // TODO: Possible I might need to figure out the extensions
   try {
-    fs.writeFileSync(`${save_path}.txt`, fileData, "utf-8");
+    fs.writeFileSync(`${savePath}`, JSON.stringify(fileData), "utf-8");
   } catch (_err) {
-    win.webContents.executeJavaScript(
-      `window.alert("Failed to save the file !")`
-    );
+    win.webContents.executeJavaScript(`window.alert("Failed to save file!")`);
   }
 }
 
@@ -237,10 +243,49 @@ async function openFile() {
   // FIXME: Need better error for if the file cannot open
   if (res.canceled || !res.filePath) return;
 
-  const list = loadList(res.filePaths[0]);
+  // Update the save path to match the path of the current file
+  savePath = res.filePaths[0];
+
+  const list = loadList(savePath);
+
   // TODO: Set the server side list to list before yeeting it back over.
-  fileData = list;
+  fileData = reflow(list);
+
+  // Reflow the list if necessary
+
   win.webContents.send();
 
   // TODO: Need to find a way to serialize and deserialize these results. (probably literally just a JSON)
+}
+
+/**Recalculate the layout of the results section.*/
+function reflow(list) {
+  let sorted = list;
+  // TODO: Basically move all this logic serverside
+  switch (filterOptions.sortOrder) {
+    case "PUB": {
+      sorted = pubDateSort(list);
+      break;
+    }
+    case "A-Z": {
+      // TODO: This type of sorting needs to be checked for correctness
+      sorted = sorted.sort((a, b) => {
+        if (a.title < b.title) {
+          return -1;
+        }
+        if (a.title > b.title) {
+          return 1;
+        }
+        return 0;
+      });
+      break;
+    }
+  }
+
+  // Make sure it does ascendingdescending
+  if (!filterOptions.ascending) {
+    sorted = sorted.reverse();
+  }
+
+  return sorted;
 }

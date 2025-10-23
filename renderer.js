@@ -1,10 +1,12 @@
-import { ListEntry, pubDateSort } from "./target/pub-sort.js";
+import { ListEntry } from "./target/pub-sort.js";
 import {
-  createFullResultsList,
-  createPartialResultsList,
+  createResultsList,
+  createDenseResultsList,
 } from "./target/elements.js";
+import { FilterOptions } from "./target/types.js";
 
-// FIXME: Something is wrong here recheck tutorial
+// FIXME: Having this variable in two places risks getting out of sync
+let filterOptions = new FilterOptions();
 
 function navigate() {
   window.addEventListener("DOMContentLoaded", async () => {
@@ -35,24 +37,7 @@ function handleSubmit() {
 
       window.api.form.submit(data).then(
         // Returns an object version of ListEntry[]
-        (appearances) => {
-          sessionStorage.setItem(
-            "Appearance Data",
-            JSON.stringify(appearances)
-          );
-          // FIXME: Annoyingly sending it makes it into a json so I need to reconvert it to a list of ListEntrys
-          appearances = appearances.map((element) => {
-            const date = element.date;
-            return new ListEntry(
-              element.title,
-              date.year,
-              date.month,
-              date.day,
-              element.links
-            );
-          });
-          reflow(appearances);
-        },
+        (appearances) => displayElements(appearances),
         () => {
           // TODO: Create a dialog saying lookup failed
         }
@@ -63,58 +48,47 @@ function handleSubmit() {
 
 function handleFilter() {
   window.addEventListener("DOMContentLoaded", async () => {
-    document.getElementById("display-style").addEventListener("change", () => {
-      // Get appearance data, needs to be made into a string parsed back and reconverted into ListEntry
-      const data = JSON.parse(sessionStorage.getItem("Appearance Data"));
-      const appearances = data.map((element) => {
-        const date = element.date;
-        return new ListEntry(
-          element.title,
-          date.year,
-          date.month,
-          date.day,
-          element.links
-        );
-      });
+    document.getElementById("display-style").addEventListener("change", (e) => {
+      // FIXME: This needs to be updated so what it does is send the button press to main
+      // main will handle it
+      const form = new FormData(e.currentTarget);
 
-      reflow(appearances);
+      filterOptions = new FilterOptions()
+        // FIXME: The toggle is being weird about sending its result
+        .setDensity(form.get("density"))
+        .setOrder(form.get("sort-type") ?? false)
+        .setAscending(form.get("ascending"));
+
+      window.api
+        .filterOptions(filterOptions)
+        .then((appearances) => displayElements(appearances));
     });
   });
 }
 
-/**Recalculate the layout of the results section.*/
-function reflow(appearances) {
-  const display = document.getElementById("display-style");
-  // TODO: Basically move all this logic serverside
-  switch (display.querySelector("#sort-type").value) {
-    case "pub-date": {
-      appearances = pubDateSort(appearances);
-      break;
-    }
-    case "A-Z": {
-      // TODO: This type of sorting needs to be checked for correctness
-      appearances = appearances.sort((a, b) => {
-        if (a.title < b.title) {
-          return -1;
-        }
-        if (a.title > b.title) {
-          return 1;
-        }
-        return 0;
-      });
-      break;
-    }
-  }
+function displayElements(elements) {
+  // FIXME: Annoyingly sending it makes it into a json so I need to reconvert it to a list of ListEntrys
+  const appearances = elements.map((element) => {
+    const date = element.date;
+    return new ListEntry(
+      element.title,
+      date.year,
+      date.month,
+      date.day,
+      element.links
+    );
+  });
 
-  // Make sure it does ascendingdescending
-  if (display.querySelector("#ascending").checked) {
-    appearances.reverse();
-  }
-
+  // FIXME: I don't like this logic being in the renderer I could stick this in an execute javascript in the main process but unfortunatelu the filter options would not be open to it
   // Determine how much data to show
-  if (display.querySelector("#names-only").checked) {
-    createPartialResultsList(appearances);
-  } else {
-    createFullResultsList(appearances);
+  switch (filterOptions.density) {
+    case "NORM": {
+      createResultsList(appearances);
+      break;
+    }
+    case "DENSE": {
+      createDenseResultsList(appearances);
+      break;
+    }
   }
 }

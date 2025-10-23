@@ -9,14 +9,19 @@ contextBridge.exposeInMainWorld("api", {
     system: () => ipcRenderer.invoke("dark-mode:system"),
   },
   form: {
-    submit: async (data) => {
+    submit: (data) => {
       console.log(data);
-      return await ipcRenderer.invoke("form-data", data);
+      return ipcRenderer.invoke("form-data", data);
     },
   },
   navigate: {
     toPage: (addr) => {
       ipcRenderer.send("navigate", addr);
     },
+  },
+  // This all send their arguments to the main process and then return the restructured data.
+  // Just just build and send a whole new instance of the filter options
+  filterOptions: (state) => {
+    return ipcRenderer.invoke("filterOptions", state);
   },
 });
