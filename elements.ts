@@ -29,9 +29,12 @@ export function createResultsList(entries: ListEntry[]) {
   }
 
   parent.replaceChildren(...children);
+
+  console.log(parent);
 }
 
 export function createDenseResultsList(entries: ListEntry[]) {
+  console.log(entries);
   console.log("reached 3");
   const template = document.querySelector<HTMLTemplateElement>(
     "#template-results-partial"

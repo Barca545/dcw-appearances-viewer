@@ -61,12 +61,12 @@ function handleFilter() {
 
       window.api
         .filterOptions(filterOptions)
-        .then((appearances) => displayElements(appearances));
+        .then((appearances) => displayElements(filterOptions, appearances));
     });
   });
 }
 
-function displayElements(elements) {
+export function displayElements(opt, elements) {
   // FIXME: Annoyingly sending it makes it into a json so I need to reconvert it to a list of ListEntrys
   const appearances = elements.map((element) => {
     const date = element.date;
@@ -81,14 +81,22 @@ function displayElements(elements) {
 
   // FIXME: I don't like this logic being in the renderer I could stick this in an execute javascript in the main process but unfortunatelu the filter options would not be open to it
   // Determine how much data to show
-  switch (filterOptions.density) {
+
+  switch (opt.density) {
     case "NORM": {
+      console.log("reached");
       createResultsList(appearances);
       break;
     }
     case "DENSE": {
+      console.log(appearances);
       createDenseResultsList(appearances);
       break;
     }
   }
+
+  filterOptions = opt;
 }
+
+// This sets up a callback so the page renders new data when it recieves it
+window.api.recieveData((res) => displayElements(res.opt, res.data));

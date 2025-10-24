@@ -3,7 +3,7 @@ const { nativeTheme } = require("electron/main");
 const path = require("node:path");
 const { createCharacterName } = require("./init.cjs");
 const { fetchList } = require("./target/fetch");
-const { loadList } = require("./target/load");
+const { loadList, sessionToJSON, sessionFromJSON } = require("./target/load");
 const fs = require("node:fs");
 const { FilterOptions } = require("./target/types");
 const {
@@ -35,6 +35,7 @@ const { pubDateSort } = require("./target/pub-sort");
 const isMac = process.platform === "darwin";
 let windows = new Set();
 
+// FIXME: These cannot be globals because then every window will share them
 let savePath;
 let fileData;
 let filterOptions = new FilterOptions();
@@ -96,13 +97,16 @@ async function newWindow(src = "index1.html") {
         {
           label: "New",
           accelerator: "CommandOrControl+N",
-          click: () => win.loadFile(path.join(__dirname, "application.html")),
+          click: () =>
+            BrowserWindow.getFocusedWindow().loadFile(
+              path.join(__dirname, "application.html")
+            ),
         },
         // TODO: This needs to open the file manager
         {
           label: "Open File",
           accelerator: "CommandOrControl+O",
-          click: () => openFile(),
+          click: () => openFile(BrowserWindow.getFocusedWindow()),
         },
         // TODO: Is this needed given the other 3 options will create a new window?
         { label: "New Window", click: () => newWindow() },
@@ -112,12 +116,20 @@ async function newWindow(src = "index1.html") {
           accelerator: "CommandOrControl+S",
           click: () => saveFile(win),
         },
-        { label: "Save As", click: () => saveFile(win, true) },
+        {
+          label: "Save As",
+          click: () => saveFile(BrowserWindow.getFocusedWindow(), true),
+        },
         { type: "separator" },
         {
           label: "Settings",
           // Settings can launch a new window which is how MS word handles it
-          click: () => newChildWindow(win, "settings.html", true),
+          click: () =>
+            newChildWindow(
+              BrowserWindow.getFocusedWindow(),
+              "settings.html",
+              true
+            ),
         },
         { type: "separator" },
         isMac ? { role: "close" } : { role: "quit" },
@@ -208,14 +220,17 @@ async function init() {
   windows.add(win);
 }
 
-async function saveFile(win, saveas) {
+async function saveFile(saveas) {
   // If there is no save_path set one or if this is explicitly a save as command
   if (saveas || typeof savePath === "undefined" || savePath === null) {
     const res = await dialog.showSaveDialog({
       defaultPath: __dirname,
       // FIXME: Can't be this and openFile figure out the difference
-      properties: ["openDirectory"],
-      filters: [{ name: ".txt", extensions: ["txt"] }],
+      properties: ["openFile"],
+      filters: [
+        { name: ".txt", extensions: ["txt"] },
+        { name: ".json", extensions: ["json"] },
+      ],
     });
 
     // Early return if the user cancels
@@ -227,35 +242,63 @@ async function saveFile(win, saveas) {
   // It's possible it should also store metadata for reloading a session
   // TODO: Possible I might need to figure out the extensions
   try {
-    fs.writeFileSync(`${savePath}`, JSON.stringify(fileData), "utf-8");
-  } catch (_err) {
-    win.webContents.executeJavaScript(`window.alert("Failed to save file!")`);
+    sessionToJSON(filterOptions, fileData, savePath);
+  } catch (err) {
+    dialog.showErrorBox("Load Failed", err.message);
   }
 }
 
-async function openFile() {
+async function openFile(win) {
   const res = await dialog.showOpenDialog({
     defaultPath: __dirname,
-    filters: [{ name: ".txt", extensions: ["txt"] }],
+    filters: [
+      { name: "All Files", extensions: ["txt", "json", "xml"] },
+      { name: ".txt", extensions: ["txt"] },
+      { name: ".json", extensions: ["json"] },
+      { name: ".xml", extensions: ["xml"] },
+    ],
+    properties: ["openFile"],
   });
 
+  const newPath = res.filePaths[0];
+
   // If the action was canceled, abort and return early
-  // FIXME: Need better error for if the file cannot open
-  if (res.canceled || !res.filePath) return;
+  // FIXME: Need better error for if the file cannot open should create a modal
+  if (res.canceled || !newPath) {
+    return;
+  }
 
   // Update the save path to match the path of the current file
-  savePath = res.filePaths[0];
+  // TODO: Should this give an error if it fails?
+  if (newPath) savePath = newPath;
 
-  const list = loadList(savePath);
+  const ext = newPath.substring(newPath.lastIndexOf("."));
 
   // TODO: Set the server side list to list before yeeting it back over.
-  fileData = reflow(list);
+  let file;
+  if (ext == ".xml") file = loadList(savePath);
+  else {
+    try {
+      file = sessionFromJSON(savePath);
+    } catch (error) {
+      dialog.showErrorBox("Load Failed", err.message);
+      return;
+    }
+  }
 
-  // Reflow the list if necessary
+  fileData = reflow(file);
 
-  win.webContents.send();
+  // OK this also needs to open a new page with the data
+  // So open the page
+  win.loadFile(path.join(__dirname, "application.html"));
+  // Send the data over
 
-  // TODO: Need to find a way to serialize and deserialize these results. (probably literally just a JSON)
+  win.webContents.on("did-finish-load", () => {
+    win.webContents.send("file-opened", {
+      opt: file.opt ?? filterOptions,
+      data: fileData,
+    });
+  });
 }
 
 /**Recalculate the layout of the results section.*/

@@ -19,9 +19,10 @@ contextBridge.exposeInMainWorld("api", {
       ipcRenderer.send("navigate", addr);
     },
   },
-  // This all send their arguments to the main process and then return the restructured data.
-  // Just just build and send a whole new instance of the filter options
+  // I believe this is just a call to send data over to main to be filtered and the recieve the filtered data
   filterOptions: (state) => {
     return ipcRenderer.invoke("filterOptions", state);
   },
+  recieveData: (callback) =>
+    ipcRenderer.on("file-opened", (_event, res) => callback(res)),
 });
