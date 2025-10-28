@@ -1,16 +1,16 @@
-const { app, BrowserWindow, ipcMain, Menu, dialog } = require("electron");
+const { app, BrowserWindow, ipcMain, Menu } = require("electron");
 const { nativeTheme } = require("electron/main");
 const path = require("node:path");
 const { createCharacterName } = require("./init.cjs");
 const { fetchList } = require("./target/fetch");
-const { loadList, sessionToJSON, sessionFromJSON } = require("./target/load");
 const fs = require("node:fs");
 const { FilterOptions } = require("./target/types");
 const {
-  createResultsList,
-  createDenseResultsList,
-} = require("./target/elements.js");
-const { pubDateSort } = require("./target/pub-sort");
+  saveFile,
+  openFile,
+  reflow,
+  Sessions,
+} = require("./target/mainProcessFunctions.js");
 
 // TODO: Do the list creation and manipulation "serverside" and display the results on the renderer.
 // A little bit more awkward to pass the button presses back and forth but ultimately makes saving more reliable.
@@ -30,143 +30,96 @@ const { pubDateSort } = require("./target/pub-sort");
 // TODO: When I move reorganize I should make as much as possible TS files
 // TODO: It'd be nice if I could set it up so the file name became the window's title but it's not urgent
 // TODO: Landing page buttons broke
+// - Get filename using path.basename
 
 // Declaring all the globals the program will use
-const isMac = process.platform === "darwin";
-let windows = new Set();
+// const isMac = process.platform === "darwin";
+// TODO: Store them by title
+// let windows = new Set();
 
-// FIXME: These cannot be globals because then every window will share them
-let savePath;
-let fileData;
-let filterOptions = new FilterOptions();
+let sessions = new Sessions();
+
+// // FIXME: These cannot be globals because then every window will share them
+// let savePath;
+// let fileData;
+// let filterOptions = new FilterOptions();
 
 // TODO: Is there a way to watch a file for changes without actually needing to hold edit access?
-let settings = JSON.parse(fs.readFileSync("settings.json"));
+// let settings = JSON.parse(fs.readFileSync("settings.json"));
 
-async function newWindow(src = "index1.html") {
-  const currentWindow = BrowserWindow.getFocusedWindow();
+// async function newWindow(src = "index.html") {
+//   const currentWindow = BrowserWindow.getFocusedWindow();
 
-  let x, y;
-  if (currentWindow) {
-    const [curX, curY] = currentWindow.getPosition();
-    // TODO: Is hardcoding this number ok?
-    x = curX + 24;
-    y = curY + 24;
-  }
+//   let x, y;
+//   if (currentWindow) {
+//     const [curX, curY] = currentWindow.getPosition();
+//     // TODO: Is hardcoding this number ok?
+//     x = curX + 24;
+//     y = curY + 24;
+//   }
 
-  // TODO: Find a way to persist the user's desired size across restarts
-  let win = new BrowserWindow({
-    width: settings.size.width,
-    height: settings.size.height,
-    x: x,
-    y: y,
-    webPreferences: {
-      contextIsolation: true,
-      enableRemoteModule: false,
-      nodeIntegration: false,
-      preload: path.join(__dirname, "preload.js"),
-    },
-  });
-  win.loadFile(path.join(__dirname, src));
+//   // TODO: Find a way to persist the user's desired size across restarts
+//   let win = new BrowserWindow({
+//     width: settings.size.width,
+//     height: settings.size.height,
+//     x: x,
+//     y: y,
+//     webPreferences: {
+//       contextIsolation: true,
+//       enableRemoteModule: false,
+//       nodeIntegration: false,
+//       preload: path.join(__dirname, "preload.js"),
+//     },
+//   });
+//   win.loadFile(path.join(__dirname, src));
 
-  win.webContents.on("did-finish-load", () => {
-    if (!win) {
-      throw new Error('"win" is not defined');
-    }
+//   win.webContents.on("did-finish-load", () => {
+//     if (!win) {
+//       throw new Error('"win" is not defined');
+//     }
 
-    if (process.env.START_MINIMIZED) {
-      win.minimize();
-    } else {
-      win.show();
-      win.focus();
-    }
-  });
+//     if (process.env.START_MINIMIZED) {
+//       win.minimize();
+//     } else {
+//       win.show();
+//       win.focus();
+//     }
+//   });
 
-  // This destroys the window instance
-  win.on("closed", () => {
-    windows.delete(win);
-    win = null;
-  });
+//   // This destroys the window instance
+//   win.on("closed", () => {
+//     windows.delete(win);
+//     win = null;
+//   });
 
-  // FIXME: Unsure if this way of creating the menu is bad. Other sources seem to just use one menu and  have it just act on the focused window
-  const menu = Menu.buildFromTemplate([
-    ...(isMac ? [{ role: "appMenu" }] : []),
-    {
-      label: "File",
-      submenu: [
-        {
-          label: "New",
-          accelerator: "CommandOrControl+N",
-          click: () =>
-            BrowserWindow.getFocusedWindow().loadFile(
-              path.join(__dirname, "application.html")
-            ),
-        },
-        // TODO: This needs to open the file manager
-        {
-          label: "Open File",
-          accelerator: "CommandOrControl+O",
-          click: () => openFile(BrowserWindow.getFocusedWindow()),
-        },
-        // TODO: Is this needed given the other 3 options will create a new window?
-        { label: "New Window", click: () => newWindow() },
-        { type: "separator" },
-        {
-          label: "Save",
-          accelerator: "CommandOrControl+S",
-          click: () => saveFile(win),
-        },
-        {
-          label: "Save As",
-          click: () => saveFile(BrowserWindow.getFocusedWindow(), true),
-        },
-        { type: "separator" },
-        {
-          label: "Settings",
-          // Settings can launch a new window which is how MS word handles it
-          click: () =>
-            newChildWindow(
-              BrowserWindow.getFocusedWindow(),
-              "settings.html",
-              true
-            ),
-        },
-        { type: "separator" },
-        isMac ? { role: "close" } : { role: "quit" },
-      ],
-    },
-    { role: "editMenu" },
-    { role: "viewMenu" },
-  ]);
-  win.setMenu(menu);
-  return win;
-}
+//   win.setMenu(menu);
+//   return win;
+// }
 
-// FIXME: Do I have to do anything if I want this to have a different/no menu?
-async function newChildWindow(parent, src, modal = false) {
-  let child = new BrowserWindow({
-    width: parent.getSize()[0] / 2,
-    height: parent.getSize()[0] / 2,
-    parent: parent,
-    modal: modal,
-    webPreferences: {
-      contextIsolation: true,
-      enableRemoteModule: false,
-      nodeIntegration: false,
-      preload: path.join(__dirname, "preload.js"),
-    },
-  });
-  child.loadFile(path.join(__dirname, src));
-  child.setMenu(null);
-}
+// // FIXME: Do I have to do anything if I want this to have a different/no menu?
+// async function newChildWindow(parent, src, modal = false) {
+//   let child = new BrowserWindow({
+//     width: parent.getSize()[0] / 2,
+//     height: parent.getSize()[0] / 2,
+//     parent: parent,
+//     modal: modal,
+//     webPreferences: {
+//       contextIsolation: true,
+//       enableRemoteModule: false,
+//       nodeIntegration: false,
+//       preload: path.join(__dirname, "preload.js"),
+//     },
+//   });
+//   child.loadFile(path.join(__dirname, src));
+//   child.setMenu(null);
+// }
 
 // NOTE: This adds a bunch of event listeners to handle stuff over the lifetime of the app
 app.whenReady().then(() => init());
 
 /**Create a new instance of the program */
 async function init() {
-  // TODO: This will eventually need to pull from the settings
-  let win = await newWindow();
+  const session = await sessions.newSession();
 
   // Activating the app when no windows are available should open a new one.
   // This listener gets added because MAC keeps the app running even when there are no windows
@@ -212,123 +165,64 @@ async function init() {
   });
 
   ipcMain.handle("filterOptions", (_, options) => {
+    // If I just target the focused I don't see how it could go wrong but maybe there are edge cases where it does?
+    const session = sessions.focused.unwrap();
+    console.log(session);
     filterOptions = options;
-    fileData = reflow(fileData);
+    fileData = reflow(fileData, filterOptions);
     return fileData;
   });
-
-  windows.add(win);
 }
 
-async function saveFile(saveas) {
-  // If there is no save_path set one or if this is explicitly a save as command
-  if (saveas || typeof savePath === "undefined" || savePath === null) {
-    const res = await dialog.showSaveDialog({
-      defaultPath: __dirname,
-      // FIXME: Can't be this and openFile figure out the difference
-      properties: ["openFile"],
-      filters: [
-        { name: ".txt", extensions: ["txt"] },
-        { name: ".json", extensions: ["json"] },
-      ],
-    });
-
-    // Early return if the user cancels
-    if (res.canceled || !res.filePath) return;
-
-    savePath = res.filePath;
-  }
-
-  // It's possible it should also store metadata for reloading a session
-  // TODO: Possible I might need to figure out the extensions
-  try {
-    sessionToJSON(filterOptions, fileData, savePath);
-  } catch (err) {
-    dialog.showErrorBox("Load Failed", err.message);
-  }
-}
-
-async function openFile(win) {
-  const res = await dialog.showOpenDialog({
-    defaultPath: __dirname,
-    filters: [
-      { name: "All Files", extensions: ["txt", "json", "xml"] },
-      { name: ".txt", extensions: ["txt"] },
-      { name: ".json", extensions: ["json"] },
-      { name: ".xml", extensions: ["xml"] },
-    ],
-    properties: ["openFile"],
-  });
-
-  const newPath = res.filePaths[0];
-
-  // If the action was canceled, abort and return early
-  // FIXME: Need better error for if the file cannot open should create a modal
-  if (res.canceled || !newPath) {
-    return;
-  }
-
-  // Update the save path to match the path of the current file
-  // TODO: Should this give an error if it fails?
-  if (newPath) savePath = newPath;
-
-  const ext = newPath.substring(newPath.lastIndexOf("."));
-
-  // TODO: Set the server side list to list before yeeting it back over.
-  let file;
-  if (ext == ".xml") file = loadList(savePath);
-  else {
-    try {
-      file = sessionFromJSON(savePath);
-    } catch (error) {
-      dialog.showErrorBox("Load Failed", err.message);
-      return;
-    }
-  }
-
-  fileData = reflow(file);
-
-  // OK this also needs to open a new page with the data
-  // So open the page
-  win.loadFile(path.join(__dirname, "application.html"));
-  // Send the data over
-
-  win.webContents.on("did-finish-load", () => {
-    win.webContents.send("file-opened", {
-      opt: file.opt ?? filterOptions,
-      data: fileData,
-    });
-  });
-}
-
-/**Recalculate the layout of the results section.*/
-function reflow(list) {
-  let sorted = list;
-  // TODO: Basically move all this logic serverside
-  switch (filterOptions.sortOrder) {
-    case "PUB": {
-      sorted = pubDateSort(list);
-      break;
-    }
-    case "A-Z": {
-      // TODO: This type of sorting needs to be checked for correctness
-      sorted = sorted.sort((a, b) => {
-        if (a.title < b.title) {
-          return -1;
-        }
-        if (a.title > b.title) {
-          return 1;
-        }
-        return 0;
-      });
-      break;
-    }
-  }
-
-  // Make sure it does ascendingdescending
-  if (!filterOptions.ascending) {
-    sorted = sorted.reverse();
-  }
-
-  return sorted;
-}
+// const menu = Menu.buildFromTemplate([
+//   ...(isMac ? [{ role: "appMenu" }] : []),
+//   {
+//     label: "File",
+//     submenu: [
+//       {
+//         label: "New",
+//         accelerator: "CommandOrControl+N",
+//         click: () =>
+//           BrowserWindow.getFocusedWindow().loadFile(
+//             path.join(__dirname, "application.html")
+//           ),
+//       },
+//       // TODO: This needs to open the file manager
+//       {
+//         label: "Open File",
+//         accelerator: "CommandOrControl+O",
+//         click: () => {
+//           openFile(BrowserWindow.getFocusedWindow());
+//           console.log(fileData);
+//         },
+//       },
+//       // TODO: Is this needed given the other 3 options will create a new window?
+//       { label: "New Window", click: () => newWindow() },
+//       { type: "separator" },
+//       {
+//         label: "Save",
+//         accelerator: "CommandOrControl+S",
+//         click: () => saveFile(win),
+//       },
+//       {
+//         label: "Save As",
+//         click: () => saveFile(BrowserWindow.getFocusedWindow(), true),
+//       },
+//       { type: "separator" },
+//       {
+//         label: "Settings",
+//         // Settings can launch a new window which is how MS word handles it
+//         click: () =>
+//           newChildWindow(
+//             BrowserWindow.getFocusedWindow(),
+//             "settings.html",
+//             true
+//           ),
+//       },
+//       { type: "separator" },
+//       isMac ? { role: "close" } : { role: "quit" },
+//     ],
+//   },
+//   { role: "editMenu" },
+//   { role: "viewMenu" },
+// ]);

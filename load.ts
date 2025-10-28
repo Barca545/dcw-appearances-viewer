@@ -28,7 +28,7 @@ export function loadList(path: string): ListEntry[] {
   return appearances;
 }
 
-interface SaveFormat {
+export interface SaveFormat {
   isApperances: "DC DATABASE APPEARANCE DATA";
   opt: FilterOptions;
   data: ListEntry[];

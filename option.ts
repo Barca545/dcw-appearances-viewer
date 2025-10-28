@@ -4,6 +4,9 @@ export class Some<T> implements OptionInterface<T> {
   constructor(val: T) {
     this.value = val;
   }
+  isNone(): boolean {
+    return false;
+  }
 
   unwrap(): T {
     return this.value;
@@ -23,6 +26,9 @@ export class Some<T> implements OptionInterface<T> {
 }
 
 export class None<T> implements OptionInterface<T> {
+  isNone(): boolean {
+    return true;
+  }
   unwrap(): never {
     throw new Error(`Tried to unwrap option None`);
   }
@@ -47,6 +53,9 @@ interface OptionInterface<T> {
 
   /**Returns true if the Option is Some T */
   isSome(): boolean;
+
+  /**Returns true if the Option is None T */
+  isNone(): boolean;
 
   unwrap_or(fallback: T): T;
 

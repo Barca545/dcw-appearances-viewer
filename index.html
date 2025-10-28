@@ -7,84 +7,16 @@
       http-equiv="Content-Security-Policy"
       content="script-src 'self' 'unsafe-inline';"
     />
-    <title>Appearance Sorter</title>
     <link rel="stylesheet" type="text/css" href="./styles.css" />
   </head>
   <body>
-    Basically how this should work is screen lets you choose to either open a
-    file or search from online then lets you sort the results
-    <!-- This would probably be on a different page but basically clicking it would call the fetch script with the data you entered  -->
-    <!-- big question is where/how to store the response. Electron is chrome so there should be temp memory-->
-
-    <label for="character-selection">Get Appearances</label>
-    <form id="character-search-form">
-      <input
-        type="search"
-        id="character-selection"
-        name="character-selection"
-        placeholder="Character Name"
-        required
-      />
-      <button type="submit" name="search-submit" id="search-submit" />
-      <!--TODO: Probably give it the value and then onfocus behavior that removes the value  -->
-      <input
-        list="earths"
-        id="earth"
-        name="universe-select"
-        placeholder="(Prime Earth)"
-      />
-      <datalist id="earths">
-        <option value="(Prime Earth)">Prime Earth</option>
-        <option value="(New Earth)">New Earth</option>
-        <option value="(Earth-One)">Earth-One</option>
-        <option value="(Earth-Two)">Earth-Two</option>
-      </datalist>
-      <button type="submit">Submit</button>
-    </form>
-    <section>
-      <h3>Results:</h3>
-      <form id="display-style">
-        <select name="sort-type" id="sort-type" required>
-          <option value="pub-date" selected>Publication Date</option>
-          <option value="alphabet">A-Z</option>
-        </select>
-        <label for="input">Ascending</label>
-        <label class="toggle" f>
-          <input type="hidden" name="ascending" value="0" />
-          <input type="checkbox" name="ascending" id="ascending" value="1" />
-          <span class="slider"></span>
-        </label>
-        <label>Names Only</label>
-        <label class="toggle" f>
-          <input type="hidden" name="names-only" value="0" />
-          <input type="checkbox" name="names-only" id="names-only" value="1" />
-          <span class="slider"></span>
-        </label>
-      </form>
-      <!-- TODO: I don't love having the templates just floating here, there has to be a better way to store them -->
-      <template id="template-results-full">
-        <details class="result-details">
-          <summary class="result-summary">
-            <div class="result-title">
-              <span class="result-name"></span>
-              <span class="result-date"> </span>
-            </div>
-          </summary>
-          <div class="result-body">
-            <!--Synopsis goes here-->
-          </div>
-        </details>
-      </template>
-      <template id="template-results-partial">
-        <div class="result-title">
-          <span class="result-name"></span>
-          <span class="result-date"> </span>
-        </div>
-      </template>
-      <section id="results">
-        <!--This empty div is where the results will go-->
-      </section>
-    </section>
+    LANDING PAGE
+    <!-- TODO: Eventually this can be made more extensible by making it something that gets filled in at load time or something from a JSON -->
+    <button type="button" name="new" class="nav-button" value="application">
+      New
+    </button>
+    <!-- TODO: This needs to open up a file picking dialog and then return the response to be opened -->
+    <button type="button" name="open" value="open">Open</button>
     <script type="module" src="renderer.js"></script>
   </body>
 </html>
