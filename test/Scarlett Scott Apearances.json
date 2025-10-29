@@ -1,0 +1,36 @@
+{
+  "isAppearances": "DC DATABASE APPEARANCE DATA",
+  "opt": { "sortOrder": "PUB", "density": "NORM", "ascending": true },
+  "data": [
+    {
+      "title": "Detective Comics Vol 1 1090",
+      "date": { "year": 2024, "month": 12, "day": 23 },
+      "link": ""
+    },
+    {
+      "title": "Detective Comics Vol 1 1091",
+      "date": { "year": 2025, "month": 1, "day": 27 },
+      "link": ""
+    },
+    {
+      "title": "Detective Comics Vol 1 1092",
+      "date": { "year": 2025, "month": 2, "day": 26 },
+      "link": ""
+    },
+    {
+      "title": "Detective Comics Vol 1 1093",
+      "date": { "year": 2025, "month": 3, "day": 22 },
+      "link": ""
+    },
+    {
+      "title": "Detective Comics Vol 1 1095",
+      "date": { "year": 2025, "month": 5, "day": 19 },
+      "link": ""
+    },
+    {
+      "title": "Detective Comics Vol 1 1096",
+      "date": { "year": 2025, "month": 6, "day": 16 },
+      "link": ""
+    }
+  ]
+}

@@ -6,6 +6,7 @@ import {
 import { FilterOptions } from "./target/types.js";
 
 // FIXME: Having this variable in two places risks getting out of sync
+// FIXME: Convert to TS
 let filterOptions = new FilterOptions();
 
 function navigate() {
@@ -24,6 +25,7 @@ function navigate() {
 handleSubmit();
 handleFilter();
 navigate();
+// openResultLink();
 
 function handleSubmit() {
   window.addEventListener("DOMContentLoaded", async () => {
@@ -37,9 +39,11 @@ function handleSubmit() {
 
       window.api.form.submit(data).then(
         // Returns an object version of ListEntry[]
-        (appearances) => displayElements(appearances),
+        ({ appearances, character }) => {
+          displayElements(undefined, appearances, character);
+        },
         () => {
-          // TODO: Create a dialog saying lookup failed
+          // TODO: Create a dialog saying lookup failed if an error is returned
         }
       );
     });
@@ -66,7 +70,7 @@ function handleFilter() {
   });
 }
 
-export function displayElements(opt, elements) {
+export function displayElements(opt, elements, charName) {
   // FIXME: Annoyingly sending it makes it into a json so I need to reconvert it to a list of ListEntrys
   const appearances = elements.map((element) => {
     const date = element.date;
@@ -81,21 +85,26 @@ export function displayElements(opt, elements) {
 
   // FIXME: I don't like this logic being in the renderer I could stick this in an execute javascript in the main process but unfortunatelu the filter options would not be open to it
   // Determine how much data to show
+  if (opt) {
+    filterOptions = opt;
+  }
 
-  switch (opt.density) {
+  switch (filterOptions.density) {
     case "NORM": {
-      console.log("reached");
       createResultsList(appearances);
       break;
     }
     case "DENSE": {
-      console.log(appearances);
       createDenseResultsList(appearances);
       break;
     }
   }
 
-  filterOptions = opt;
+  if (charName) {
+    document.getElementById(
+      "results-header"
+    ).textContent = `${charName} Appearances`;
+  }
 }
 
 // This sets up a callback so the page renders new data when it recieves it

@@ -1,5 +1,8 @@
 /* TODO: I want the result boxes to appear in rows of alternative highlights which are the same size (when closed) regardless of full or partial*/
 /* TODO: The filters need to be grouped with results not the search input */
+.results-header {
+  text-align: center;
+}
 
 @media (prefers-color-scheme: dark) {
   body {

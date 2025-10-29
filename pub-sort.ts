@@ -8,11 +8,11 @@ export class ListEntry {
     year: string,
     month: string,
     day: string,
-    link: string
+    link?: string
   ) {
     this.title = title;
     this.date = new EntryDate(year, month, day);
-    this.link = link;
+    this.link = link ?? "";
   }
 }
 

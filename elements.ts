@@ -24,18 +24,21 @@ export function createResultsList(entries: ListEntry[]) {
     let synopsis = clone.querySelector(".result-body") as Element;
     synopsis.textContent =
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
-    // parent.append(clone);
+
+    // TODO: Honestly is the anchor even necessary?
+    clone.addEventListener("click", (e) => {
+      e.preventDefault();
+      // @ts-ignore
+      window.api.navigate.toURL(titleToURL(entry.title));
+    });
+
     children.push(clone);
   }
 
   parent.replaceChildren(...children);
-
-  console.log(parent);
 }
 
 export function createDenseResultsList(entries: ListEntry[]) {
-  console.log(entries);
-  console.log("reached 3");
   const template = document.querySelector<HTMLTemplateElement>(
     "#template-results-partial"
   );
@@ -54,10 +57,48 @@ export function createDenseResultsList(entries: ListEntry[]) {
     // Set the date
     let date = clone?.querySelector(".result-date") as Element;
     date.textContent = `${entry.date.month}/${entry.date.day}/${entry.date.year}`;
-    // parent.appendChild(clone);
+    // Set the link
+    let link = clone?.querySelector(".result-url") as HTMLAnchorElement;
+    link.href = titleToURL(entry.title);
+
+    // TODO: Honestly is the anchor even necessary?
+    clone.addEventListener("click", (e) => {
+      e.preventDefault();
+      // @ts-ignore
+      window.api.navigate.toURL(titleToURL(entry.title));
+    });
     children.push(clone);
   }
 
   parent.replaceChildren(...children);
-  console.log(parent);
+}
+
+function titleToURL(title: string): string {
+  return `https://dc.fandom.com/wiki/${title.replaceAll(" ", "_")}`;
+}
+
+function addOpenResultLinkListener(elem: Element) {
+  elem.addEventListener("click", (e) => {
+    e.preventDefault();
+    console.log("urling");
+    // @ts-ignore
+    window.api.navigate.toURL(
+      `https://www.reddit.com/r/electronjs/comments/1al2w67/opening_url_in_default_browser_macos/`
+    );
+  });
+  // window.addEventListener("DOMContentLoaded", async () => {
+  //   const results =
+  //     document.querySelectorAll<HTMLAnchorElement>(".results-url");
+
+  //   for (let result of results) {
+  //     result.addEventListener("click", (e) => {
+  //       e.preventDefault();
+  //       console.log("urling");
+  //       // @ts-ignore
+  //       window.api.navigate.toURL(
+  //         `https://www.reddit.com/r/electronjs/comments/1al2w67/opening_url_in_default_browser_macos/`
+  //       );
+  //     });
+  //   }
+  // });
 }

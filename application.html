@@ -23,8 +23,8 @@
         name="character-selection"
         placeholder="Character Name"
         required
+        autofocus
       />
-      <button type="submit" name="search-submit" id="search-submit" />
       <!--TODO: Probably give it the value and then onfocus behavior that removes the value  -->
       <input
         list="earths"
@@ -41,14 +41,14 @@
       <button type="submit">Submit</button>
     </form>
     <section>
-      <h3>Results:</h3>
+      <h3 id="results-header" class="results-header">Appearances</h3>
       <form id="display-style">
         <select name="sort-type" id="sort-type" required>
           <option value="PUB" selected>Publication Date</option>
           <option value="A-Z">A-Z</option>
         </select>
         <label for="input">Ascending</label>
-        <label class="toggle" f>
+        <label class="toggle">
           <!-- FIXME: I think this toggle is inverted -->
           <input type="checkbox" name="ascending" id="ascending" value="1" />
           <span class="slider"></span>
@@ -64,7 +64,10 @@
         <details class="result-details">
           <summary class="result-summary">
             <div class="result-title">
-              <span class="result-name"></span>
+              <a class="result-url" href="">
+                <!-- TODO: Is this span actually neccessary or can I just use the anchor -->
+                <span class="result-name"></span>
+              </a>
               <span class="result-date"> </span>
             </div>
           </summary>
@@ -75,7 +78,7 @@
       </template>
       <template id="template-results-partial">
         <div class="result-title">
-          <span class="result-name"></span>
+          <a class="result-url" href=""><span class="result-name"></span></a>
           <span class="result-date"> </span>
         </div>
       </template>

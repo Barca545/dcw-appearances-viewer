@@ -1,21 +1,20 @@
 import { PathLike } from "fs";
 import { ListEntry, pubDateSort } from "./pub-sort.js";
 import { FilterOptions } from "./types.js";
-import { BaseWindow, BrowserWindow, dialog, Menu, MenuItem } from "electron";
+import { BaseWindow, BrowserWindow, dialog, Menu } from "electron";
 import path from "node:path";
-import { match, None, Option, Some } from "./option.js";
+import { None, Option, Some } from "./option.js";
 import {
+  Character,
   loadList,
   SaveFormat,
   sessionFromJSON,
   sessionToJSON,
 } from "./load.js";
-import { template } from "lodash-es";
 import fs from "fs";
+import { isMac } from "./main.js";
 
 // FIXME: This module really needs a more immediately descriptive name
-// TODO: Use methods on the path module to extract the extensions
-// TODO: If a session is already open openFile should create a new window not just make a new session
 
 class Path {
   private path: string;
@@ -52,17 +51,18 @@ class Path {
   }
 }
 
-const isMac = process.platform === "darwin";
-
 export class Sessions {
-  sessions: Map<string, Session> = new Map();
+  sessions: Map<number, Session> = new Map();
   settings: Settings;
-  // menu: MenuItem[];
-  focused: Option<string>;
+  focused: Option<number>;
 
   constructor() {
     this.settings = JSON.parse(fs.readFileSync("settings.json").toString());
     this.focused = new None();
+  }
+
+  getFocusedSession(): Session {
+    return this.sessions.get(this.focused.unwrap()) as Session;
   }
 
   /**Create a new `Session` in the sessions instance. If no title is provided its title will be `"Untitled" + this.untitledNumber()`. Its key will be its title. */
@@ -73,7 +73,7 @@ export class Sessions {
 
     const win = await this.newWindow(title);
     const session = new Session(win);
-    this.sessions.set(title, session);
+    this.sessions.set(win.id, session);
 
     return session;
   }
@@ -119,14 +119,14 @@ export class Sessions {
     });
 
     // TODO: Confirm this should work to make sure the correct window is always focused
-    win.on("focus", () => (this.focused = new Some(win.title)));
+    win.on("focus", () => (this.focused = new Some(win.id)));
 
-    win.on("focus", () => (this.focused = new Some(win.title)));
+    win.on("focus", () => (this.focused = new Some(win.id)));
 
     win.on("blur", () => (this.focused = new None()));
 
     // This destroys the window instance
-    win.on("close", () => this.sessions.delete(win?.title));
+    win.on("close", () => this.sessions.delete(win?.id));
 
     win.setMenu(this.menuTemplate());
     return win;
@@ -151,7 +151,7 @@ export class Sessions {
             accelerator: "CommandOrControl+O",
             click: (_item, base, _e) => {
               const win = browserWindowFrom(base as BaseWindow);
-              const session = this.sessions.get(win.title) as Session;
+              const session = this.sessions.get(win.id) as Session;
               session.openFile();
             },
           },
@@ -164,17 +164,30 @@ export class Sessions {
           {
             label: "Save",
             accelerator: "CommandOrControl+S",
-            click: () => {}, //session.saveFile(),
+            click: (_item, base, _e) => {
+              const win = browserWindowFrom(base as BaseWindow);
+              const session = this.sessions.get(win.id) as Session;
+              session.saveFile();
+            },
           },
           {
             label: "Save As",
-            click: () => {}, //session.saveFile(true),
+            accelerator: "CommandOrControl+Shift+N",
+            click: (_item, base, _e) => {
+              const win = browserWindowFrom(base as BaseWindow);
+              const session = this.sessions.get(win.id) as Session;
+              session.saveFile(true);
+            },
           },
           { type: "separator" },
           {
             label: "Settings",
             // Settings can launch a new window which is how MS word handles it
-            click: () => {}, //newChildWindow(session.win, "settings.html", true),
+            click: (_item, base, _e) => {
+              const win = browserWindowFrom(base as BaseWindow);
+              const session = this.sessions.get(win.id) as Session;
+              newChildWindow(session.win, "settings.html", true);
+            },
           },
           { type: "separator" },
           isMac ? { role: "close" } : { role: "quit" },
@@ -200,15 +213,13 @@ export class Sessions {
 // TODO: Maybe eventually find a way to stick every part of the program into this structure but for now just using it to store file data works
 export class Session {
   // FIXME: Do not list titles in the loaded pages
-  // TODO: Don't love initializing it like this
-  // TODO: This is not actually how I should be creating a new browser window I have a real function for that
   win: BrowserWindow;
   // TODO: Don't love initializing it like this
   savePath = new Path("");
   fileData: ListEntry[] = [];
   opt = new FilterOptions();
 
-  constructor(win: BrowserWindow, title?: string) {
+  constructor(win: BrowserWindow) {
     this.win = win;
   }
 
@@ -259,7 +270,7 @@ export class Session {
     let file: SaveFormat;
     if (ext == ".xml")
       file = {
-        isApperances: "DC DATABASE APPEARANCE DATA",
+        isAppearances: "DC DATABASE APPEARANCE DATA",
         opt: new FilterOptions(),
         data: loadList(this.savePath.toString()),
       };
@@ -267,16 +278,14 @@ export class Session {
       try {
         // FIXME: My understanding is this catch block should still work but I need to confirm
         file = sessionFromJSON(this.savePath.toString()) as SaveFormat;
-      } catch (e) {
-        const err = e as Error;
-        dialog.showErrorBox("Load Failed", err.message);
+      } catch (err) {
+        dialog.showErrorBox("Load Failed", (err as Error).message);
         return;
       }
     }
 
     // Reflow expects fileData to already be set
     this.fileData = file.data;
-
     this.fileData = this.reflow();
 
     // Open the page
@@ -288,6 +297,8 @@ export class Session {
         data: this.fileData,
       });
     });
+
+    // Changing the window name will make it impossible
 
     // Set the window name to the title of the file
     this.win.title = path.basename(
@@ -330,8 +341,8 @@ export class Session {
     sessionToJSON(this.opt, this.fileData, this.savePath.toString());
   }
 
-  /**Recalculate the layout of the results section.*/
-  reflow() {
+  /**Recalculate the layout of the results section and return the new layout.*/
+  reflow(): ListEntry[] {
     let sorted = this.fileData;
     // TODO: Basically move all this logic serverside
     switch (this.opt.sortOrder) {

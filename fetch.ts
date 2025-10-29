@@ -1,3 +1,4 @@
+import { writeFileSync } from "fs";
 import { templateStringToListEntry } from "./helpers.js";
 import { xmlToJSON } from "./parser.js";
 import { ListEntry } from "./pub-sort.js";
@@ -83,7 +84,6 @@ export async function getRealitiesList(): Promise<any[]> {
   // Remove the word category
   universes.forEach((world) => {
     if (world.title.startsWith("Category:")) {
-      console.log(world.title);
     }
     world.title.replace(/\(|\)/g, "");
   });
@@ -100,22 +100,6 @@ export async function getAppearancePages(titles: string[]): Promise<string> {
   titles = titles.map((title) => {
     return title.replaceAll(/\s/g, "_");
   });
-
-  // This is stuff for the actual api instead of special export but it has a limit so I want to avoid it unless it is needed
-  // // https://dc.fandom.com/api.php?action=query&prop=revisions&rvprop=content&rvslots=main&titles=Catwoman_Vol_5_25|Catwoman_Vol_5_26&format=json
-  // let params = new URLSearchParams({
-  //   action: "query",
-  //   prop: "revisions",
-  //   rvprop: "content",
-  //   rvslots: "main",
-  //   limit: "50",
-  //   titles: titles.join("|"),
-  //   format: "json",
-  // });
-
-  // const url = new URL(
-  //   `https://dc.fandom.com/api.php?${params.toString()}`
-  // );
 
   let params = new URLSearchParams({
     pages: titles.join("\r\n"),
@@ -147,7 +131,10 @@ export async function getAppearancePages(titles: string[]): Promise<string> {
  */
 export async function fetchList(character: string): Promise<ListEntry[]> {
   // Fetch the file and convert it into a json
+
   const res = await getAppearancePages(await getAppearances(character));
+
+  const t = await getAppearances(character);
 
   const json = xmlToJSON(res);
 
@@ -158,5 +145,6 @@ export async function fetchList(character: string): Promise<ListEntry[]> {
       templateStringToListEntry(entry.revision.text._text as string)
     );
   }
+
   return appearances;
 }

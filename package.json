@@ -2,7 +2,7 @@
   "version": "0.0.1",
   "name": "dc_wiki_appearances_sort",
   "type": "module",
-  "main": "main.cjs",
+  "main": "./target/main.js",
   "scripts": {
     "start": "npm run build && nodemon --exec electron . --trace-warnings",
     "test": "tsc --noEmit && tsx --test",
