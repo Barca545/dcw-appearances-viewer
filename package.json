@@ -2,27 +2,30 @@
   "version": "0.0.1",
   "name": "dc_wiki_appearances_sort",
   "type": "module",
-  "main": "./target/main.js",
+  "main": "./target/main/main.js",
   "scripts": {
     "start": "npm run build && nodemon --exec electron . --trace-warnings",
-    "test": "tsc --noEmit && tsx --test",
-    "build": "tsc"
+    "test": "npm run build && tsx --test",
+    "dev": "nodemon --watch ./target/main --exec electron ./target/main/main.js",
+    "build": "tsc --build src --force",
+    "build:watch": "tsc --build src --force --watch"
   },
   "dependencies": {
     "npm": "^11.6.0",
-    "wikiapi": "^1.20.0",
-    "wtf_wikipedia": "^10.4.0",
     "xml-js": "1.6.11"
   },
   "devDependencies": {
+    "terser-webpack-plugin": "^5.3.14",
     "@types/lodash-es": "^4.17.12",
     "electron": "^38.2.2",
+    "electron-builder": "^26.0.12",
     "lodash-es": "^4.17.21",
     "nodemon": "^3.1.10",
     "tsx": "^4.20.5"
   },
   "directories": {
-    "test": "test"
+    "test": "test",
+    "src": "src/**"
   },
   "keywords": [],
   "author": "",

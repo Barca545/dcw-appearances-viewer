@@ -1,0 +1,22 @@
+{
+  "compileOnSave": true,
+  "exclude": ["node_modules"],
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "lib": ["ESNext", "DOM", "dom.iterable"],
+    "useDefineForClassFields": true,
+    "incremental": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "skipLibCheck": true,
+    "noUnusedLocals": true,
+    "rootDir": ".",
+    "outDir": "../target/"
+  }
+}
