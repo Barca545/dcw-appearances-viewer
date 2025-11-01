@@ -1,6 +1,3 @@
-// FIXME: Weird is it possible I have no client side logic for the settings
-import { Settings } from "../common/apiTypes.js";
-
 // When the page loads pull up a copy of the settings and store them
 
 // Instead of including in the function, only call the functions once this is satisfied
@@ -26,7 +23,7 @@ function registerSave() {
       const msg = new FormData(e.target as HTMLFormElement);
       const rawData = Object.fromEntries(msg.entries());
 
-      const data: Settings = {
+      const data = {
         theme: rawData.theme as "system" | "light" | "dark",
         "open in new window": rawData["new-window"] as unknown as boolean,
         "choose-earth-settings": rawData["choose-type"] as "user" | "dropdown",

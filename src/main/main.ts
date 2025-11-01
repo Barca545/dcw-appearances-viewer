@@ -1,11 +1,11 @@
 import { app, BrowserWindow, ipcMain, shell } from "electron";
 import { nativeTheme } from "electron/main";
 import path from "node:path";
-import { Sessions } from "./mainProcessFunctions.js";
-import { createCharacterName } from "../common/init.js";
-import { fetchList } from "../common/fetch.js";
+import { Session } from "./session.js";
+import { createCharacterName } from "../common/utils.js";
+import { fetchList } from "../../core/fetch.js";
 import fs from "fs";
-import { Settings } from "../common/apiTypes.js";
+import { Settings, AppearanceData } from "../common/apiTypes.js";
 
 // TODO: View needs to not show dev stuff when packaged
 // TODO: Toggles should use sliders https://www.w3schools.com/howto/howto_css_switch.asp
@@ -20,6 +20,9 @@ import { Settings } from "../common/apiTypes.js";
 // TODO: If the session it is being issued from is already active openFile should create a new window (well follow those settings) not overwrite the current session
 // TODO: Save to markdown reading list that formats each entry as "-[] [name](link)\n"
 // TODO: Tests will have to get completely reworked now the file structure changed
+// TODO: Update architecture.md
+// TODO: Update tests
+// TODO: Multiple windows might be more complicated than I thought: https://stackoverflow.com/questions/76319694/how-to-display-two-windows-in-electron-app-with-electron-forge-and-vite
 
 // Urgent Pre-alpha
 // TODO: Actually implement settings file
@@ -28,7 +31,7 @@ import { Settings } from "../common/apiTypes.js";
 // TODO: Store the name of the character as part of the session/save data so it can be used to show who the appearances belong to
 // TODO: Renderer files for the start and settings pages are not compiling
 
-let sessions = new Sessions();
+let sessions = new Session();
 export const isMac = process.platform === "darwin";
 const __userdata = app.getPath("userData");
 
@@ -94,7 +97,12 @@ async function init() {
     // This needs to be here because renderer can't import
     // Send back to the renderer (clientside)
     // TODO: Use an alert to show a proper error for if the name is wrong (basically if fetch comes back empty)
-    return { appearances: session.fileData, character: character };
+
+    const res: { appearances: AppearanceData[]; character: string } = {
+      appearances: session.fileData,
+      character: character,
+    };
+    return res;
   });
 
   // TODO: Figure out why it randomly errors sometimes and says the reflow function does not exist
@@ -114,3 +122,60 @@ async function init() {
     console.log(data);
   });
 }
+
+// import { app, BrowserWindow } from 'electron';
+// import path from 'node:path';
+// import started from 'electron-squirrel-startup';
+
+// // Handle creating/removing shortcuts on Windows when installing/uninstalling.
+// if (started) {
+//   app.quit();
+// }
+
+// const createWindow = () => {
+//   // Create the browser window.
+//   const mainWindow = new BrowserWindow({
+//     width: 800,
+//     height: 600,
+//     webPreferences: {
+//       preload: path.join(__dirname, 'preload.js'),
+//     },
+//   });
+
+//   // and load the index.html of the app.
+//   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+//     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
+//   } else {
+//     mainWindow.loadFile(
+//       path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`),
+//     );
+//   }
+
+//   // Open the DevTools.
+//   mainWindow.webContents.openDevTools();
+// };
+
+// // This method will be called when Electron has finished
+// // initialization and is ready to create browser windows.
+// // Some APIs can only be used after this event occurs.
+// app.on('ready', createWindow);
+
+// // Quit when all windows are closed, except on macOS. There, it's common
+// // for applications and their menu bar to stay active until the user quits
+// // explicitly with Cmd + Q.
+// app.on('window-all-closed', () => {
+//   if (process.platform !== 'darwin') {
+//     app.quit();
+//   }
+// });
+
+// app.on('activate', () => {
+//   // On OS X it's common to re-create a window in the app when the
+//   // dock icon is clicked and there are no other windows open.
+//   if (BrowserWindow.getAllWindows().length === 0) {
+//     createWindow();
+//   }
+// });
+
+// // In this file you can include the rest of your app's specific main process
+// // code. You can also put them in separate files and import them here.

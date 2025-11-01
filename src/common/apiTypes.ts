@@ -45,18 +45,15 @@ declare global {
       };
 
       form: {
-        // TODO: This returns a json string of the list data or something
-        // I'd like more precise typing
-        // Ind
-        submit: (data: SearchRequest) => Object;
+        /**Submits the form to the main process and returns the result to the renderer. */
+        submit: (data: SearchRequest) => Promise<{ appearances: AppearanceData[]; character: string }>;
       };
       open: {
         page: (addr: string) => void;
         url: (addr: string) => void;
       };
-      // TODO: This returns a json string of a FilterOptions instance
-      // I'd like more precise typing
-      filterOptions: (state: FilterOptions) => Object;
+
+      filterOptions: (state: FilterOptions) => Promise<AppearanceData[]>;
       recieveData: (callback: (res: any) => any) => void;
     };
   }
@@ -67,6 +64,13 @@ export interface Settings {
   "choose-earth-settings": "user" | "dropdown";
   "open in new window": boolean;
   size: { width: number; height: number };
+}
+
+/**Interface containing the data used to construct a list entry. The return result of window.api.form.submit */
+export interface AppearanceData {
+  title: string;
+  date: { year: number; month: number; day: number };
+  link: string;
 }
 
 // TODO: List entry should be in shared?

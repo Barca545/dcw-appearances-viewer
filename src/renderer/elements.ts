@@ -1,18 +1,14 @@
-import { ListEntry } from "../common/pub-sort.js";
+import { ListEntry } from "../../core/pub-sort.js";
 // FIXME: Currently these are used in reflow but are purely rendering. These need to be render side
 
 /**Fills out a template to create a list of results with their synopses */
 export function createResultsList(entries: ListEntry[]) {
-  const template = document.querySelector<HTMLTemplateElement>(
-    "#template-results-full"
-  );
+  const template = document.querySelector<HTMLTemplateElement>("#template-results-full");
 
   const parent = document.querySelector("#results") as Element;
   let children = [];
   for (const entry of entries) {
-    let clone = template?.content
-      .querySelector(".result-details")
-      ?.cloneNode(true) as DocumentFragment;
+    let clone = template?.content.querySelector(".result-details")?.cloneNode(true) as DocumentFragment;
 
     // Set the name
     let name = clone?.querySelector(".result-name") as Element;
@@ -38,17 +34,13 @@ export function createResultsList(entries: ListEntry[]) {
 }
 
 export function createDenseResultsList(entries: ListEntry[]) {
-  const template = document.querySelector<HTMLTemplateElement>(
-    "#template-results-partial"
-  );
+  const template = document.querySelector<HTMLTemplateElement>("#template-results-partial");
 
   let parent = document.querySelector("#results") as Element;
 
   let children = [];
   for (const entry of entries) {
-    let clone = template?.content
-      .querySelector(".result-title")
-      ?.cloneNode(true) as Element;
+    let clone = template?.content.querySelector(".result-title")?.cloneNode(true) as Element;
 
     // Set the name
     let name = clone?.querySelector(".result-name") as Element;

@@ -1,27 +1,43 @@
 {
   "version": "0.0.1",
   "name": "dc_wiki_appearances_sort",
-  "type": "module",
-  "main": "./target/main/main.js",
+  "main": ".vite/build/main.js",
   "scripts": {
-    "start": "npm run build && nodemon --exec electron . --trace-warnings",
+    "start": "electron-forge start",
     "test": "npm run build && tsx --test",
     "dev": "nodemon --watch ./target/main --exec electron ./target/main/main.js",
     "build": "tsc --build src --force",
-    "build:watch": "tsc --build src --force --watch"
+    "build:preload": " tsc --project src/preload/tsconfig.json",
+    "build:src": "tsc --project src/tsconfig.json",
+    "build:watch": "tsc --build src --force --watch",
+    "dev:vite": "vite"
   },
   "dependencies": {
     "npm": "^11.6.0",
     "xml-js": "1.6.11"
   },
   "devDependencies": {
-    "terser-webpack-plugin": "^5.3.14",
-    "@types/lodash-es": "^4.17.12",
-    "electron": "^38.2.2",
-    "electron-builder": "^26.0.12",
+    "@electron-forge/cli": "^7.10.2",
+    "@electron-forge/maker-deb": "^7.10.2",
+    "@electron-forge/maker-rpm": "^7.10.2",
+    "@electron-forge/maker-squirrel": "^7.10.2",
+    "@electron-forge/maker-zip": "^7.10.2",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.10.2",
+    "@electron-forge/plugin-fuses": "^7.10.2",
+    "@electron-forge/plugin-vite": "^7.10.2",
+    "@electron/fuses": "^1.8.0",
+    "@types/electron-squirrel-startup": "^1.0.2",
+    "@typescript-eslint/eslint-plugin": "^5.62.0",
+    "@typescript-eslint/parser": "^5.62.0",
+    "electron": "39.0.0",
+    "eslint": "^8.57.1",
+    "eslint-plugin-import": "^2.32.0",
     "lodash-es": "^4.17.21",
     "nodemon": "^3.1.10",
-    "tsx": "^4.20.5"
+    "terser-webpack-plugin": "^5.3.14",
+    "tsx": "^4.20.5",
+    "typescript": "~4.5.4",
+    "vite": "^5.4.21"
   },
   "directories": {
     "test": "test",
