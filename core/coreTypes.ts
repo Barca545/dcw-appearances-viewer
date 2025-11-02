@@ -83,7 +83,7 @@ export class Template {
     }
     const res = this.data.get(key);
 
-    if (res === undefined) {
+    if (res === undefined || (res as string) == "") {
       return new None();
     } else {
       return new Some(res);

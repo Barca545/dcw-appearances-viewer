@@ -1,39 +1,16 @@
 import { app, BrowserWindow, ipcMain, shell } from "electron";
 import { nativeTheme } from "electron/main";
 import path from "node:path";
-import { Session } from "./session.js";
+import { Sessions } from "./session.js";
 import { createCharacterName } from "../common/utils.js";
 import { fetchList } from "../../core/fetch.js";
 import fs from "fs";
 import { Settings, AppearanceData } from "../common/apiTypes.js";
 
-// TODO: View needs to not show dev stuff when packaged
-// TODO: Toggles should use sliders https://www.w3schools.com/howto/howto_css_switch.asp
-// TODO: Could stand to be a *bit* prettier
-// TODO: Hot reloading does not work for ts because it does not recompile
-// FIXME: Need to clean main up and create submodules, in general need to organize project
-//   - A lot of the logic files can go in main
-//   - This is as good an outline as any https://webpack.electron.build/project-structure
-// TODO: All of the isMac stuff should be something that can be handled during compilation
-// TODO: Confirm sessions supports multiple sessions at once
-// FIXME: Probably worth it to switch to react for later versions since it is easier to handle the kind of reactive changes I want to do
-// TODO: If the session it is being issued from is already active openFile should create a new window (well follow those settings) not overwrite the current session
-// TODO: Save to markdown reading list that formats each entry as "-[] [name](link)\n"
-// TODO: Tests will have to get completely reworked now the file structure changed
-// TODO: Update architecture.md
-// TODO: Update tests
-// TODO: Multiple windows might be more complicated than I thought: https://stackoverflow.com/questions/76319694/how-to-display-two-windows-in-electron-app-with-electron-forge-and-vite
-
-// Urgent Pre-alpha
-// TODO: Actually implement settings file
-// TODO: Figure out where settings needs to go for bundling
-// TODO: Be cool if the lists could be saved
-// TODO: Store the name of the character as part of the session/save data so it can be used to show who the appearances belong to
-// TODO: Renderer files for the start and settings pages are not compiling
-
-let sessions = new Session();
+let sessions = new Sessions();
 export const isMac = process.platform === "darwin";
-const __userdata = app.getPath("userData");
+/** Path to the Application's userdata folder. */
+export const __userdata = `${app.getPath("userData")}/DCDB Appearances`;
 
 // NOTE: This adds a bunch of event listeners to handle stuff over the lifetime of the app
 app.whenReady().then(() => init());
@@ -41,24 +18,25 @@ app.whenReady().then(() => init());
 /**Create a new instance of the program */
 async function init() {
   const session = await sessions.newSession();
-  let win = session.win;
+  // let win = session.win;
 
   // Activating the app when no windows are available should open a new one.
   // This listener gets added because MAC keeps the app running even when there are no windows
   // so you need to listen for a situation where the app should be active but there are no windows open
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      sessions.newWindow();
+      sessions.newSession();
     }
   });
 
-  ipcMain.on("navigate:page", (_event, page) => {
+  ipcMain.on("navigate:page", (_event, cmd) => {
     // FIXME: This is extremely cursed and eventually now this is no longer navigation this whole API will need to be renamed
-    if (page == "open.html") {
+    if (cmd == "open") {
       const session = sessions.getFocusedSession();
+      // TODO: the get focused should happen inside openFile but it needs to be reworked becaue run it's a methon on window not on main
       session.openFile();
     } else {
-      win.loadFile(path.join(process.cwd(), page));
+      session.loadRenderFile(path.join(process.cwd(), cmd));
     }
   });
 

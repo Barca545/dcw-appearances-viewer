@@ -1,12 +1,9 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
     <meta charset="UTF-8" />
     <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
-    <meta
-      http-equiv="Content-Security-Policy"
-      content="script-src 'self' 'unsafe-inline';"
-    />
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" />
     <link rel="stylesheet" type="text/css" href="./styles.css" />
   </head>
   <body>
@@ -17,21 +14,9 @@
 
     <label for="character-selection">Get Appearances</label>
     <form id="character-search-form">
-      <input
-        type="search"
-        id="character-selection"
-        name="character-selection"
-        placeholder="Character Name"
-        required
-        autofocus
-      />
+      <input type="search" id="character-selection" name="character-selection" placeholder="Character Name" required autofocus />
       <!--TODO: Probably give it the value and then onfocus behavior that removes the value  -->
-      <input
-        list="earths"
-        id="earth"
-        name="universe-select"
-        placeholder="(Prime Earth)"
-      />
+      <input list="earths" id="earth" name="universe-select" placeholder="(Prime Earth)" />
       <datalist id="earths">
         <option value="(Prime Earth)">Prime Earth</option>
         <option value="(New Earth)">New Earth</option>
@@ -64,6 +49,9 @@
         <details class="result-details">
           <summary class="result-summary">
             <div class="result-title">
+              <!-- This anchor does nothing -->
+              <!-- The logic to handle the click is inserted during its creation in elements.ts-->
+              <!-- The anchor is just here to make it visually clear it's a link -->
               <a class="result-url" href="">
                 <!-- TODO: Is this span actually neccessary or can I just use the anchor -->
                 <span class="result-name"></span>
@@ -73,6 +61,7 @@
           </summary>
           <div class="result-body">
             <!--Synopsis goes here-->
+            Synopsis
           </div>
         </details>
       </template>
@@ -87,6 +76,6 @@
       </section>
     </section>
     <!-- TODO: Should I use defer or something here? -->
-    <script type="module" src="renderer.js" />
+    <script type="module" src="app.ts"></script>
   </body>
 </html>

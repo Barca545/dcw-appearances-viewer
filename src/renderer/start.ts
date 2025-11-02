@@ -4,7 +4,7 @@ function navigate() {
       button.addEventListener("click", (e) => {
         const target = e.target as HTMLButtonElement;
         // No need to prevent default on e since type button don't default to submit
-        window.api.open.page(`${target.value}.html`);
+        window.api.open.page(target.value);
       });
     });
   });

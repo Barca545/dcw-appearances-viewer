@@ -1,24 +1,20 @@
 import { ListEntry, pubDateSort } from "../../core/pub-sort.js";
-import { app, BaseWindow, BrowserWindow, dialog, Menu } from "electron";
+import { BaseWindow, BrowserWindow, dialog, Menu } from "electron";
 import path from "node:path";
 import { None, Option, Some } from "../../core/option.js";
 import { loadList, SaveFormat, sessionFromJSON, sessionToJSON } from "../../core/load.js";
 import fs, { PathLike } from "fs";
-import { isMac } from "./main.js";
+import { __userdata, isMac } from "./main.js";
 import { FilterOptions, Settings } from "../common/apiTypes.js";
 
-// TODO: If this works I need to make some changes to this
-
-const pagesrootdir = "./src/renderer/";
-
+// TODO: This should go in a declaration file or something
+// TODO: I am also unclear this is what this should be called. Don't my windows have different names? And what if I have multiple windows?
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
 
-// For dev if this is true the base needs to be different since a server is being used
-if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-} else {
-}
+export const ROOT_DIRECTORY = MAIN_WINDOW_VITE_DEV_SERVER_URL ? MAIN_WINDOW_VITE_DEV_SERVER_URL : ".";
 
+// TODO: Do I actually really need this? If I need it is there a way I can add it to the real path instead of doing this?
 class Path {
   private path: string;
 
@@ -54,8 +50,8 @@ class Path {
   }
 }
 
-export class Session {
-  sessions: Map<number, Window> = new Map();
+export class Sessions {
+  sessions: Map<number, Session> = new Map();
   focused: Option<number>;
 
   constructor() {
@@ -63,43 +59,55 @@ export class Session {
   }
 
   settings(): Settings {
-    const userdata = app.getPath("userData");
-    // FIXME: For distribution
-    // @ts-ignore
-    return JSON.parse(fs.readFileSync("C:/Users/jamar/Documents/Hobbies/Coding/publication_date_sort/settings.json")) as Settings;
-    // @ts-ignore
-    return JSON.parse(fs.readFileSync(`${userdata}/DCDB Appearances/settings.json`)) as Settings;
-  }
+    // FIXME: There should be a way to have it make a settings file if there is none
+    // Maybe that can be done as part of the installation process?
 
-  getFocusedSession(): Window {
-    return this.sessions.get(this.focused.unwrap()) as Window;
-  }
-
-  /**Create a new `Session` in the sessions instance. If no title is provided its title will be `"Untitled" + this.untitledNumber()`. Its key will be its title. */
-  async newSession(title?: string): Promise<Window> {
-    if (!title) {
-      title = "Untitled" + this.untitledNumber();
+    // Skip the production stuff below
+    if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+      // @ts-ignore
+      return JSON.parse(fs.readFileSync("settings.json")) as Settings;
     }
 
-    const win = await this.newWindow(title);
-    const session = new Window(win);
-    this.sessions.set(win.id, session);
+    // If there is no userdata folder make one and add the settings to
+    // This will only run if in production
+    if (!fs.existsSync(__userdata)) {
+      fs.mkdirSync(__userdata);
+      // Copy the default settings file into userdata
+      fs.copyFileSync("settings.json", __userdata);
+    }
+
+    // @ts-ignore
+    return JSON.parse(fs.readFileSync(`${__userdata}/DCDB Appearances/settings.json`)) as Settings;
+  }
+
+  getFocusedSession(): Session {
+    return this.sessions.get(this.focused.unwrap()) as Session;
+  }
+
+  /**Create a new `Session` in the sessions instance and returns its `Window`. If no title is provided its title will be `"Untitled" + this.untitledNumber()`. Its key will be its title. */
+  async newSession(title?: string): Promise<Session> {
+    let newTitle;
+    if (!title) {
+      newTitle = `Untitled ${this.untitledNumber()}`;
+    }
+
+    const session = await this.newWindow(newTitle);
+
+    this.sessions.set(session.id(), session);
 
     return session;
   }
 
-  async newWindow(title?: string, src = pagesrootdir + "index.html"): Promise<BrowserWindow> {
+  private async newWindow(title?: string, src = "index.html"): Promise<Session> {
     const currentWindow = BrowserWindow.getFocusedWindow();
 
     let x, y;
     if (currentWindow) {
       const [curX, curY] = currentWindow.getPosition();
-      // TODO: Is hardcoding this number ok?
       x = curX + 24;
       y = curY + 24;
     }
 
-    // TODO: Find a way to persist the user's desired size across restarts
     let win = new BrowserWindow({
       width: this.settings().size.width,
       height: this.settings().size.height,
@@ -113,7 +121,10 @@ export class Session {
         preload: path.join(process.cwd(), "src/preload/preload.js"),
       },
     });
-    win.loadFile(path.join(process.cwd(), src));
+
+    // Load the new window's index.html file
+    const session = new Session(win);
+    session.loadRenderFile(src);
 
     win.webContents.on("did-finish-load", () => {
       if (!win) {
@@ -131,15 +142,14 @@ export class Session {
     // TODO: Confirm this should work to make sure the correct window is always focused
     win.on("focus", () => (this.focused = new Some(win.id)));
 
-    win.on("focus", () => (this.focused = new Some(win.id)));
-
     win.on("blur", () => (this.focused = new None()));
 
     // This destroys the window instance
     win.on("close", () => this.sessions.delete(win?.id));
 
     win.setMenu(this.menuTemplate());
-    return win;
+
+    return session;
   }
 
   menuTemplate(): Menu {
@@ -151,22 +161,25 @@ export class Session {
             label: "New",
             accelerator: "CommandOrControl+N",
             click: (_item, base, _e) => {
-              browserWindowFrom(base as BaseWindow).loadFile(path.join(process.cwd(), "application.html"));
+              const win = browserWindowFrom(base as BaseWindow);
+              const session = new Session(win);
+              session.loadRenderFile("application.html");
             },
+          },
+          {
+            label: "New Window",
+            accelerator: "CommandOrControl+Shift+N",
+            click: () => this.newSession(),
           },
           {
             label: "Open File",
             accelerator: "CommandOrControl+O",
             click: (_item, base, _e) => {
               const win = browserWindowFrom(base as BaseWindow);
-              const session = this.sessions.get(win.id) as Window;
+
+              const session = this.sessions.get(win.id) as Session;
               session.openFile();
             },
-          },
-          {
-            label: "New Window",
-            accelerator: "CommandOrControl+Shift+N",
-            click: () => this.newWindow(),
           },
           { type: "separator" },
           {
@@ -174,16 +187,17 @@ export class Session {
             accelerator: "CommandOrControl+S",
             click: (_item, base, _e) => {
               const win = browserWindowFrom(base as BaseWindow);
-              const session = this.sessions.get(win.id) as Window;
+              const session = this.sessions.get(win.id) as Session;
               session.saveFile();
             },
           },
           {
             label: "Save As",
-            accelerator: "CommandOrControl+Shift+N",
+            accelerator: "CommandOrControl+Shift+S",
             click: (_item, base, _e) => {
               const win = browserWindowFrom(base as BaseWindow);
-              const session = this.sessions.get(win.id) as Window;
+              const session = this.sessions.get(win.id) as Session;
+
               session.saveFile(true);
             },
           },
@@ -193,8 +207,8 @@ export class Session {
             // Settings can launch a new window which is how MS word handles it
             click: (_item, base, _e) => {
               const win = browserWindowFrom(base as BaseWindow);
-              const session = this.sessions.get(win.id) as Window;
-              newChildWindow(session.win, pagesrootdir + "settings.html", true);
+              const session = this.sessions.get(win.id) as Session;
+              session.newChildWindow("settings.html", true);
             },
           },
           { type: "separator" },
@@ -207,28 +221,43 @@ export class Session {
   }
 
   /**Returns the number of untilted sessions in the sessions object */
-  private untitledNumber(): number {
+  private untitledNumber(): string {
     let num = 0;
-    for (const key in this.sessions) {
-      if (key.includes("Untitled")) {
+
+    this.sessions.forEach((session) => {
+      if (session.getTitle().includes("Untitled")) {
         num += 1;
       }
+    });
+
+    let out;
+
+    if (num == 0) {
+      out = "";
+    } else {
+      out = num.toString();
     }
-    return num;
+    return out;
   }
 }
 
 // TODO: Maybe eventually find a way to stick every part of the program into this structure but for now just using it to store file data works
-export class Window {
+export class Session {
   // FIXME: Do not list titles in the loaded pages
   win: BrowserWindow;
   // TODO: Don't love initializing it like this
   savePath = new Path("");
   fileData: ListEntry[] = [];
   opt = new FilterOptions();
+  /**Field indicating whether the session has unsaved changes.*/
+  isClean = false;
 
   constructor(win: BrowserWindow) {
     this.win = win;
+  }
+
+  id(): number {
+    return this.win.id;
   }
 
   // FIXME: This might be unnecessary since the title is only reset by saving and opening a file
@@ -236,13 +265,8 @@ export class Window {
     this.win.title = title;
   }
 
-  getTitle(): Option<string> {
-    // TODO: Confirm an untitled
-    if (this.win.title != undefined) {
-      return new Some(this.win.title);
-    } else {
-      return new None();
-    }
+  getTitle(): string {
+    return this.win.getTitle();
   }
 
   /** Open a new file for the `Session`. */
@@ -297,7 +321,7 @@ export class Window {
     this.fileData = this.reflow();
 
     // Open the page
-    this.win.loadFile(path.join(process.cwd(), "application.html"));
+    this.loadRenderFile("application.html");
     // Send the data over
     this.win.webContents.on("did-finish-load", () => {
       this.win.webContents.send("file-opened", {
@@ -337,6 +361,8 @@ export class Window {
 
     // FIXME: Unclear if a try/catch block is needed
     sessionToJSON(this.opt, this.fileData, this.savePath.toString());
+    // If all this completes successfully mark the session as clean (until the next change)
+    this.isClean = true;
   }
 
   /**Recalculate the layout of the results section and return the new layout.*/
@@ -370,24 +396,39 @@ export class Window {
 
     return sorted;
   }
-}
 
-async function newChildWindow(parent: BrowserWindow, src: string, modal = false) {
-  let child = new BrowserWindow({
-    width: parent.getSize()[0] / 2,
-    height: parent.getSize()[0] / 2,
-    parent: parent,
-    modal: modal,
-    webPreferences: {
-      contextIsolation: true,
-      // enableRemoteModule: false,
-      nodeIntegration: false,
-      preload: path.join(process.cwd(), "src/preload/preload.js"),
-      // preload: "C:/Users/jamar/Documents/Hobbies/Coding/publication_date_sort/target/src/preload/preload.js",
-    },
-  });
-  child.loadFile(path.join(process.cwd(), src));
-  child.setMenu(null);
+  /**Wrapper for this.win.loadFile and this.win.loadURL that uses the appropriate one and path depending on context. DO NOT INCLUDE A DIRNAME JUST THE FILE'S NAME. */
+  loadRenderFile(src = "index.html") {
+    if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+      // TODO: Don't love having the directory be constant here but this only loads pages so it should be fine
+      this.win.loadURL(ROOT_DIRECTORY + "/src/renderer/" + src);
+    } else {
+      this.win.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/` + src));
+    }
+  }
+
+  setMenu(menu: Electron.Menu | null) {
+    this.win.setMenu(menu);
+  }
+
+  async newChildWindow(src: string, modal = false) {
+    let childRaw = new BrowserWindow({
+      width: this.win.getSize()[0] / 2,
+      height: this.win.getSize()[0] / 2,
+      parent: this.win,
+      modal: modal,
+      webPreferences: {
+        contextIsolation: true,
+        // enableRemoteModule: false,
+        nodeIntegration: false,
+        preload: path.join(__dirname, "src/preload/preload.js"),
+      },
+    });
+
+    const child = new Session(childRaw);
+    child.loadRenderFile(src);
+    child.setMenu(null);
+  }
 }
 
 function browserWindowFrom(base: BaseWindow): BrowserWindow {

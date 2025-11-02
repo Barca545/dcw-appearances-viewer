@@ -65,7 +65,7 @@ export function displayElements(data: AppearanceData[], character?: string, opt?
   // FIXME: Annoyingly sending it makes it into a json so I need to reconvert it to a list of ListEntrys
   const appearances = data.map((element) => {
     const date = element.date;
-    return new ListEntry(element.title, date.year, date.month, date.day, element.link);
+    return new ListEntry(element.title, element.synopsis, date.year, date.month, date.day, element.link);
   });
 
   // FIXME: I don't like this logic being in the renderer I could stick this in an execute javascript in the main process but unfortunatelu the filter options would not be open to it
@@ -92,4 +92,4 @@ export function displayElements(data: AppearanceData[], character?: string, opt?
 }
 
 // This sets up a callback so the page renders new data when it recieves it
-window.api.recieveData((res) => displayElements(res.opt, res.data));
+window.api.recieveData((res) => displayElements(res.data, undefined, res.opt));

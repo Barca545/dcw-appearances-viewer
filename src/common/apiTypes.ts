@@ -69,6 +69,7 @@ export interface Settings {
 /**Interface containing the data used to construct a list entry. The return result of window.api.form.submit */
 export interface AppearanceData {
   title: string;
+  synopsis: string;
   date: { year: number; month: number; day: number };
   link: string;
 }

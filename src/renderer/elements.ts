@@ -18,11 +18,11 @@ export function createResultsList(entries: ListEntry[]) {
     date.textContent = `${entry.date.month}/${entry.date.day}/${entry.date.year}`;
     // Set the synopsis
     let synopsis = clone.querySelector(".result-body") as Element;
-    synopsis.textContent =
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+    synopsis.textContent = entry.synopsis;
 
-    // TODO: Honestly is the anchor even necessary?
-    clone.addEventListener("click", (e) => {
+    console.log(entry);
+
+    name.addEventListener("click", (e) => {
       e.preventDefault();
       window.api.open.url(titleToURL(entry.title));
     });
@@ -53,7 +53,7 @@ export function createDenseResultsList(entries: ListEntry[]) {
     link.href = titleToURL(entry.title);
 
     // TODO: Honestly is the anchor even necessary?
-    clone.addEventListener("click", (e) => {
+    name.addEventListener("click", (e) => {
       e.preventDefault();
       window.api.open.url(titleToURL(entry.title));
     });

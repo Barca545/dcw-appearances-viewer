@@ -66,7 +66,16 @@ export function sessionFromJSON(path: string): SaveFormat {
   // Convert the entries to list entries because right now they don't actually have the class' metadata and functions
   let entries = [];
   for (const entry of data.data) {
-    entries.push(new ListEntry(entry.title, entry.date.year.toString(), entry.date.month.toString(), entry.date.day.toString()));
+    console.log(entry.synopsis);
+    entries.push(
+      new ListEntry(
+        entry.title,
+        entry.synopsis,
+        entry.date.year.toString(),
+        entry.date.month.toString(),
+        entry.date.day.toString(),
+      ),
+    );
   }
 
   data.data = entries;
