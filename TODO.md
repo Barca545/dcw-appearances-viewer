@@ -10,6 +10,7 @@
 - [ ] If the session it is being issued from is already active `openFile` should create a new window (well follow those settings) not automatically overwrite the current session
 - [ ] Attempting to open a new file in a window with an existing project should prompt you to save first.
 - [ ] Every change to a document should mark it as `isDirty`.
+- [ ] Should error if window tries to close without saving. https://stackoverflow.com/questions/45677600/
 - [ ] Save to markdown reading list that formats each entry as "`- [ ] [name](link)\n`"
 - [ ] Tests need to be completely reworked and new ones added now the file structure changed
 - [ ] Update architecture.md

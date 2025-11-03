@@ -4,6 +4,8 @@
 import type { FilterOptions, SearchRequest, Settings } from "../common/apiTypes.js";
 import { contextBridge, ipcRenderer } from "electron";
 
+console.log("...PRELOAD RUNNING");
+
 // TODO: If this ends up being overly granular merge taking inspiration from
 // https://stackoverflow.com/questions/66266205/how-to-read-a-local-file-in-javascript-running-from-an-electron-app
 contextBridge.exposeInMainWorld("api", {
@@ -23,12 +25,12 @@ contextBridge.exposeInMainWorld("api", {
     url: (addr: string) => ipcRenderer.send("navigate:URL", addr),
   },
   settings: {
-    request: () => {
+    request: async () => {
+      // It is returned as a JSON blob so it needs to be converted
+      // const settings = await ipcRenderer.invoke("settings:request");
       return ipcRenderer.invoke("settings:request");
     },
-    update: (data: Settings) => {
-      ipcRenderer.send("settings:update", data);
-    },
+    update: (data: Settings) => ipcRenderer.send("settings:update", data),
   },
   filterOptions: (state: FilterOptions) => {
     // TODO: Can I handle the conversion into the correct format here instead of the functions?
@@ -36,3 +38,5 @@ contextBridge.exposeInMainWorld("api", {
   },
   recieveData: (callback: (data: any) => any) => ipcRenderer.on("file-opened", (_event, res) => callback(res)),
 });
+
+console.log("...PRELOAD FINSHED");

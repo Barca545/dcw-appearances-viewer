@@ -11,8 +11,14 @@ import { FilterOptions, Settings } from "../common/apiTypes.js";
 // TODO: I am also unclear this is what this should be called. Don't my windows have different names? And what if I have multiple windows?
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
+// FIXME: This is supposed to be a constant that points to the path but it does not work
+// declare const MAIN_WINDOW_PRELOAD_VITE_ENTRY: string;
 
-export const ROOT_DIRECTORY = MAIN_WINDOW_VITE_DEV_SERVER_URL ? MAIN_WINDOW_VITE_DEV_SERVER_URL : ".";
+// TODO: Decide if it shoud be dirname or "."
+export const ROOT_DIRECTORY = MAIN_WINDOW_VITE_DEV_SERVER_URL ? MAIN_WINDOW_VITE_DEV_SERVER_URL : __dirname;
+
+// FIXME: It does not seem as if vite supports this for vite as it does webpack but maybe they will eventually
+const MAIN_WINDOW_PRELOAD_VITE_ENTRY = path.resolve(__dirname, "preload.js");
 
 // TODO: Do I actually really need this? If I need it is there a way I can add it to the real path instead of doing this?
 class Path {
@@ -62,7 +68,7 @@ export class Sessions {
     // FIXME: There should be a way to have it make a settings file if there is none
     // Maybe that can be done as part of the installation process?
 
-    // Skip the production stuff below
+    // Skip the production stuff below if we're in dev
     if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
       // @ts-ignore
       return JSON.parse(fs.readFileSync("settings.json")) as Settings;
@@ -118,7 +124,7 @@ export class Sessions {
         contextIsolation: true,
         // enableRemoteModule: false,
         nodeIntegration: false,
-        preload: path.join(process.cwd(), "src/preload/preload.js"),
+        preload: MAIN_WINDOW_PRELOAD_VITE_ENTRY,
       },
     });
 
@@ -208,7 +214,13 @@ export class Sessions {
             click: (_item, base, _e) => {
               const win = browserWindowFrom(base as BaseWindow);
               const session = this.sessions.get(win.id) as Session;
-              session.newChildWindow("settings.html", true);
+
+              // Setting does not have a menu in final build but needs one is dev
+              if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+                session.newChildWindow("settings.html", this.menuTemplate(), true);
+              } else {
+                session.newChildWindow("settings.html", null, true);
+              }
             },
           },
           { type: "separator" },
@@ -401,9 +413,9 @@ export class Session {
   loadRenderFile(src = "index.html") {
     if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
       // TODO: Don't love having the directory be constant here but this only loads pages so it should be fine
-      this.win.loadURL(ROOT_DIRECTORY + "/src/renderer/" + src);
+      this.win.loadURL(`${ROOT_DIRECTORY}/src/renderer/${src}`);
     } else {
-      this.win.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/` + src));
+      this.win.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/${src}`));
     }
   }
 
@@ -411,7 +423,8 @@ export class Session {
     this.win.setMenu(menu);
   }
 
-  async newChildWindow(src: string, modal = false) {
+  /**Create a new child window. If a new menu is passed it will set it to that.*/
+  async newChildWindow(src: string, menu: Menu | null, modal = false) {
     let childRaw = new BrowserWindow({
       width: this.win.getSize()[0] / 2,
       height: this.win.getSize()[0] / 2,
@@ -421,13 +434,13 @@ export class Session {
         contextIsolation: true,
         // enableRemoteModule: false,
         nodeIntegration: false,
-        preload: path.join(__dirname, "src/preload/preload.js"),
+        preload: MAIN_WINDOW_PRELOAD_VITE_ENTRY,
       },
     });
 
     const child = new Session(childRaw);
     child.loadRenderFile(src);
-    child.setMenu(null);
+    child.setMenu(menu);
   }
 }
 

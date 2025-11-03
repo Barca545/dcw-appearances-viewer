@@ -4,7 +4,7 @@ import { defineConfig } from "vite";
 export default defineConfig({
   root: ".",
   build: {
-    // outDir: "target/src/renderer/",
+    // outDir: "../../.vite/build/renderer/main_window",
     emptyOutDir: true,
   },
 });

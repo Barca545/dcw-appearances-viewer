@@ -35,12 +35,12 @@ declare global {
   interface Window {
     api: {
       // TODO: This is now folded into settings so no need for separate
-      darkmode: {
+      darkMode: {
         toggle: () => void;
         system: () => void;
       };
       settings: {
-        request: () => Settings;
+        request: () => Promise<Settings>;
         update: (data: Settings) => void;
       };
 

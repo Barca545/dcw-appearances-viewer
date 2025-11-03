@@ -1,16 +1,14 @@
 import { app, BrowserWindow, ipcMain, shell } from "electron";
 import { nativeTheme } from "electron/main";
-import path from "node:path";
 import { Sessions } from "./session.js";
 import { createCharacterName } from "../common/utils.js";
 import { fetchList } from "../../core/fetch.js";
-import fs from "fs";
-import { Settings, AppearanceData } from "../common/apiTypes.js";
+import { AppearanceData } from "../common/apiTypes.js";
 
 let sessions = new Sessions();
 export const isMac = process.platform === "darwin";
 /** Path to the Application's userdata folder. */
-export const __userdata = `${app.getPath("userData")}/DCDB Appearances`;
+export const __userdata = `${app.getPath("userData")}/DCDB Appearances/`;
 
 // NOTE: This adds a bunch of event listeners to handle stuff over the lifetime of the app
 app.whenReady().then(() => init());
@@ -18,7 +16,6 @@ app.whenReady().then(() => init());
 /**Create a new instance of the program */
 async function init() {
   const session = await sessions.newSession();
-  // let win = session.win;
 
   // Activating the app when no windows are available should open a new one.
   // This listener gets added because MAC keeps the app running even when there are no windows
@@ -36,7 +33,7 @@ async function init() {
       // TODO: the get focused should happen inside openFile but it needs to be reworked becaue run it's a methon on window not on main
       session.openFile();
     } else {
-      session.loadRenderFile(path.join(process.cwd(), cmd));
+      session.loadRenderFile(cmd);
     }
   });
 
@@ -92,8 +89,8 @@ async function init() {
   });
 
   ipcMain.handle("settings:request", (_e) => {
-    // @ts-ignore
-    return JSON.parse(fs.readFileSync(`${__userdata}/DCDB Appearances/settings.json`)) as Settings;
+    const settings = sessions.settings();
+    return settings;
   });
 
   ipcMain.handle("settings:update", (_e, data) => {

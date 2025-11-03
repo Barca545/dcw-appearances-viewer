@@ -5,12 +5,11 @@
   "scripts": {
     "start": "electron-forge start",
     "test": "npm run build && tsx --test",
-    "dev": "nodemon --watch ./target/main --exec electron ./target/main/main.js",
+    "dev": "vite",
     "build": "tsc --build src --force",
     "build:preload": " tsc --project src/preload/tsconfig.json",
     "build:src": "tsc --project src/tsconfig.json",
-    "build:watch": "tsc --build src --force --watch",
-    "dev:vite": "vite"
+    "build:watch": "tsc --build src --force --watch"
   },
   "dependencies": {
     "npm": "^11.6.0",

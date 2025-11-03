@@ -58,7 +58,6 @@
       <div>
         Open projects in new window
         <input type="checkbox" id="new-window" name="new-window" />
-        <!-- TODO: Figure outwhat this was going to be the number of  -->
       </div>
       <div>
         <label for="width">Width</label>
@@ -67,10 +66,9 @@
         <input id="height" type="number" min="0" />
       </div>
       <!-- TODO: Rig this up so it saves to the config.json  -->
-      <button id="save-settings" class="save-button" name="save-settings">
-        Save
-      </button>
-      <input type="submit" id="save" class="save-button" name="save-settings" value="Save and close"/>
+      <input type="button" id="save-settings" class="save-button" name="save-settings" value="Save">
+      <input type="button" id="save" class="save-button" name="save-settings" value="Save and close"/>
     </form>
+    <script type="module" src="settings.ts"></script>
   </body>
 </html>
