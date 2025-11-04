@@ -21,6 +21,7 @@ async function registerFetchData() {
         input.checked = input.value == value;
         console.log(input.value);
         console.log(input.checked);
+        // input.dispatchEvent(new Event("change", { bubbles: true }));
       });
 
       continue;
@@ -43,9 +44,6 @@ function registerSaveSettings() {
 
       // Convert data to Settings
       const rawData = Object.fromEntries(new FormData(form));
-      console.log((document.querySelector(`[id="earthDropdownType"]`) as HTMLInputElement).checked);
-      console.log(form);
-      console.log(new FormData(form));
       const data = {
         theme: rawData.theme as "system" | "light" | "dark",
         earthDropdownType: rawData.earthDropdownType as "user" | "external",
@@ -72,7 +70,7 @@ function registerPreventSubmit() {
 }
 
 window.addEventListener("DOMContentLoaded", async () => {
-  registerFetchData();
+  await registerFetchData();
   registerSaveSettings();
   registerPreventSubmit();
 });

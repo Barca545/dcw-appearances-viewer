@@ -81,33 +81,31 @@ export class Sessions {
     if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
       // @ts-ignore
       return JSON.parse(fs.readFileSync("settings.json")) as Settings;
-    }
+    } else {
+      // If there is no userdata folder make one and add the settings to
+      if (!fs.existsSync(`${__userdata}/DCDB Appearances/`)) {
+        fs.mkdirSync(`${__userdata}/DCDB Appearances/`);
+        // Copy the default settings file into userdata
+        fs.copyFileSync("settings.json", __userdata);
+      }
 
-    // If there is no userdata folder make one and add the settings to
-    // This will only run if in production
-    if (!fs.existsSync(__userdata)) {
-      fs.mkdirSync(__userdata);
-      // Copy the default settings file into userdata
-      fs.copyFileSync("settings.json", __userdata);
+      // @ts-ignore
+      return JSON.parse(fs.readFileSync(`${__userdata}/DCDB Appearances/settings.json`)) as Settings;
     }
-
-    // @ts-ignore
-    return JSON.parse(fs.readFileSync(`${__userdata}/DCDB Appearances/settings.json`)) as Settings;
   }
 
   saveSettings(data: Settings) {
     const file = JSON.stringify(data);
     // In dev, save to dev settings folder
     if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-      fs.writeFileSync(file, "settings.json");
+      fs.writeFileSync("settings.json", file);
+    } else {
+      // If there is no userdata folder make one and add the settings to
+      if (!fs.existsSync(`${__userdata}/DCDB Appearances/`)) {
+        fs.mkdirSync(`${__userdata}/DCDB Appearances/`);
+      }
+      fs.writeFileSync(`${__userdata}/DCDB Appearances/settings.json`, file);
     }
-
-    // If there is no userdata folder make one and add the settings to
-    // This will only run if in production
-    if (!fs.existsSync(__userdata)) {
-      fs.mkdirSync(__userdata);
-    }
-    fs.writeFileSync(file, `${__userdata}/DCDB Appearances/settings.json`);
   }
 
   getFocusedSession(): Session {

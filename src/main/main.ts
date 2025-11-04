@@ -93,8 +93,7 @@ async function init() {
     return settings;
   });
 
-  ipcMain.handle("settings:update", (_e, data) => {
-    console.log(data);
+  ipcMain.on("settings:update", (_e, data) => {
     // TODO: Need update all the windows so they follow the new ones
     sessions.saveSettings(data);
   });

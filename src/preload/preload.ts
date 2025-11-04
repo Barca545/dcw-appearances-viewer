@@ -3,7 +3,7 @@
 
 import type { FilterOptions, SearchRequest, Settings } from "../common/apiTypes.js";
 import { contextBridge, ipcRenderer } from "electron";
-
+// REMINDER: Handle only takes invokes not sends
 console.log("PRELOAD RUNNING...");
 
 // TODO: If this ends up being overly granular merge taking inspiration from
