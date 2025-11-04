@@ -1,73 +1,59 @@
 <!-- TODO: Add lines between each section and more spaces -->
-<!DOCTYPE html>
+
+<!doctype html>
 <html>
   <head>
     <meta charset="UTF-8" />
     <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
-    <meta
-      http-equiv="Content-Security-Policy"
-      content="script-src 'self' 'unsafe-inline';"
-    />
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" />
     <title>Settings</title>
     <link rel="stylesheet" type="text/css" href="./styles.css" />
   </head>
   <!-- TODO: Ideally this script would load in from an external source but resolving that right now is annoying and low priority -->
   <script>
-    window.addEventListener("DOMContentLoaded", async () => {
-      document
-        .getElementById("toggle-dark-mode")
-        .addEventListener("click", async () => {
-          const isDarkMode = await window.api.darkMode.toggle();
-        });
+    // window.addEventListener("DOMContentLoaded", async () => {
+    //   document.getElementById("toggle-dark-mode").addEventListener("click", async () => {
+    //     const isDarkMode = await window.api.darkMode.toggle();
+    //   });
 
-      document
-        .getElementById("reset-to-system")
-        .addEventListener("click", async () => {
-          await window.api.darkMode.system();
-        });
-    });
+    //   document.getElementById("reset-to-system").addEventListener("click", async () => {
+    //     await window.api.darkMode.system();
+    //   });
+    // });
   </script>
   <!-- TODO: I want to add a universal script here that injects the nav stuff into this page and every page -->
   <body>
     <form id="settings">
-      <div id="theme settings">
-        <label class="toggle" for="toggle-dark-mode">
-          <input type="checkbox" id="toggle-dark-mode" />
-          <span class="slider"></span>
-        </label>
-        <button id="reset-to-system">System Theme</button>
-      </div>
-      <div id="choose-earth-settings">
-        WARNING: The Earth Names in the dropdown are created programatically and
-        some are likely incorrect. If you identify one is wrong please sumbit a
-        bug report...somehow.
-        <span>
-          <!-- TODO: Why don't these have labels -->
-        </br>
-          <input type="radio" id="r1" name="choose-type" value="user" />User
-          Input
-        </br>
-          <input
-            type="radio"
-            id=""
-            name="choose-type"
-            value="dropdown"
-          />Dropdown
-        </span>
-      </div>
-      <div>
-        Open projects in new window
-        <input type="checkbox" id="new-window" name="new-window" />
-      </div>
+      <fieldset id="theme">
+        <legend>System Theme</legend>
+        <label class="theme-label" for="theme:system">System</label>
+        <input type="radio" id="theme:system" name="theme" value="system" />
+        <label class="theme-label" for="theme:dark">Dark</label>
+        <input type="radio" id="theme:dark" name="theme" value="dark" />
+        <label class="theme-label" for="theme:light">Light</label>
+        <input type="radio" id="theme:light" name="theme" value="light" />
+      </fieldset>
+      <fieldset id="earthDropdownType">
+        <legend>
+          WARNING: The Earth Names in the dropdown are created programatically and some are likely incorrect. If you identify one
+          is wrong please sumbit a bug report.
+        </legend>
+        <label for="earthDropdownType:user">User Input</label>
+        <input type="radio" id="earthDropdownType:user" name="earthDropdownType" value="user" />
+        <label for="earthDropdownType:external">Dropdown</label>
+        <input type="radio" id="earthDropdownType:external" name="earthDropdownType" value="external" />
+      </fieldset>
       <div>
         <label for="width">Width</label>
-        <input id="width" type="number" min="0"/>
-         <label for="height">Height</label>
-        <input id="height" type="number" min="0" />
+        <input id="width" type="number" min="0" name="width" />
+        <label for="height">Height</label>
+        <input id="height" type="number" min="0" name="height" />
       </div>
       <!-- TODO: Rig this up so it saves to the config.json  -->
-      <input type="button" id="save-settings" class="save-button" name="save-settings" value="Save">
-      <input type="button" id="save" class="save-button" name="save-settings" value="Save and close"/>
+      <button type="button" id="save" class="save-button" name="save-settings" value="Save">Save</button>
+      <button type="button" id="save-and-close" class="save-button" name="save-settings" value="Save and Close">
+        Save and Close
+      </button>
     </form>
     <script type="module" src="settings.ts"></script>
   </body>

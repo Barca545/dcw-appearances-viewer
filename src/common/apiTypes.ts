@@ -41,7 +41,8 @@ declare global {
       };
       settings: {
         request: () => Promise<Settings>;
-        update: (data: Settings) => void;
+        /**Save the new settings to the disk. */
+        save: (data: Settings) => void;
       };
 
       form: {
@@ -52,18 +53,22 @@ declare global {
         page: (addr: string) => void;
         url: (addr: string) => void;
       };
+      /**Close the window that send the request.*/
+      finish: () => void;
 
+      // TODO: Do I need a request and send for this since saving needs to save the settings?
       filterOptions: (state: FilterOptions) => Promise<AppearanceData[]>;
       recieveData: (callback: (res: any) => any) => void;
     };
   }
 }
 
+// Keep this flat so it can be iterated over
 export interface Settings {
   theme: "system" | "light" | "dark";
-  "choose-earth-settings": "user" | "dropdown";
-  "open in new window": boolean;
-  size: { width: number; height: number };
+  earthDropdownType: "user" | "external";
+  width: number;
+  height: number;
 }
 
 /**Interface containing the data used to construct a list entry. The return result of window.api.form.submit */

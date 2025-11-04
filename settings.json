@@ -1,6 +1,6 @@
 {
   "theme": "system",
-  "earth dropdown type": "external",
-  "open in new window": "true",
-  "size": { "width": "800", "height": "600" }
+  "earthDropdownType": "user",
+  "width": "800",
+  "height": "600"
 }

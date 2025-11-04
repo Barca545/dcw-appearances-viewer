@@ -4,7 +4,7 @@
 import type { FilterOptions, SearchRequest, Settings } from "../common/apiTypes.js";
 import { contextBridge, ipcRenderer } from "electron";
 
-console.log("...PRELOAD RUNNING");
+console.log("PRELOAD RUNNING...");
 
 // TODO: If this ends up being overly granular merge taking inspiration from
 // https://stackoverflow.com/questions/66266205/how-to-read-a-local-file-in-javascript-running-from-an-electron-app
@@ -26,17 +26,22 @@ contextBridge.exposeInMainWorld("api", {
   },
   settings: {
     request: async () => {
-      // It is returned as a JSON blob so it needs to be converted
-      // const settings = await ipcRenderer.invoke("settings:request");
+      // It is returned as an object with the fields of settings but no methods
       return ipcRenderer.invoke("settings:request");
     },
-    update: (data: Settings) => ipcRenderer.send("settings:update", data),
+    /**Save the new settings to the disk. */
+    save: (data: Settings) => ipcRenderer.send("settings:update", data),
   },
   filterOptions: (state: FilterOptions) => {
     // TODO: Can I handle the conversion into the correct format here instead of the functions?
     return ipcRenderer.invoke("filterOptions", state);
   },
   recieveData: (callback: (data: any) => any) => ipcRenderer.on("file-opened", (_event, res) => callback(res)),
+  /**Close the window that send the request.*/
+  finish: (data: Settings) => {
+    console.log("finish called");
+    ipcRenderer.send("finish", data);
+  },
 });
 
-console.log("...PRELOAD FINSHED");
+console.log("PRELOAD FINSHED...");

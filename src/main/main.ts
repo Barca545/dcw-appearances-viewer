@@ -89,12 +89,19 @@ async function init() {
   });
 
   ipcMain.handle("settings:request", (_e) => {
-    const settings = sessions.settings();
+    const settings = sessions.getSettings();
     return settings;
   });
 
   ipcMain.handle("settings:update", (_e, data) => {
     console.log(data);
+    // TODO: Need update all the windows so they follow the new ones
+    sessions.saveSettings(data);
+  });
+
+  ipcMain.on("finish", (e, _data) => {
+    console.log(e.sender.id);
+    sessions.closeSession(e.sender.id);
   });
 }
 

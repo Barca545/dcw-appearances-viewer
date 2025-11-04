@@ -63,8 +63,17 @@ export class Sessions {
   constructor() {
     this.focused = new None();
   }
+  /**Close the session matching id */
+  closeSession(id: number) {
+    let session = this.sessions.get(id);
+    if (session) {
+      session.close();
+    } else {
+      throw new Error(`Session ${id} does not exist.`);
+    }
+  }
 
-  settings(): Settings {
+  getSettings(): Settings {
     // FIXME: There should be a way to have it make a settings file if there is none
     // Maybe that can be done as part of the installation process?
 
@@ -84,6 +93,21 @@ export class Sessions {
 
     // @ts-ignore
     return JSON.parse(fs.readFileSync(`${__userdata}/DCDB Appearances/settings.json`)) as Settings;
+  }
+
+  saveSettings(data: Settings) {
+    const file = JSON.stringify(data);
+    // In dev, save to dev settings folder
+    if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+      fs.writeFileSync(file, "settings.json");
+    }
+
+    // If there is no userdata folder make one and add the settings to
+    // This will only run if in production
+    if (!fs.existsSync(__userdata)) {
+      fs.mkdirSync(__userdata);
+    }
+    fs.writeFileSync(file, `${__userdata}/DCDB Appearances/settings.json`);
   }
 
   getFocusedSession(): Session {
@@ -115,8 +139,8 @@ export class Sessions {
     }
 
     let win = new BrowserWindow({
-      width: this.settings().size.width,
-      height: this.settings().size.height,
+      width: this.getSettings().width,
+      height: this.getSettings().height,
       title: title ?? undefined,
       x: x,
       y: y,
@@ -217,9 +241,9 @@ export class Sessions {
 
               // Setting does not have a menu in final build but needs one is dev
               if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-                session.newChildWindow("settings.html", this.menuTemplate(), true);
+                session.newChildWindow("settings.html", this, this.menuTemplate(), true);
               } else {
-                session.newChildWindow("settings.html", null, true);
+                session.newChildWindow("settings.html", this, null, true);
               }
             },
           },
@@ -266,6 +290,15 @@ export class Session {
 
   constructor(win: BrowserWindow) {
     this.win = win;
+  }
+
+  /**
+   * Try to close the window. This has the same effect as a user manually clicking
+   * the close button of the window. The web page may cancel the close though. See
+   * the close event.
+   */
+  close() {
+    this.win.close();
   }
 
   id(): number {
@@ -341,8 +374,6 @@ export class Session {
         data: this.fileData,
       });
     });
-
-    // Changing the window name will make it impossible
 
     // Set the window name to the title of the file
     this.win.title = path.basename(this.savePath.toString(), this.savePath.type().unwrap());
@@ -424,7 +455,8 @@ export class Session {
   }
 
   /**Create a new child window. If a new menu is passed it will set it to that.*/
-  async newChildWindow(src: string, menu: Menu | null, modal = false) {
+  // TODO: Is there a smoother way to do this than passing in sessions?
+  async newChildWindow(src: string, sessions: Sessions, menu: Menu | null, modal = false) {
     let childRaw = new BrowserWindow({
       width: this.win.getSize()[0] / 2,
       height: this.win.getSize()[0] / 2,
@@ -441,6 +473,7 @@ export class Session {
     const child = new Session(childRaw);
     child.loadRenderFile(src);
     child.setMenu(menu);
+    sessions.sessions.set(child.id(), child);
   }
 }
 
