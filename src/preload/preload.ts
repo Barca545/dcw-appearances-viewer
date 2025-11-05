@@ -2,7 +2,7 @@
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
 
 import type { FilterOptions, SearchRequest, Settings } from "../common/apiTypes.js";
-import { contextBridge, ipcRenderer } from "electron";
+import { contextBridge, ipcMain, ipcRenderer } from "electron";
 // REMINDER: Handle only takes invokes not sends
 console.log("PRELOAD RUNNING...");
 
@@ -41,6 +41,15 @@ contextBridge.exposeInMainWorld("api", {
     return ipcRenderer.invoke("filterOptions", state);
   },
   recieveData: (callback: (data: any) => any) => ipcRenderer.on("file-opened", (_event, res) => callback(res)),
+  dataRequest: (data: any) =>
+    ipcRenderer.on("data:request", () => {
+      ipcRenderer.send("data:response", data);
+    }),
 });
+
+// ipcRenderer.on("data:request", () => {
+//   console.log("testing 1");
+//   ipcRenderer.send("data:response", "testing 2");
+// });
 
 console.log("PRELOAD FINSHED...");

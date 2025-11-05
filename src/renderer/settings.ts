@@ -94,12 +94,15 @@ function registerPreviewSettings() {
   });
 }
 
+window.api.dataRequest("dummy data");
+
 window.addEventListener("DOMContentLoaded", async () => {
   await registerFetchData();
   registerHandleFontSize();
   registerSaveSettings();
   registerPreventSubmit();
   registerPreviewSettings();
+  // window.addEventListener("close", (_) => window.api.settings.close());
 });
 
 function htmlFormtoSettings(form: HTMLFormElement): Settings {

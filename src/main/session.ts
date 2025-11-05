@@ -1,106 +1,124 @@
-import { ListEntry, pubDateSort } from "../../core/pub-sort.js";
-import { BaseWindow, BrowserWindow, dialog, ipcMain, Menu, nativeTheme } from "electron";
-import path from "node:path";
-import { None, Option, Some } from "../../core/option.js";
-import { loadList, SaveFormat, sessionFromJSON, sessionToJSON } from "../../core/load.js";
-import fs, { PathLike } from "fs";
-import { __userdata, isMac, messages } from "./main.js";
-import { FilterOptions, Settings } from "../common/apiTypes.js";
+import { BrowserWindow, dialog, Menu, nativeTheme } from "electron";
+import { ListEntry, pubDateSort } from "../../core/pub-sort";
+import path from "path";
+import { SaveFormat, loadList, sessionFromJSON, sessionToJSON } from "../../core/load";
+import { FilterOptions, Settings } from "../common/apiTypes";
+import { PathLike } from "fs";
+import { None, Some, Option } from "../../core/option";
+import { __userdata } from "./main";
+import fs from "fs";
+import { title } from "process";
 
-// TODO: This should go in a declaration file or something
-// TODO: I am also unclear this is what this should be called. Don't my windows have different names? And what if I have multiple windows?
-declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
-declare const MAIN_WINDOW_VITE_NAME: string;
-// FIXME: This is supposed to be a constant that points to the path but it does not work
-// declare const MAIN_WINDOW_PRELOAD_VITE_ENTRY: string;
-
-// TODO: Decide if it shoud be dirname or "."
-export const ROOT_DIRECTORY = MAIN_WINDOW_VITE_DEV_SERVER_URL ? MAIN_WINDOW_VITE_DEV_SERVER_URL : __dirname;
-
-// FIXME: It does not seem as if vite supports this for vite as it does webpack but maybe they will eventually
-const MAIN_WINDOW_PRELOAD_VITE_ENTRY = path.resolve(__dirname, "preload.js");
-
-type MenuTemplate = Electron.MenuItemConstructorOptions[];
-
-// TODO: Do I actually really need this? If I need it is there a way I can add it to the real path instead of doing this?
-class Path {
-  private path: string;
-
-  constructor(pathStr: PathLike) {
-    // FIXME: Confirm it is a valid path and error if not
-
-    this.path = pathStr.toString();
-  }
-
-  /**Returns the name of a path's file if it has one */
-  fileName(): Option<string> {
-    const name = path.basename(this.path);
-
-    if (typeof name == "undefined") {
-      return new None();
-    } else {
-      return new Some(name);
-    }
-  }
-
-  /**Returns the filetype of the file the path references. Returns None if there is no extension. */
-  type(): Option<string> {
-    const ty = path.extname(this.path);
-    if (ty == "") {
-      return new None();
-    } else {
-      return new Some(ty);
-    }
-  }
-
-  toString() {
-    return this.path.toString();
-  }
-}
-
-export class Sessions {
-  sessions: Map<number, Session> = new Map();
-  focused: Option<number>;
+// TODO: Maybe eventually find a way to stick every part of the program into this structure but for now just using it to store file data works
+export class Session {
+  // FIXME: Do not list titles in the loaded pages
+  win: BrowserWindow;
+  // TODO: Don't love initializing it like this maybe it should be an option or undefined
+  savePath;
+  fileData: ListEntry[];
+  opt = new FilterOptions();
+  /**Field indicating whether the session has unsaved changes.*/
+  isClean: {
+    task: boolean;
+    settings: boolean;
+  };
+  saveFn: () => Promise<void>;
+  shouldClose: boolean;
+  onClose: (args: any) => Promise<void>;
   settings: Settings;
-  settingWinId?: number;
 
-  constructor() {
-    this.focused = new None();
-    this.settings = Sessions.getSettings();
+  constructor(win: BrowserWindow, onClose: (args: any) => Promise<void>, saveFn?: () => Promise<void>) {
+    this.win = win;
+    // Only mark dirty once a task is open
+    this.isClean = { settings: true, task: true };
+    this.fileData = [];
+    this.savePath = new Path("");
+    this.settings = Session.getSettings();
+    this.saveFn = saveFn ? saveFn : this.close;
+    // Each window will need to register its own save handler
+    this.shouldClose = false;
+    this.onClose = onClose;
   }
 
-  get(id: number): Session {
-    const session = this.sessions.get(id);
-    if (session) {
-      return session;
+  navigateToPage(page: string) {}
+
+  /**Applys current settings file to all windows and updates the settings field.*/
+  updateSettings(settings: Settings) {
+    this.applySettings(settings);
+    this.settings = settings;
+  }
+
+  /**Applys current settings file to all windows. \
+   * Does not update the settings field. */
+  applySettings(settings: Settings) {
+    // Theme
+    nativeTheme.themeSource = settings.theme;
+    // Update size
+    this.win.setSize(Number.parseInt(settings.width), Number.parseInt(settings.width));
+
+    // Changing the dropdown is a little more annoying
+    //  I need to swap out an HTML component on the fly
+
+    this.isClean.settings = false;
+  }
+
+  /**Saves the `Sessions` current `settings` field to disk. */
+  async saveSettings() {
+    // settingsSess.win.webContents.send("settings");
+
+    const file = JSON.stringify(this.settings);
+    console.log(file);
+    console.log(typeof file);
+    // In dev, save to dev settings folder
+    if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+      fs.writeFileSync("settings.json", file);
     } else {
-      throw new Error(`Session ${id} does not exist.`);
-    }
-  }
-
-  sessionChange(session: Session, sessType: SessionType) {
-    switch (sessType) {
-      case SessionType.Project: {
-        // Load the new page
-        session.loadRenderFile("application.html");
-        // Make it so you're prompted to save
-        break;
+      // If there is no userdata folder make one and add the settings to
+      if (!fs.existsSync(`${__userdata}/DCDB Appearances/`)) {
+        fs.mkdirSync(`${__userdata}/DCDB Appearances/`);
       }
+      fs.writeFileSync(`${__userdata}/DCDB Appearances/settings.json`, file);
     }
+
+    this.isClean.settings = true;
   }
 
-  /**Close the session matching id */
-  closeSession(id: number) {
-    let session = this.sessions.get(id);
-    if (session) {
-      // session.close(this, e);
-      session.close();
-    } else {
-      throw new Error(`Session ${id} does not exist.`);
-    }
+  private static makeWindow(settings: Settings): BrowserWindow {
+    let win = new BrowserWindow({
+      width: Number.parseInt(settings.width),
+      height: Number.parseInt(settings.height),
+      title: "Untitled",
+      webPreferences: {
+        contextIsolation: true,
+        // enableRemoteModule: false,
+        nodeIntegration: false,
+        preload: MAIN_WINDOW_PRELOAD_VITE_ENTRY,
+      },
+    });
+
+    // Load the new window's index.html file
+    const session = new Session(win, async () => {});
+    session.loadRenderFile();
+
+    win.webContents.on("did-finish-load", () => {
+      if (!win) {
+        throw new Error('"win" is not defined');
+      }
+
+      if (process.env.START_MINIMIZED) {
+        win.minimize();
+      } else {
+        win.show();
+        win.focus();
+      }
+    });
+
+    win.setMenu(Menu.buildFromTemplate(this.menuTemplate()));
+
+    return win;
   }
 
-  static getSettings(): Settings {
+  private static getSettings(): Settings {
     // FIXME: There should be a way to have it make a settings file if there is none
     // Maybe that can be done as part of the installation process?
 
@@ -120,309 +138,14 @@ export class Sessions {
       return JSON.parse(fs.readFileSync(`${__userdata}/DCDB Appearances/settings.json`)) as Settings;
     }
   }
-  /**Applys current settings file to all windows and updates the settings field.*/
-  updateSettings(settings: Settings) {
-    this.applySettings(settings);
-    this.settings = settings;
-  }
-
-  /**Applys current settings file to all windows. \
-   * Does not update the settings field. */
-  applySettings(settings: Settings) {
-    // Theme
-    nativeTheme.themeSource = settings.theme;
-    // Update size
-    this.sessions.forEach((session) => {
-      // Don't resize modals
-      if (!session.win.isModal()) {
-        session.win.setSize(Number.parseInt(settings.width), Number.parseInt(settings.width));
-      }
-    });
-    // Changing the dropdown is a little more annoying
-    //  I need to swap out an HTML component on the fly
-
-    const id = this.settingWinId as number;
-    let settingsSess = this.get(id);
-    settingsSess.isClean = false;
-  }
-
-  /**Saves the `Sessions` current `settings` field to disk. */
-  saveSettings() {
-    let settingsSess = this.get(this.settingWinId as number);
-    settingsSess.win.webContents.send("settings");
-
-    const file = JSON.stringify(this.settings);
-    console.log(file);
-    console.log(typeof file);
-    // In dev, save to dev settings folder
-    if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-      fs.writeFileSync("settings.json", file);
-    } else {
-      // If there is no userdata folder make one and add the settings to
-      if (!fs.existsSync(`${__userdata}/DCDB Appearances/`)) {
-        fs.mkdirSync(`${__userdata}/DCDB Appearances/`);
-      }
-      fs.writeFileSync(`${__userdata}/DCDB Appearances/settings.json`, file);
-    }
-
-    settingsSess.isClean = true;
-  }
-
-  getFocusedSession(): Session {
-    return this.sessions.get(this.focused.unwrap()) as Session;
-  }
-
-  /**Create a new `Session` in the sessions instance and returns its `Session`.
-   * If no title is provided its title will be `"Untitled" + this.untitledNumber()`. Its key will be its title. */
-  async newSession(title?: string, src = "index.html"): Promise<Session> {
-    const currentWindow = BrowserWindow.getFocusedWindow();
-
-    let x, y;
-    if (currentWindow) {
-      const [curX, curY] = currentWindow.getPosition();
-      x = curX + 24;
-      y = curY + 24;
-    }
-
-    let win = new BrowserWindow({
-      width: Number.parseInt(this.settings.width),
-      height: Number.parseInt(this.settings.height),
-      title: title ? title : `Untitled ${this.untitledNumber()}`,
-      x: x,
-      y: y,
-      webPreferences: {
-        contextIsolation: true,
-        // enableRemoteModule: false,
-        nodeIntegration: false,
-        preload: MAIN_WINDOW_PRELOAD_VITE_ENTRY,
-      },
-    });
-
-    // Load the new window's index.html file
-    const session = new Session(win);
-    session.loadRenderFile(src);
-
-    win.webContents.on("did-finish-load", () => {
-      if (!win) {
-        throw new Error('"win" is not defined');
-      }
-
-      if (process.env.START_MINIMIZED) {
-        win.minimize();
-      } else {
-        win.show();
-        win.focus();
-      }
-    });
-
-    // TODO: Confirm this should work to make sure the correct window is always focused
-    win.on("focus", () => (this.focused = new Some(win.id)));
-
-    win.on("blur", () => (this.focused = new None()));
-
-    // @ts-ignore
-    // FIXME: For some reason I do not quire understand this believes it is a window resize event
-    // Delete the window only once it is definitely closed
-    win.on("closed", (_e: Event) => this.sessions.delete(win.id));
-
-    this.registerSavePromptOnCloseAttempt(session);
-
-    win.setMenu(Menu.buildFromTemplate(this.menuTemplate()));
-
-    this.sessions.set(session.id(), session);
-    return session;
-  }
-
-  menuTemplate(): MenuTemplate {
-    return [
-      {
-        label: "File",
-        submenu: [
-          {
-            label: "New",
-            accelerator: "CommandOrControl+N",
-            click: (_item, base, _e) => this.get(base?.id as number).loadRenderFile("application.html"),
-          },
-          {
-            label: "New Window",
-            accelerator: "CommandOrControl+Shift+N",
-            click: () => this.newSession(),
-          },
-          {
-            label: "Open File",
-            accelerator: "CommandOrControl+O",
-            click: (_item, base, _e) => {
-              const win = browserWindowFrom(base as BaseWindow);
-
-              const session = this.sessions.get(win.id) as Session;
-              session.openFile();
-            },
-          },
-          { type: "separator" },
-          {
-            label: "Save",
-            accelerator: "CommandOrControl+S",
-            click: (_item, base, _e) => {
-              const win = browserWindowFrom(base as BaseWindow);
-              const session = this.sessions.get(win.id) as Session;
-              session.saveFile();
-            },
-          },
-          {
-            label: "Save As",
-            accelerator: "CommandOrControl+Shift+S",
-            click: (_item, base, _e) => {
-              const win = browserWindowFrom(base as BaseWindow);
-              const session = this.sessions.get(win.id) as Session;
-
-              session.saveFile(true);
-            },
-          },
-          { type: "separator" },
-          {
-            label: "Settings",
-            // Settings can launch a new window which is how MS word handles it
-            click: (_item, base, _e) => {
-              // const win = browserWindowFrom(base as BaseWindow);
-
-              const parent = this.sessions.get(base?.id as number) as Session;
-
-              // Setting does not have a menu in final build but needs one is dev
-              if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-                const devMenu: MenuTemplate = [{ role: "toggleDevTools" }];
-                const id = this.newChildWindow("settings.html", parent.id(), devMenu, this.saveSettings, true);
-                this.settingWinId = id;
-              } else {
-                const id = this.newChildWindow("settings.html", parent.id(), null, this.saveSettings, true);
-                this.settingWinId = id;
-              }
-            },
-          },
-          { type: "separator" },
-          isMac ? { role: "close" } : { role: "quit" },
-        ],
-      },
-      { role: "editMenu" },
-      { role: "viewMenu" },
-    ];
-  }
-
-  /**Returns the number of untilted sessions in the sessions object */
-  private untitledNumber(): string {
-    let num = 0;
-
-    this.sessions.forEach((session) => {
-      if (session.getTitle().includes("Untitled")) {
-        num += 1;
-      }
-    });
-
-    let out;
-
-    if (num == 0) {
-      out = "";
-    } else {
-      out = num.toString();
-    }
-    return out;
-  }
-
-  /**Create a new child window. If a new menu is passed it will set it to that. Returns the Window's ID.*/
-  // TODO: Is there a smoother way to do this than passing in sessions?
-  newChildWindow(src: string, parentID: number, menu: MenuTemplate | null, saveFn?: () => void, modal = false): number {
-    const parent = this.get(parentID);
-
-    let childRaw = new BrowserWindow({
-      width: parent.win.getSize()[0] / 2,
-      height: parent.win.getSize()[0] / 2,
-      parent: parent.win,
-      modal: modal,
-      webPreferences: {
-        contextIsolation: true,
-        // enableRemoteModule: false,
-        nodeIntegration: false,
-        preload: MAIN_WINDOW_PRELOAD_VITE_ENTRY,
-      },
-    });
-
-    const child = new Session(childRaw, saveFn);
-    child.loadRenderFile(src);
-    menu ? child.setMenu(Menu.buildFromTemplate(menu)) : child.setMenu(null);
-
-    this.sessions.set(child.id(), child);
-
-    this.registerSavePromptOnCloseAttempt(child);
-
-    return child.id();
-  }
-
-  /**Registers a function that promps a user to save before exiting a new document or document they have edited. */
-  registerSavePromptOnCloseAttempt(session: Session) {
-    session.win.on("close", (e) => {
-      // Session always has a browser window
-
-      if (!session.isClean) {
-        e.preventDefault();
-
-        const choice = dialog.showMessageBoxSync(session.win, {
-          title: "Confirm",
-          message: messages.closeWarning,
-          type: "question",
-          buttons: ["Yes", "No", "Cancel"],
-        });
-
-        if (choice == 0) {
-          session.isClean = true;
-          session.saveFn();
-        } else if (choice == 1) {
-          // Just mark clean but no save
-          session.isClean = true;
-        } else if (choice == 2) {
-          return;
-        }
-      }
-
-      this.closeSession(session.id());
-    });
-  }
-}
-
-// TODO: Maybe eventually find a way to stick every part of the program into this structure but for now just using it to store file data works
-export class Session {
-  // FIXME: Do not list titles in the loaded pages
-  win: BrowserWindow;
-  // TODO: Don't love initializing it like this maybe it should be an option or undefined
-  savePath;
-  fileData: ListEntry[];
-  opt = new FilterOptions();
-  /**Field indicating whether the session has unsaved changes.*/
-  isClean: boolean;
-  saveFn: () => void;
-  shouldClose: boolean;
-  onClose: (self: Session) => void | (() => void);
-
-  constructor(win: BrowserWindow, saveFn?: () => void, onClose?: (self: Session) => void) {
-    this.win = win;
-    this.win.closable = false;
-    // Initialize to false so a user is prompted to save before closing
-    this.isClean = false;
-    this.fileData = [];
-    this.savePath = new Path("");
-    this.saveFn = saveFn ? saveFn : this.win.close;
-    // Each window will need to register its own save handler
-    this.win.on("close", (e: Electron.Event) => {
-      this.shouldClose ? this.win.close() : e.preventDefault();
-    });
-    this.shouldClose = false;
-    this.onClose = onClose ? onClose : this.close;
-  }
 
   /**
    * Try to close the window. This has the same effect as a user manually clicking
    * the close button of the window. The web page may cancel the close though. See
-   * the close event.
+   * the close event. Will skip `onClose` behavior.
    */
-  close() {
+  async close() {
+    console.log("closing functions");
     this.shouldClose = true;
     this.win.close();
   }
@@ -531,7 +254,7 @@ export class Session {
     // FIXME: Unclear if a try/catch block is needed
     sessionToJSON(this.opt, this.fileData, this.savePath.toString());
     // If all this completes successfully mark the session as clean (until the next change)
-    this.isClean = true;
+    this.isClean.task = true;
   }
 
   /**Recalculate the layout of the results section and return the new layout.*/
@@ -579,37 +302,6 @@ export class Session {
   setMenu(menu: Electron.Menu | null) {
     this.win.setMenu(menu);
   }
-
-  // /**Create a new child window. If a new menu is passed it will set it to that. Returns the Window's ID.*/
-  // // TODO: Is there a smoother way to do this than passing in sessions?
-  // newChildWindow(
-  //   src: string,
-  //   sessions: Sessions,
-  //   menu: MenuTemplate | null,
-  //   saveFn?: () => void,
-  //   modal = false,
-  // ): number {
-  //   let childRaw = new BrowserWindow({
-  //     width: this.win.getSize()[0] / 2,
-  //     height: this.win.getSize()[0] / 2,
-  //     parent: this.win,
-  //     modal: modal,
-  //     webPreferences: {
-  //       contextIsolation: true,
-  //       // enableRemoteModule: false,
-  //       nodeIntegration: false,
-  //       preload: MAIN_WINDOW_PRELOAD_VITE_ENTRY,
-  //     },
-  //   });
-
-  //   const child = new Session(sessions, childRaw, saveFn);
-  //   child.loadRenderFile(src);
-  //   menu ? child.setMenu(Menu.buildFromTemplate(menu)) : child.setMenu(null);
-
-  //   sessions.sessions.set(child.id(), child);
-
-  //   return child.id();
-  // }
 }
 
 enum SessionType {
@@ -618,8 +310,53 @@ enum SessionType {
   Settings,
 }
 
-function browserWindowFrom(base: BaseWindow): BrowserWindow {
-  const win = BrowserWindow.fromId(base.id);
-  if (win) return win;
-  else throw new Error(`Window ${base?.id} does not exist.`);
+// TODO: Do I actually really need this? If I need it is there a way I can add it to the real path instead of doing this?
+class Path {
+  private path: string;
+
+  constructor(pathStr: PathLike) {
+    // FIXME: Confirm it is a valid path and error if not
+
+    this.path = pathStr.toString();
+  }
+
+  /**Returns the name of a path's file if it has one */
+  fileName(): Option<string> {
+    const name = path.basename(this.path);
+
+    if (typeof name == "undefined") {
+      return new None();
+    } else {
+      return new Some(name);
+    }
+  }
+
+  /**Returns the filetype of the file the path references. Returns None if there is no extension. */
+  type(): Option<string> {
+    const ty = path.extname(this.path);
+    if (ty == "") {
+      return new None();
+    } else {
+      return new Some(ty);
+    }
+  }
+
+  toString() {
+    return this.path.toString();
+  }
+}
+
+// TODO: Move somewhere better
+declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
+declare const MAIN_WINDOW_VITE_NAME: string;
+// FIXME: This is supposed to be a constant that points to the path but it does not work
+// declare const MAIN_WINDOW_PRELOAD_VITE_ENTRY: string;
+
+// TODO: Decide if it shoud be dirname or "."
+const ROOT_DIRECTORY = MAIN_WINDOW_VITE_DEV_SERVER_URL ? MAIN_WINDOW_VITE_DEV_SERVER_URL : __dirname;
+
+// FIXME: It does not seem as if vite supports this for vite as it does webpack but maybe they will eventually
+const MAIN_WINDOW_PRELOAD_VITE_ENTRY = path.resolve(__dirname, "preload.js");
+function getSettings() {
+  throw new Error("Function not implemented.");
 }

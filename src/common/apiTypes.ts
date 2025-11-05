@@ -61,6 +61,7 @@ declare global {
       // TODO: Do I need a request and send for this since saving needs to save the settings?
       filterOptions: (state: FilterOptions) => Promise<AppearanceData[]>;
       recieveData: (callback: (res: any) => any) => void;
+      dataRequest: (data: any) => void;
     };
   }
 }

@@ -20,6 +20,7 @@
 - [ ] Normal list has purple links `"Name Only"` has blue ones
 - [ ] Add save before closing prompt for main windows.
 - [ ] Replace casts with Option + unwraps
+- [ ] Maybe add multiwindow later
 
 # Urgent Pre-alpha
 
