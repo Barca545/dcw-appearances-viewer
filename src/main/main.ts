@@ -3,12 +3,14 @@ import { nativeTheme } from "electron/main";
 import { Sessions } from "./session.js";
 import { createCharacterName } from "../common/utils.js";
 import { fetchList } from "../../core/fetch.js";
-import { AppearanceData } from "../common/apiTypes.js";
+import { AppearanceData, AppMessages } from "../common/apiTypes.js";
+import fs from "fs";
 
 let sessions = new Sessions();
 export const isMac = process.platform === "darwin";
 /** Path to the Application's userdata folder. */
 export const __userdata = `${app.getPath("userData")}/DCDB Appearances/`;
+export const messages = JSON.parse(fs.readFileSync("appMessages.json", { encoding: "utf-8" })) as AppMessages;
 
 // NOTE: This adds a bunch of event listeners to handle stuff over the lifetime of the app
 app.whenReady().then(() => init());
@@ -89,20 +91,39 @@ async function init() {
   });
 
   ipcMain.handle("settings:request", (_e) => {
-    const settings = sessions.getSettings();
+    const settings = Sessions.getSettings();
     return settings;
   });
 
-  ipcMain.on("settings:update", (_e, data) => {
+  ipcMain.on("settings:update", (_e, settings) => {
     // TODO: Need update all the windows so they follow the new ones
-    sessions.saveSettings(data);
+    // Just apply no save
+    sessions.applySettings(settings);
   });
 
-  ipcMain.on("finish", (e, _data) => {
-    console.log(e.sender.id);
-    sessions.closeSession(e.sender.id);
+  ipcMain.on("settings:save", (_e, settings) => {
+    // Update settings
+    sessions.updateSettings(settings);
+
+    // Save settings
+    sessions.saveSettings();
+  });
+
+  ipcMain.on("settings:close", (e) => {
+    // Apply the current session's settings because apply
+    // as done by "settings:change" does not update the settings field
+    // So if the settings were unsaved they will be reverted.
+
+    // need to catch the close event so this probably needs to be before any other listeners are added
+
+    console.log(e);
+    sessions.updateSettings(sessions.settings);
+    // sessions.closeSession();
   });
 }
+
+// 1. Block all windows from closing by default
+// 2.
 
 // import { app, BrowserWindow } from 'electron';
 // import path from 'node:path';

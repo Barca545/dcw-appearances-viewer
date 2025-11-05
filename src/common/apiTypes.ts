@@ -43,6 +43,10 @@ declare global {
         request: () => Promise<Settings>;
         /**Save the new settings to the disk. */
         save: (data: Settings) => void;
+        /**Send settings data to the main process without saving it to file. */
+        apply: (data: Settings) => void;
+        /**Close the window that send the request.*/
+        close: () => void;
       };
 
       form: {
@@ -53,8 +57,6 @@ declare global {
         page: (addr: string) => void;
         url: (addr: string) => void;
       };
-      /**Close the window that send the request.*/
-      finish: () => void;
 
       // TODO: Do I need a request and send for this since saving needs to save the settings?
       filterOptions: (state: FilterOptions) => Promise<AppearanceData[]>;
@@ -67,8 +69,10 @@ declare global {
 export interface Settings {
   theme: "system" | "light" | "dark";
   earthDropdownType: "user" | "external";
-  width: number;
-  height: number;
+  width: string;
+  height: string;
+  fontSizeUseDefault: "true" | "false";
+  fontSizeChoose: string;
 }
 
 /**Interface containing the data used to construct a list entry. The return result of window.api.form.submit */
@@ -80,3 +84,7 @@ export interface AppearanceData {
 }
 
 // TODO: List entry should be in shared?
+
+export interface AppMessages {
+  closeWarning: string;
+}

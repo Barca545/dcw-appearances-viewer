@@ -26,22 +26,21 @@ contextBridge.exposeInMainWorld("api", {
   },
   settings: {
     request: async () => {
-      // It is returned as an object with the fields of settings but no methods
+      // It is returned as an object with the fields of `Settings` but no methods.
       return ipcRenderer.invoke("settings:request");
     },
     /**Save the new settings to the disk. */
-    save: (data: Settings) => ipcRenderer.send("settings:update", data),
+    save: (data: Settings) => ipcRenderer.send("settings:save", data),
+    /**Request a preview of the settings but do not save them to disk. */
+    apply: (data: Settings) => ipcRenderer.send("settings:update", data),
+    /**Close the window that sent the request.*/
+    close: () => ipcRenderer.send("settings:close"),
   },
   filterOptions: (state: FilterOptions) => {
     // TODO: Can I handle the conversion into the correct format here instead of the functions?
     return ipcRenderer.invoke("filterOptions", state);
   },
   recieveData: (callback: (data: any) => any) => ipcRenderer.on("file-opened", (_event, res) => callback(res)),
-  /**Close the window that send the request.*/
-  finish: (data: Settings) => {
-    console.log("finish called");
-    ipcRenderer.send("finish", data);
-  },
 });
 
 console.log("PRELOAD FINSHED...");

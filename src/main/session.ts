@@ -1,10 +1,10 @@
 import { ListEntry, pubDateSort } from "../../core/pub-sort.js";
-import { BaseWindow, BrowserWindow, dialog, Menu } from "electron";
+import { BaseWindow, BrowserWindow, dialog, ipcMain, Menu, nativeTheme } from "electron";
 import path from "node:path";
 import { None, Option, Some } from "../../core/option.js";
 import { loadList, SaveFormat, sessionFromJSON, sessionToJSON } from "../../core/load.js";
 import fs, { PathLike } from "fs";
-import { __userdata, isMac } from "./main.js";
+import { __userdata, isMac, messages } from "./main.js";
 import { FilterOptions, Settings } from "../common/apiTypes.js";
 
 // TODO: This should go in a declaration file or something
@@ -19,6 +19,8 @@ export const ROOT_DIRECTORY = MAIN_WINDOW_VITE_DEV_SERVER_URL ? MAIN_WINDOW_VITE
 
 // FIXME: It does not seem as if vite supports this for vite as it does webpack but maybe they will eventually
 const MAIN_WINDOW_PRELOAD_VITE_ENTRY = path.resolve(__dirname, "preload.js");
+
+type MenuTemplate = Electron.MenuItemConstructorOptions[];
 
 // TODO: Do I actually really need this? If I need it is there a way I can add it to the real path instead of doing this?
 class Path {
@@ -59,21 +61,46 @@ class Path {
 export class Sessions {
   sessions: Map<number, Session> = new Map();
   focused: Option<number>;
+  settings: Settings;
+  settingWinId?: number;
 
   constructor() {
     this.focused = new None();
+    this.settings = Sessions.getSettings();
   }
+
+  get(id: number): Session {
+    const session = this.sessions.get(id);
+    if (session) {
+      return session;
+    } else {
+      throw new Error(`Session ${id} does not exist.`);
+    }
+  }
+
+  sessionChange(session: Session, sessType: SessionType) {
+    switch (sessType) {
+      case SessionType.Project: {
+        // Load the new page
+        session.loadRenderFile("application.html");
+        // Make it so you're prompted to save
+        break;
+      }
+    }
+  }
+
   /**Close the session matching id */
   closeSession(id: number) {
     let session = this.sessions.get(id);
     if (session) {
+      // session.close(this, e);
       session.close();
     } else {
       throw new Error(`Session ${id} does not exist.`);
     }
   }
 
-  getSettings(): Settings {
+  static getSettings(): Settings {
     // FIXME: There should be a way to have it make a settings file if there is none
     // Maybe that can be done as part of the installation process?
 
@@ -93,9 +120,40 @@ export class Sessions {
       return JSON.parse(fs.readFileSync(`${__userdata}/DCDB Appearances/settings.json`)) as Settings;
     }
   }
+  /**Applys current settings file to all windows and updates the settings field.*/
+  updateSettings(settings: Settings) {
+    this.applySettings(settings);
+    this.settings = settings;
+  }
 
-  saveSettings(data: Settings) {
-    const file = JSON.stringify(data);
+  /**Applys current settings file to all windows. \
+   * Does not update the settings field. */
+  applySettings(settings: Settings) {
+    // Theme
+    nativeTheme.themeSource = settings.theme;
+    // Update size
+    this.sessions.forEach((session) => {
+      // Don't resize modals
+      if (!session.win.isModal()) {
+        session.win.setSize(Number.parseInt(settings.width), Number.parseInt(settings.width));
+      }
+    });
+    // Changing the dropdown is a little more annoying
+    //  I need to swap out an HTML component on the fly
+
+    const id = this.settingWinId as number;
+    let settingsSess = this.get(id);
+    settingsSess.isClean = false;
+  }
+
+  /**Saves the `Sessions` current `settings` field to disk. */
+  saveSettings() {
+    let settingsSess = this.get(this.settingWinId as number);
+    settingsSess.win.webContents.send("settings");
+
+    const file = JSON.stringify(this.settings);
+    console.log(file);
+    console.log(typeof file);
     // In dev, save to dev settings folder
     if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
       fs.writeFileSync("settings.json", file);
@@ -106,27 +164,17 @@ export class Sessions {
       }
       fs.writeFileSync(`${__userdata}/DCDB Appearances/settings.json`, file);
     }
+
+    settingsSess.isClean = true;
   }
 
   getFocusedSession(): Session {
     return this.sessions.get(this.focused.unwrap()) as Session;
   }
 
-  /**Create a new `Session` in the sessions instance and returns its `Window`. If no title is provided its title will be `"Untitled" + this.untitledNumber()`. Its key will be its title. */
-  async newSession(title?: string): Promise<Session> {
-    let newTitle;
-    if (!title) {
-      newTitle = `Untitled ${this.untitledNumber()}`;
-    }
-
-    const session = await this.newWindow(newTitle);
-
-    this.sessions.set(session.id(), session);
-
-    return session;
-  }
-
-  private async newWindow(title?: string, src = "index.html"): Promise<Session> {
+  /**Create a new `Session` in the sessions instance and returns its `Session`.
+   * If no title is provided its title will be `"Untitled" + this.untitledNumber()`. Its key will be its title. */
+  async newSession(title?: string, src = "index.html"): Promise<Session> {
     const currentWindow = BrowserWindow.getFocusedWindow();
 
     let x, y;
@@ -137,9 +185,9 @@ export class Sessions {
     }
 
     let win = new BrowserWindow({
-      width: this.getSettings().width,
-      height: this.getSettings().height,
-      title: title ?? undefined,
+      width: Number.parseInt(this.settings.width),
+      height: Number.parseInt(this.settings.height),
+      title: title ? title : `Untitled ${this.untitledNumber()}`,
       x: x,
       y: y,
       webPreferences: {
@@ -172,27 +220,28 @@ export class Sessions {
 
     win.on("blur", () => (this.focused = new None()));
 
-    // This destroys the window instance
-    win.on("close", () => this.sessions.delete(win?.id));
+    // @ts-ignore
+    // FIXME: For some reason I do not quire understand this believes it is a window resize event
+    // Delete the window only once it is definitely closed
+    win.on("closed", (_e: Event) => this.sessions.delete(win.id));
 
-    win.setMenu(this.menuTemplate());
+    this.registerSavePromptOnCloseAttempt(session);
 
+    win.setMenu(Menu.buildFromTemplate(this.menuTemplate()));
+
+    this.sessions.set(session.id(), session);
     return session;
   }
 
-  menuTemplate(): Menu {
-    return Menu.buildFromTemplate([
+  menuTemplate(): MenuTemplate {
+    return [
       {
         label: "File",
         submenu: [
           {
             label: "New",
             accelerator: "CommandOrControl+N",
-            click: (_item, base, _e) => {
-              const win = browserWindowFrom(base as BaseWindow);
-              const session = new Session(win);
-              session.loadRenderFile("application.html");
-            },
+            click: (_item, base, _e) => this.get(base?.id as number).loadRenderFile("application.html"),
           },
           {
             label: "New Window",
@@ -234,14 +283,18 @@ export class Sessions {
             label: "Settings",
             // Settings can launch a new window which is how MS word handles it
             click: (_item, base, _e) => {
-              const win = browserWindowFrom(base as BaseWindow);
-              const session = this.sessions.get(win.id) as Session;
+              // const win = browserWindowFrom(base as BaseWindow);
+
+              const parent = this.sessions.get(base?.id as number) as Session;
 
               // Setting does not have a menu in final build but needs one is dev
               if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-                session.newChildWindow("settings.html", this, this.menuTemplate(), true);
+                const devMenu: MenuTemplate = [{ role: "toggleDevTools" }];
+                const id = this.newChildWindow("settings.html", parent.id(), devMenu, this.saveSettings, true);
+                this.settingWinId = id;
               } else {
-                session.newChildWindow("settings.html", this, null, true);
+                const id = this.newChildWindow("settings.html", parent.id(), null, this.saveSettings, true);
+                this.settingWinId = id;
               }
             },
           },
@@ -251,7 +304,7 @@ export class Sessions {
       },
       { role: "editMenu" },
       { role: "viewMenu" },
-    ]);
+    ];
   }
 
   /**Returns the number of untilted sessions in the sessions object */
@@ -273,21 +326,95 @@ export class Sessions {
     }
     return out;
   }
+
+  /**Create a new child window. If a new menu is passed it will set it to that. Returns the Window's ID.*/
+  // TODO: Is there a smoother way to do this than passing in sessions?
+  newChildWindow(src: string, parentID: number, menu: MenuTemplate | null, saveFn?: () => void, modal = false): number {
+    const parent = this.get(parentID);
+
+    let childRaw = new BrowserWindow({
+      width: parent.win.getSize()[0] / 2,
+      height: parent.win.getSize()[0] / 2,
+      parent: parent.win,
+      modal: modal,
+      webPreferences: {
+        contextIsolation: true,
+        // enableRemoteModule: false,
+        nodeIntegration: false,
+        preload: MAIN_WINDOW_PRELOAD_VITE_ENTRY,
+      },
+    });
+
+    const child = new Session(childRaw, saveFn);
+    child.loadRenderFile(src);
+    menu ? child.setMenu(Menu.buildFromTemplate(menu)) : child.setMenu(null);
+
+    this.sessions.set(child.id(), child);
+
+    this.registerSavePromptOnCloseAttempt(child);
+
+    return child.id();
+  }
+
+  /**Registers a function that promps a user to save before exiting a new document or document they have edited. */
+  registerSavePromptOnCloseAttempt(session: Session) {
+    session.win.on("close", (e) => {
+      // Session always has a browser window
+
+      if (!session.isClean) {
+        e.preventDefault();
+
+        const choice = dialog.showMessageBoxSync(session.win, {
+          title: "Confirm",
+          message: messages.closeWarning,
+          type: "question",
+          buttons: ["Yes", "No", "Cancel"],
+        });
+
+        if (choice == 0) {
+          session.isClean = true;
+          session.saveFn();
+        } else if (choice == 1) {
+          // Just mark clean but no save
+          session.isClean = true;
+        } else if (choice == 2) {
+          return;
+        }
+      }
+
+      this.closeSession(session.id());
+    });
+  }
 }
 
 // TODO: Maybe eventually find a way to stick every part of the program into this structure but for now just using it to store file data works
 export class Session {
   // FIXME: Do not list titles in the loaded pages
   win: BrowserWindow;
-  // TODO: Don't love initializing it like this
-  savePath = new Path("");
-  fileData: ListEntry[] = [];
+  // TODO: Don't love initializing it like this maybe it should be an option or undefined
+  savePath;
+  fileData: ListEntry[];
   opt = new FilterOptions();
   /**Field indicating whether the session has unsaved changes.*/
-  isClean = false;
+  isClean: boolean;
+  saveFn: () => void;
+  shouldClose: boolean;
+  onClose: (self: Session) => void | (() => void);
 
-  constructor(win: BrowserWindow) {
+  constructor(win: BrowserWindow, saveFn?: () => void, onClose?: (self: Session) => void) {
     this.win = win;
+    this.win.closable = false;
+    // Initialize to false so a user is prompted to save before closing
+    this.isClean = false;
+    this.fileData = [];
+    this.savePath = new Path("");
+    this.saveFn = saveFn ? saveFn : this.win.close;
+    // Each window will need to register its own save handler
+    this.win.on("close", (e: Electron.Event) => {
+      this.shouldClose ? this.win.close() : e.preventDefault();
+    });
+    this.shouldClose = false;
+    this.onClose = onClose ? onClose : this.close;
   }
 
   /**
@@ -296,6 +423,7 @@ export class Session {
    * the close event.
    */
   close() {
+    this.shouldClose = true;
     this.win.close();
   }
 
@@ -452,27 +580,42 @@ export class Session {
     this.win.setMenu(menu);
   }
 
-  /**Create a new child window. If a new menu is passed it will set it to that.*/
-  // TODO: Is there a smoother way to do this than passing in sessions?
-  async newChildWindow(src: string, sessions: Sessions, menu: Menu | null, modal = false) {
-    let childRaw = new BrowserWindow({
-      width: this.win.getSize()[0] / 2,
-      height: this.win.getSize()[0] / 2,
-      parent: this.win,
-      modal: modal,
-      webPreferences: {
-        contextIsolation: true,
-        // enableRemoteModule: false,
-        nodeIntegration: false,
-        preload: MAIN_WINDOW_PRELOAD_VITE_ENTRY,
-      },
-    });
+  // /**Create a new child window. If a new menu is passed it will set it to that. Returns the Window's ID.*/
+  // // TODO: Is there a smoother way to do this than passing in sessions?
+  // newChildWindow(
+  //   src: string,
+  //   sessions: Sessions,
+  //   menu: MenuTemplate | null,
+  //   saveFn?: () => void,
+  //   modal = false,
+  // ): number {
+  //   let childRaw = new BrowserWindow({
+  //     width: this.win.getSize()[0] / 2,
+  //     height: this.win.getSize()[0] / 2,
+  //     parent: this.win,
+  //     modal: modal,
+  //     webPreferences: {
+  //       contextIsolation: true,
+  //       // enableRemoteModule: false,
+  //       nodeIntegration: false,
+  //       preload: MAIN_WINDOW_PRELOAD_VITE_ENTRY,
+  //     },
+  //   });
 
-    const child = new Session(childRaw);
-    child.loadRenderFile(src);
-    child.setMenu(menu);
-    sessions.sessions.set(child.id(), child);
-  }
+  //   const child = new Session(sessions, childRaw, saveFn);
+  //   child.loadRenderFile(src);
+  //   menu ? child.setMenu(Menu.buildFromTemplate(menu)) : child.setMenu(null);
+
+  //   sessions.sessions.set(child.id(), child);
+
+  //   return child.id();
+  // }
+}
+
+enum SessionType {
+  Project,
+  Launcher,
+  Settings,
 }
 
 function browserWindowFrom(base: BaseWindow): BrowserWindow {

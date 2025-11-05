@@ -17,17 +17,20 @@ async function registerFetchData() {
     if (setting?.tagName == "FIELDSET") {
       let inputs = setting.querySelectorAll(`[name="${key}"]`) as NodeListOf<HTMLInputElement>;
       inputs.forEach((input) => {
+        console.log(key);
+        console.log(value);
         // This will unselect all radios except the one the user selected
         input.checked = input.value == value;
-        console.log(input.value);
-        console.log(input.checked);
         // input.dispatchEvent(new Event("change", { bubbles: true }));
       });
 
       continue;
+    } else if (setting.type == "checkbox") {
+      // console.log(setting.name);
+      setting.checked = value;
+    } else {
+      setting.value = value;
     }
-    // Otherwise just set the value
-    setting.value = value;
   }
 }
 
@@ -43,22 +46,36 @@ function registerSaveSettings() {
       let form = document.querySelector(`[id="settings"]`) as HTMLFormElement;
 
       // Convert data to Settings
-      const rawData = Object.fromEntries(new FormData(form));
-      const data = {
-        theme: rawData.theme as "system" | "light" | "dark",
-        earthDropdownType: rawData.earthDropdownType as "user" | "external",
-        width: rawData.width as unknown as number,
-        height: rawData.height as unknown as number,
-      } satisfies Settings;
+      const data = htmlFormtoSettings(form);
 
       window.api.settings.save(data);
 
       // TODO: If name is save and close also close
 
       if ((e.target as HTMLButtonElement).id.toLowerCase().includes("close")) {
-        window.api.finish();
+        window.api.settings.close();
       }
     });
+  });
+}
+
+function registerHandleFontSize() {
+  const setValues = () => {
+    const useDefault = document.querySelector(`[id="fontSizeUseDefault"]`) as HTMLInputElement;
+    let size = document.querySelector(`[id="fontSizeChoose"]`) as HTMLInputElement;
+    let wrapper = document.querySelector(`[id=fontSizeChooseWrapper]`) as HTMLSpanElement;
+    size.disabled = useDefault.checked;
+    wrapper.hidden = useDefault.checked;
+    size.value = "16";
+  };
+
+  // TODO: Idk if there is a fix but annoyingly this has to run here
+  // Because it can't detect the change as it happens before this listener is added
+  setValues();
+
+  const fontsizewrapper = document.querySelector(`[id="fontSize"]`) as HTMLFieldSetElement;
+  fontsizewrapper.addEventListener("change", () => {
+    setValues();
   });
 }
 
@@ -69,8 +86,32 @@ function registerPreventSubmit() {
   });
 }
 
+function registerPreviewSettings() {
+  const form = document.querySelector(`[id="settings"]`) as HTMLFormElement;
+  form.addEventListener("change", () => {
+    const data = htmlFormtoSettings(form);
+    window.api.settings.apply(data);
+  });
+}
+
 window.addEventListener("DOMContentLoaded", async () => {
   await registerFetchData();
+  registerHandleFontSize();
   registerSaveSettings();
   registerPreventSubmit();
+  registerPreviewSettings();
 });
+
+function htmlFormtoSettings(form: HTMLFormElement): Settings {
+  const rawData = Object.fromEntries(new FormData(form));
+  const data = {
+    theme: rawData.theme as "system" | "light" | "dark",
+    earthDropdownType: rawData.earthDropdownType as "user" | "external",
+    width: rawData.width as string,
+    height: rawData.height as string,
+    fontSizeUseDefault: rawData.fontSizeUseDefault as "true" | "false",
+    fontSizeChoose: rawData.fontSizeChoose as string,
+  } satisfies Settings;
+
+  return data;
+}

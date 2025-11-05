@@ -18,7 +18,8 @@
 - [ ] Startup includes option to continue last project
 - [ ] I want to add the ability to guess which character a raw xml file is for but this is low priority
 - [ ] Normal list has purple links `"Name Only"` has blue ones
-- Add save before closing prompt for main windows.
+- [ ] Add save before closing prompt for main windows.
+- [ ] Replace casts with Option + unwraps
 
 # Urgent Pre-alpha
 

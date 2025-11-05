@@ -12,3 +12,4 @@ It allows for sorting the lists, currently only alphabetical order and publicati
 - Only the first synopsis from an issue is shown.
 - The Dropdown that includes all the earths preloaded is very tempermental.
 - (Dev) Sometimes preload disappears from the `.vite/build` directory. It is annoying and why is unclear. Reloading will return it.
+- Changing the theme in settings changes the window size and position.

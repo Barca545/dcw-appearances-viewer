@@ -8,20 +8,9 @@
     <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" />
     <title>Settings</title>
     <link rel="stylesheet" type="text/css" href="./styles.css" />
+    <!-- TODO: Don't love having two style sheets load in but maybe it's fine -->
+    <link rel="stylesheet" type="text/css" href="./settings.css" />
   </head>
-  <!-- TODO: Ideally this script would load in from an external source but resolving that right now is annoying and low priority -->
-  <script>
-    // window.addEventListener("DOMContentLoaded", async () => {
-    //   document.getElementById("toggle-dark-mode").addEventListener("click", async () => {
-    //     const isDarkMode = await window.api.darkMode.toggle();
-    //   });
-
-    //   document.getElementById("reset-to-system").addEventListener("click", async () => {
-    //     await window.api.darkMode.system();
-    //   });
-    // });
-  </script>
-  <!-- TODO: I want to add a universal script here that injects the nav stuff into this page and every page -->
   <body>
     <form id="settings">
       <fieldset id="theme">
@@ -49,6 +38,18 @@
         <label for="height">Height</label>
         <input id="height" type="number" min="0" name="height" />
       </div>
+      <!-- TODO: Should I the other wrappers follow a naming scheme like this? -->
+      <!-- 16px is the default fontsize in chromium-->
+      <fieldset id="fontSize">
+        <legend>Font Size</legend>
+        <label for="fontSizeUseDefault">Use Default Size</label>
+        <input type="checkbox" id="fontSizeUseDefault" name="fontSize" value="true" />
+        <span id="fontSizeChooseWrapper">
+          <label for="fontSizeChoose">Choose Size</label>
+          <input type="number" min="16" id="fontSizeChoose" name="fontSize" />
+        </span>
+      </fieldset>
+
       <!-- TODO: Rig this up so it saves to the config.json  -->
       <button type="button" id="save" class="save-button" name="save-settings" value="Save">Save</button>
       <button type="button" id="save-and-close" class="save-button" name="save-settings" value="Save and Close">
