@@ -1,3 +1,5 @@
+import { ListEntry } from "../../core/pub-sort";
+
 export interface SearchRequest {
   "character-selection": string;
   "universe-select": string;
@@ -54,7 +56,9 @@ declare global {
         submit: (data: SearchRequest) => Promise<{ appearances: AppearanceData[]; character: string }>;
       };
       open: {
-        page: (addr: string) => void;
+        /**Open a Page in the current window. */
+        page: (addr: AppPage) => void;
+        /**Open a Web URL in the default browser. */
         url: (addr: string) => void;
       };
 
@@ -88,4 +92,53 @@ export interface AppearanceData {
 
 export interface AppMessages {
   closeWarning: string;
+  unimplemented: string;
+}
+
+export enum AppPage {
+  StartPage = "start.html",
+  Application = "app.html",
+  Settings = "settings.html",
+}
+
+// Cursed way to kinda emulate rust enums
+export namespace AppPage {
+  export function from(pg: string): AppPage {
+    // It's like a shitty match statement :D (visually not under the hood)
+    if (pg.includes("start") || pg.includes("start.html")) return AppPage.StartPage;
+    else if (pg.includes("app") || pg.includes("app.html")) return AppPage.Application;
+    else if (pg.includes("settings") || pg.includes("settings.html")) return AppPage.Settings;
+    else throw Error(`INVALID NAVIGATION TARGET: ${pg}`);
+  }
+}
+
+// export class AppPage {
+//   // This is pretty hacky but basically this should allow me to make it via "from"
+//   // instead of the constructor
+//   // declare makes a gaurantee the PAGE value will exist at runtime
+//   // See https://stackoverflow.com/questions/67351411/what-s-the-difference-between-definite-assignment-assertion-and-ambient-declarat
+//   PAGE: "start.html" | "app.html" | "settings.html";
+
+//   private constructor(pg: string) {
+//     if (pg.includes("start") || pg.includes("start.html")) {
+//       this.PAGE = "start.html";
+//     } else if (pg.includes("app") || pg.includes("app.html")) {
+//       this.PAGE = "app.html";
+//     } else if (pg.includes("settings") || pg.includes("settings.html")) {
+//       this.PAGE = "settings.html";
+//     } else {
+//       throw Error(`INVALID NAVIGATION TARGET: ${pg}`);
+//     }
+//   }
+
+//   static from(pg: string): AppPage {
+//     return new AppPage(pg);
+//   }
+// }
+
+// FIXME: App data should be this not the nonsense in load.ts
+interface ProjectData {
+  header: { appID: "DCDDB-Appearances-View"; version: string };
+  meta: { character?: string; options: FilterOptions };
+  data: ListEntry[];
 }

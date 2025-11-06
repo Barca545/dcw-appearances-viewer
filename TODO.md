@@ -16,11 +16,13 @@
 - [ ] Update architecture.md
 - [ ] See https://stackoverflow.com/questions/76319694/ to create multiple windows
 - [ ] Startup includes option to continue last project
-- [ ] I want to add the ability to guess which character a raw xml file is for but this is low priority
+- [ ] I want to add the ability to guess which character(s) a raw xml file is for then have a dialog prompting the user to confirm or correct the guess
 - [ ] Normal list has purple links `"Name Only"` has blue ones
 - [ ] Add save before closing prompt for main windows.
 - [ ] Replace casts with Option + unwraps
 - [ ] Maybe add multiwindow later
+- [ ] Accessibility stuff in settings i.e. Accessibility section with "Ease of Access", "Accessibility Options", "Screen Reader Support", "High Contrast".
+- [ ] Many files need more descriptive names.
 
 # Urgent Pre-alpha
 
@@ -31,5 +33,5 @@
 - [ ] Actually implement settings file
 - [ ] Need to figure out why the renderer files don't need `src/renderer/` but seem to include the
 - [ ] Need to clean main up and create submodules, in general need to organize project
-- [ ] Be cool if the lists could be saved
+- [ ] Implement session saving
 - [ ] Store the name of the character as part of save data so it can be used to show who the appearances belong to

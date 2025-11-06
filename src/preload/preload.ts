@@ -1,7 +1,7 @@
 // See the Electron documentation for details on how to use preload scripts:
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
 
-import type { FilterOptions, SearchRequest, Settings } from "../common/apiTypes.js";
+import type { AppPage, FilterOptions, SearchRequest, Settings } from "../common/apiTypes.js";
 import { contextBridge, ipcMain, ipcRenderer } from "electron";
 // REMINDER: Handle only takes invokes not sends
 console.log("PRELOAD RUNNING...");
@@ -21,8 +21,9 @@ contextBridge.exposeInMainWorld("api", {
     },
   },
   open: {
-    page: (addr: string) => ipcRenderer.send("navigate:page", addr),
-    url: (addr: string) => ipcRenderer.send("navigate:URL", addr),
+    /**Open a Page in the current window. */
+    page: (addr: AppPage) => ipcRenderer.send("open:page", addr),
+    url: (addr: string) => ipcRenderer.send("open:URL", addr),
   },
   settings: {
     request: async () => {

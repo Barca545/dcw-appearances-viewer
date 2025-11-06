@@ -1,8 +1,12 @@
 import { Session } from "./session";
+import { UNIMPLEMENTED_FEATURE, IS_MAC, IS_DEV } from "./helpers";
+import { dialog } from "electron";
+import { AppPage } from "../common/apiTypes";
 
 type MenuTemplate = Electron.MenuItemConstructorOptions[];
+type MenuEntry = Electron.MenuItemConstructorOptions;
 
-function devMenuTemplate(session: Session): MenuTemplate {
+export function MenuTemplate(session: Session): MenuTemplate {
   return [
     {
       label: "File",
@@ -10,51 +14,62 @@ function devMenuTemplate(session: Session): MenuTemplate {
         {
           label: "New",
           accelerator: "CommandOrControl+N",
-          click: (_item, base, _e) => this.get(base?.id as number).loadRenderFile("application.html"),
+          click: (_item, _base, _e) => session.navigateToPage(AppPage.Application),
         },
         {
-          label: "New Window",
+          label: "New Tab",
           accelerator: "CommandOrControl+Shift+N",
-          click: (_item, base, _e) => this.sessionChange(this.get(base?.id as number), SessionType.Project),
+          click: (_item, _base, _e) => UNIMPLEMENTED_FEATURE,
         },
         {
           label: "Open File",
           accelerator: "CommandOrControl+O",
-          click: (_item, base, _e) => {
-            const win = browserWindowFrom(base as BaseWindow);
-
-            const session = this.sessions.get(win.id) as Session;
-            session.openFile();
-          },
+          click: (_item, _base, _e) => session.openFile(),
         },
+        { type: "separator" },
+        { role: "recentDocuments", click: (_item, _base, _e) => UNIMPLEMENTED_FEATURE },
         { type: "separator" },
         {
           label: "Save",
           accelerator: "CommandOrControl+S",
-          click: (_item, base, _e) => {
-            const session = this.sessions.get(base?.id as number) as Session;
-            session.saveFile();
-          },
+          click: (_item, _base, _e) => session.saveFile(),
         },
         {
           label: "Save As",
           accelerator: "CommandOrControl+Shift+S",
-          click: (_item, base, _e) => {
-            const session = this.sessions.get(base?.id as number) as Session;
-            session.saveFile(true);
-          },
+          click: (_item, _base, _e) => session.saveFile(true),
         },
         { type: "separator" },
         {
           label: "Settings",
-          // Settings can launch a new window which is how MS word handles it
-          click: (_item, base, _e) => this.sessionChange(this.get(base?.id as number), SessionType.Settings),
+          accelerator: "CommandOrControl+,",
+          // TODO: Once tabbing is set up, just have the settings open in a new tab
+          click: (_item, _base, _e) => UNIMPLEMENTED_FEATURE,
         },
         { type: "separator" },
-        isMac ? { role: "close" } : { role: "quit" },
+        IS_MAC ? { role: "close" } : { role: "quit" },
       ],
     },
     { role: "editMenu" },
-    { role: "viewMenu" },
+    IS_DEV ? VIEW_MENU_DEV : VIEW_MENU_PROD,
   ];
+}
+
+const VIEW_MENU_DEV: MenuEntry = {
+  label: "View",
+  submenu: [{ role: "zoomIn" }, { role: "zoomOut" }, { role: "resetZoom" }, { type: "separator" }, { role: "toggleDevTools" }],
+};
+const VIEW_MENU_PROD: MenuEntry = { label: "View", submenu: [{ role: "zoomIn" }, { role: "zoomOut" }, { role: "resetZoom" }] };
+
+// Dialogs
+export async function openFileDialog(): Promise<Electron.OpenDialogReturnValue> {
+  return dialog.showOpenDialog({
+    filters: [
+      { name: "All Files", extensions: ["txt", "json", "xml"] },
+      { name: ".txt", extensions: ["txt"] },
+      { name: ".json", extensions: ["json"] },
+      { name: ".xml", extensions: ["xml"] },
+    ],
+    properties: ["openFile"],
+  });
 }

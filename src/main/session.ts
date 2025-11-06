@@ -2,22 +2,27 @@ import { BrowserWindow, dialog, Menu, nativeTheme } from "electron";
 import { ListEntry, pubDateSort } from "../../core/pub-sort";
 import path from "path";
 import { SaveFormat, loadList, sessionFromJSON, sessionToJSON } from "../../core/load";
-import { FilterOptions, Settings } from "../common/apiTypes";
-import { PathLike } from "fs";
+import { AppPage, FilterOptions, Settings } from "../common/apiTypes";
 import { None, Some, Option } from "../../core/option";
-import { __userdata } from "./main";
-import fs from "fs";
-import { title } from "process";
+import fs, { PathLike } from "fs";
+import { MenuTemplate, openFileDialog } from "./menu";
+import { __userdata, IS_DEV } from "./helpers";
+
+export declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
+export declare const MAIN_WINDOW_VITE_NAME: string;
+/**Address of the root directory */
+export const ROOT_DIRECTORY = IS_DEV ? MAIN_WINDOW_VITE_DEV_SERVER_URL : __dirname;
+
+// FIXME: It does not seem as if vite supports this for vite as it does webpack but maybe they will eventually
+export const MAIN_WINDOW_PRELOAD_VITE_ENTRY = path.join(__dirname, `preload.js`);
 
 // TODO: Maybe eventually find a way to stick every part of the program into this structure but for now just using it to store file data works
 export class Session {
-  // FIXME: Do not list titles in the loaded pages
   win: BrowserWindow;
-  // TODO: Don't love initializing it like this maybe it should be an option or undefined
-  savePath;
+  savePath: Path;
   fileData: ListEntry[];
-  opt = new FilterOptions();
-  /**Field indicating whether the session has unsaved changes.*/
+  opt: FilterOptions;
+  /**Field indicating whether the `Session` has unsaved changes.*/
   isClean: {
     task: boolean;
     settings: boolean;
@@ -27,22 +32,27 @@ export class Session {
   onClose: (args: any) => Promise<void>;
   settings: Settings;
 
-  constructor(win: BrowserWindow, onClose: (args: any) => Promise<void>, saveFn?: () => Promise<void>) {
-    this.win = win;
+  constructor(onClose: (args: any) => Promise<void>, saveFn?: () => Promise<void>) {
+    const settings = Session.getSettings();
+
+    this.win = Session.makeWindow(settings);
+    this.opt = new FilterOptions();
     // Only mark dirty once a task is open
     this.isClean = { settings: true, task: true };
     this.fileData = [];
-    this.savePath = new Path("");
-    this.settings = Session.getSettings();
-    this.saveFn = saveFn ? saveFn : this.close;
+    this.savePath = new Path();
+    this.settings = settings;
     // Each window will need to register its own save handler
+    this.saveFn = saveFn ? saveFn : this.close;
     this.shouldClose = false;
     this.onClose = onClose;
+
+    // Basically this needs to run after all the fields are set up
+    this.navigateToPage();
+    this.win.setMenu(Menu.buildFromTemplate(MenuTemplate(this)));
   }
 
-  navigateToPage(page: string) {}
-
-  /**Applys current settings file to all windows and updates the settings field.*/
+  /**Applies current settings file to all windows and updates the settings field.*/
   updateSettings(settings: Settings) {
     this.applySettings(settings);
     this.settings = settings;
@@ -67,8 +77,7 @@ export class Session {
     // settingsSess.win.webContents.send("settings");
 
     const file = JSON.stringify(this.settings);
-    console.log(file);
-    console.log(typeof file);
+
     // In dev, save to dev settings folder
     if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
       fs.writeFileSync("settings.json", file);
@@ -87,6 +96,7 @@ export class Session {
     let win = new BrowserWindow({
       width: Number.parseInt(settings.width),
       height: Number.parseInt(settings.height),
+      // FIXME: Cycle through the number tabs once number of tabs is a thing
       title: "Untitled",
       webPreferences: {
         contextIsolation: true,
@@ -95,10 +105,6 @@ export class Session {
         preload: MAIN_WINDOW_PRELOAD_VITE_ENTRY,
       },
     });
-
-    // Load the new window's index.html file
-    const session = new Session(win, async () => {});
-    session.loadRenderFile();
 
     win.webContents.on("did-finish-load", () => {
       if (!win) {
@@ -112,8 +118,6 @@ export class Session {
         win.focus();
       }
     });
-
-    win.setMenu(Menu.buildFromTemplate(this.menuTemplate()));
 
     return win;
   }
@@ -165,15 +169,7 @@ export class Session {
 
   /** Open a new file for the `Session`. */
   async openFile() {
-    const res = await dialog.showOpenDialog({
-      filters: [
-        { name: "All Files", extensions: ["txt", "json", "xml"] },
-        { name: ".txt", extensions: ["txt"] },
-        { name: ".json", extensions: ["json"] },
-        { name: ".xml", extensions: ["xml"] },
-      ],
-      properties: ["openFile"],
-    });
+    const res = await openFileDialog();
 
     const newPath = res.filePaths[0];
 
@@ -184,8 +180,6 @@ export class Session {
 
     // Update the save path to match the path of the current file
     // TODO: Should this give an error if it fails?
-    // FIXME: it did not seem like this was saving I think this is because it was an XML
-    // confirm how the json saves and confirm loading it works
     if (newPath) {
       this.savePath = new Path(newPath);
     }
@@ -215,7 +209,7 @@ export class Session {
     this.fileData = this.reflow();
 
     // Open the page
-    this.loadRenderFile("application.html");
+    this.navigateToPage(AppPage.from(this.savePath.toString()));
     // Send the data over
     this.win.webContents.on("did-finish-load", () => {
       this.win.webContents.send("file-opened", {
@@ -288,14 +282,18 @@ export class Session {
 
     return sorted;
   }
-
-  /**Wrapper for this.win.loadFile and this.win.loadURL that uses the appropriate one and path depending on context. DO NOT INCLUDE A DIRNAME JUST THE FILE'S NAME. */
-  loadRenderFile(src = "index.html") {
-    if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+  /**Replace the current window content with content for another page
+   * Wrapper for this.win.loadFile and this.win.loadURL that uses the appropriate one and path depending on context.
+   * DO NOT INCLUDE A DIRNAME JUST THE FILE'S NAME.
+   * Loads `index.html` by default.
+   * */
+  navigateToPage(src = AppPage.StartPage) {
+    if (IS_DEV) {
       // TODO: Don't love having the directory be constant here but this only loads pages so it should be fine
       this.win.loadURL(`${ROOT_DIRECTORY}/src/renderer/${src}`);
     } else {
-      this.win.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/${src}`));
+      // TODO: Doublecheck
+      this.win.loadFile(path.join(ROOT_DIRECTORY, `../renderer/${MAIN_WINDOW_VITE_NAME}/${src}`));
     }
   }
 
@@ -304,20 +302,13 @@ export class Session {
   }
 }
 
-enum SessionType {
-  Project,
-  Launcher,
-  Settings,
-}
-
 // TODO: Do I actually really need this? If I need it is there a way I can add it to the real path instead of doing this?
 class Path {
   private path: string;
 
-  constructor(pathStr: PathLike) {
+  constructor(pathStr?: PathLike) {
     // FIXME: Confirm it is a valid path and error if not
-
-    this.path = pathStr.toString();
+    this.path = pathStr ? pathStr.toString() : "";
   }
 
   /**Returns the name of a path's file if it has one */
@@ -344,19 +335,4 @@ class Path {
   toString() {
     return this.path.toString();
   }
-}
-
-// TODO: Move somewhere better
-declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
-declare const MAIN_WINDOW_VITE_NAME: string;
-// FIXME: This is supposed to be a constant that points to the path but it does not work
-// declare const MAIN_WINDOW_PRELOAD_VITE_ENTRY: string;
-
-// TODO: Decide if it shoud be dirname or "."
-const ROOT_DIRECTORY = MAIN_WINDOW_VITE_DEV_SERVER_URL ? MAIN_WINDOW_VITE_DEV_SERVER_URL : __dirname;
-
-// FIXME: It does not seem as if vite supports this for vite as it does webpack but maybe they will eventually
-const MAIN_WINDOW_PRELOAD_VITE_ENTRY = path.resolve(__dirname, "preload.js");
-function getSettings() {
-  throw new Error("Function not implemented.");
 }

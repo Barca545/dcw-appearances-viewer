@@ -1,55 +1,64 @@
-import { app, BrowserWindow, ipcMain, shell } from "electron";
+import { app, ipcMain, shell } from "electron";
 import { nativeTheme } from "electron/main";
-import { Session } from "./session.js";
-import { createCharacterName } from "../common/utils.js";
+import { Session } from "./session";
+import { createCharacterName } from "../common/utils";
 import { fetchList } from "../../core/fetch.js";
-import { AppearanceData, AppMessages } from "../common/apiTypes.js";
-import fs from "fs";
+import { AppearanceData } from "../common/apiTypes";
+import { IS_MAC, IS_DEV } from "./helpers";
 
-let sessions = new Session();
-export const isMac = process.platform === "darwin";
-/** Path to the Application's userdata folder. */
-export const __userdata = `${app.getPath("userData")}/DCDB Appearances/`;
-export const messages = JSON.parse(fs.readFileSync("appMessages.json", { encoding: "utf-8" })) as AppMessages;
-
-// NOTE: This adds a bunch of event listeners to handle stuff over the lifetime of the app
+// TODO: I am not actually sure if holding the session here at the top level after init is needed
+// It would be in rust but it's possible that is not the case in JS
+let session: Session;
 app.whenReady().then(() => init());
 
-/**Create a new instance of the program */
+// NOTE: This adds a bunch of
+
+// Ok general outline of my plan:
+// - Tabs akin to what VS Code has
+// - Opening some things (like settings and new tab) automatically open a new tab
+// - User can manually open a new tab too
+// - Configurable on tab close behavior
+
+/**Revister `IPC` event handlers for communication between the renderer and main process*/
+// FIXME: Should this be a method on session?
 async function init() {
-  const session = await sessions.newSession();
+  // FIXME: Fix MAC behavior, really I want to just make it so that closing the window closes the app
+  // damn expected MAC behavior
 
   // Activating the app when no windows are available should open a new one.
   // This listener gets added because MAC keeps the app running even when there are no windows
   // so you need to listen for a situation where the app should be active but there are no windows open
-  app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      sessions.newSession();
-    }
-  });
+  // app.on("activate", () => {
+  //   if (BrowserWindow.getAllWindows().length === 0) {
+  //     sessions.newSession();
+  //   }
+  // });
 
-  ipcMain.on("navigate:page", (_event, cmd) => {
+  // This can only be created after the app is ready
+  session = new Session(async () => {});
+
+  // FIXME: This needs to get split into navigate:page and navigate:file
+  ipcMain.on("open:page", (_event, page) => {
+    console.log(page);
     // FIXME: This is extremely cursed and eventually now this is no longer navigation this whole API will need to be renamed
-    if (cmd == "open") {
-      const session = sessions.getFocusedSession();
+    if (page == "open") {
       // TODO: the get focused should happen inside openFile but it needs to be reworked becaue run it's a methon on window not on main
       session.openFile();
     } else {
-      session.loadRenderFile(cmd);
+      session.navigateToPage(page);
     }
   });
 
-  ipcMain.on("navigate:URL", (_e, url) => {
+  ipcMain.on("open:URL", (_e, url) => {
     console.log(url);
     shell.openExternal(url);
   });
 
   // Quit the application when all windows/tabs are closed
   ipcMain.on("window-all-closed", () => {
-    if (!isMac) app.quit();
+    if (!IS_MAC) app.quit();
   });
 
-  // TODO: What is an ipcmain
   // Control behavior when dark mode is toggled
   ipcMain.handle("dark-mode:toggle", () => {
     // If dark mode is toggled and we're in dark mode, switch to light
@@ -85,32 +94,29 @@ async function init() {
   // TODO: Figure out why it randomly errors sometimes and says the reflow function does not exist
   ipcMain.handle("filterOptions", (_e, options) => {
     // TODO: If I just target the focused I don't see how it could go wrong but maybe there are edge cases where it does?
-    const session = sessions.getFocusedSession();
     session.opt = options;
     return session.reflow();
   });
 
   ipcMain.handle("settings:request", (_e) => {
-    const settings = Sessions.getSettings();
-    return settings;
+    return session.settings;
   });
 
   ipcMain.on("settings:update", (_e, settings) => {
     // TODO: Need update all the windows so they follow the new ones
     // Just apply no save
-    sessions.applySettings(settings);
+    session.applySettings(settings);
   });
-
+  // FIXME: All the setting save logic is still kind of broken
   ipcMain.on("settings:save", (_e, settings) => {
     // Update settings
-    sessions.updateSettings(settings);
+    session.updateSettings(settings);
 
     // Save settings
-    sessions.saveSettings();
+    session.saveSettings();
   });
 
   ipcMain.on("data:response", (_e, data) => {
-    console.log(d);
     console.log(data);
   });
 
@@ -121,8 +127,6 @@ async function init() {
 
     // need to catch the close event so this probably needs to be before any other listeners are added
     // sessions.updateSettings(sessions.settings);
-
-    const session = sessions.get(e.sender.id);
 
     session.onClose(settings);
   });
