@@ -1,10 +1,9 @@
 import { BaseWindow, dialog } from "electron";
 import { app } from "electron";
 import fs from "fs";
-
 import { Session } from "./session";
-import path from "path";
 import { AppMessages } from "../common/apiTypes";
+
 /**ASSUMES THE CLOSE EVENT DEFAULT BEHAVIOR IS BLOCKED */
 export async function savePromptBeforeClose(session: Session) {
   // console.log("close logic called?");

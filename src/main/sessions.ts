@@ -519,7 +519,7 @@
 //     this.loadRenderFile("application.html");
 //     // Send the data over
 //     this.win.webContents.on("did-finish-load", () => {
-//       this.win.webContents.send("file-opened", {
+//       this.win.webContents.send("data:response", {
 //         opt: file.opt ?? this.opt,
 //         data: this.fileData,
 //       });

@@ -1,18 +1,13 @@
 import { AppPage } from "../common/apiTypes";
 
+// TODO: Function is probably unneeded tbh
 function navigate() {
-  Array.from(document.getElementsByClassName("nav-button")).forEach((button) => {
-    button.addEventListener("click", (e) => {
-      const target = e.target as HTMLButtonElement;
+  let newProjectButton = document.querySelector(`[id="new-project"]`) as HTMLButtonElement;
+  newProjectButton.addEventListener("click", (_e) => window.api.open.page(AppPage.Application));
 
-      // No need to prevent default on e since type button don't default to submit
-      window.api.open.page(target.value);
-    });
-  });
+  let openProjectButton = document.querySelector(`[id="open-project"]`) as HTMLButtonElement;
+  openProjectButton.addEventListener("click", (_e) => window.api.open.file());
 }
-
-console.log(`WINDOW API:`);
-console.log(window.api);
 
 window.addEventListener("DOMContentLoaded", async () => {
   navigate();

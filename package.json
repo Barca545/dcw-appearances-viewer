@@ -1,6 +1,6 @@
 {
   "version": "0.0.1",
-  "name": "dc_wiki_appearances_sort",
+  "name": "dc_database_appearances_viewer",
   "main": ".vite/build/main.js",
   "scripts": {
     "start": "electron-forge start",

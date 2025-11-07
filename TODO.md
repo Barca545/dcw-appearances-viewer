@@ -1,37 +1,74 @@
-# General
+# 0.0.1
 
-- [ ] View needs to not show dev stuff when packaged
-- [ ] Toggles should use [sliders](https://www.w3schools.com/howto/howto_css_switch.asp)
-- [ ] Could stand to be a bit prettier
-- [ ] Hot reloading does not work for ts because it does not recompile
-- [ ] All of the isMac stuff should be something that can be handled during compilation
-- [ ] Confirm sessions supports multiple sessions at once
-- [ ] Probably worth it to switch to react for later versions since it is easier to handle the kind of reactive changes I want to do
-- [ ] If the session it is being issued from is already active `openFile` should create a new window (well follow those settings) not automatically overwrite the current session
-- [ ] Attempting to open a new file in a window with an existing project should prompt you to save first.
-- [ ] Every change to a document should mark it as `isDirty`.
-- [ ] Should error if window tries to close without saving. https://stackoverflow.com/questions/45677600/
-- [ ] Save to markdown reading list that formats each entry as "`- [ ] [name](link)\n`"
-- [ ] Tests need to be completely reworked and new ones added now the file structure changed
-- [ ] Update architecture.md
-- [ ] See https://stackoverflow.com/questions/76319694/ to create multiple windows
-- [ ] Startup includes option to continue last project
-- [ ] I want to add the ability to guess which character(s) a raw xml file is for then have a dialog prompting the user to confirm or correct the guess
-- [ ] Normal list has purple links `"Name Only"` has blue ones
-- [ ] Add save before closing prompt for main windows.
-- [ ] Replace casts with Option + unwraps
-- [ ] Maybe add multiwindow later
-- [ ] Accessibility stuff in settings i.e. Accessibility section with "Ease of Access", "Accessibility Options", "Screen Reader Support", "High Contrast".
-- [ ] Many files need more descriptive names.
+## Session saving
 
-# Urgent Pre-alpha
+- [ ] Every change to a document should mark it as `isDirty`
+- [x] Store the name of the character as part of save data
+- [ ] Exiting an unsaved page should autosave or prompt a save (user preference)
+- [ ] Save prompt [on window exit](https://stackoverflow.com/questions/45677600/)
+- [ ] Save as markdown reading list with entries as "`- [ ] [name](link)\n`"
+- [x] Open saved files
+
+## Miscellaneous
 
 - [x] The whole dropdown should not be a link, only the text
 - [x] Fix renderer files for the start and settings pages are not compiling
 - [x] The `ListEntry`s actually need to capture the history field
 - [x] Figure out how to have it create a settings file in userdata
-- [ ] Actually implement settings file
-- [ ] Need to figure out why the renderer files don't need `src/renderer/` but seem to include the
-- [ ] Need to clean main up and create submodules, in general need to organize project
-- [ ] Implement session saving
-- [ ] Store the name of the character as part of save data so it can be used to show who the appearances belong to
+- [ ] View should not show dev stuff when packaged
+- [x] Open dialog should be a modal
+
+# 0.0.2
+
+## Organize project
+
+- [ ] Need to clean main up and create submodules
+- [ ] Reorganize exports/imports between APITypes and core types
+- [ ] Many files need more descriptive names
+- [ ] Move types used by multiple modules to whichever is most logical
+
+## Add new Tests
+
+- [ ] Update existing tests' file paths
+- [ ] add tests for electron features
+- [ ] Figure out why the renderer files don't need `src/renderer/`
+
+## Miscellaneous
+
+- [ ] Replace casts with `Options` + `unwrap`s
+- [ ] Update architecture.md
+- [ ] Save previous searches in a document to autofill them into the search
+
+# 0.0.3
+
+## Renderer Refactor
+
+- [ ] Retool pages in React
+- [ ] Allegedly no need to await `"dom-content-loaded"`
+
+## Miscellaneous
+
+- [ ] Recent documents list on the start page
+
+# 0.0.5
+
+## Settings
+
+- [ ] Accessibility subsection
+
+## Styling
+
+- [ ] Toggles should use [sliders](https://www.w3schools.com/howto/howto_css_switch.asp)
+- [ ] Normal list has purple links `"Name Only"` has blue ones
+- [ ] Text Size
+
+## Multiple Tabs
+
+- [ ] Extend `onLeave` save behavior to tabs
+- [ ] Tab should indicate if unsaved
+
+# 0.0.9
+
+- [ ] Multiple Characters
+- [ ] Sorting by type of appearance
+- [ ] Character inference for `.xml` files

@@ -1,4 +1,5 @@
 {
   "closeWarning": "You have unsaved changes, would you like to save before exiting?",
-  "unimplemented": "This feature is currently unimplemented."
+  "unimplemented": "This feature is currently unimplemented.",
+  "illegalFileType": "File type must be an .xml, .txt, or .json."
 }

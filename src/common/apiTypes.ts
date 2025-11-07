@@ -1,4 +1,9 @@
-import { ListEntry } from "../../core/pub-sort";
+import { None, Option, Some } from "../../core/option";
+
+// TODO: I think some type files need to be reorganized.
+// This has some types that should probably be exported from core.
+// - FilterOptions
+// - AppearanceData
 
 export interface SearchRequest {
   "character-selection": string;
@@ -36,11 +41,6 @@ export class FilterOptions {
 declare global {
   interface Window {
     api: {
-      // TODO: This is now folded into settings so no need for separate
-      darkMode: {
-        toggle: () => void;
-        system: () => void;
-      };
       settings: {
         request: () => Promise<Settings>;
         /**Save the new settings to the disk. */
@@ -56,10 +56,13 @@ declare global {
         submit: (data: SearchRequest) => Promise<{ appearances: AppearanceData[]; character: string }>;
       };
       open: {
-        /**Open a Page in the current window. */
+        /**Open a  new AppPage in the current tab. */
         page: (addr: AppPage) => void;
         /**Open a Web URL in the default browser. */
         url: (addr: string) => void;
+        // TODO: Eventually should open in a new tab but that's beside the point
+        /**Open a Project file in the current tab*/
+        file: () => void;
       };
 
       // TODO: Do I need a request and send for this since saving needs to save the settings?
@@ -93,6 +96,7 @@ export interface AppearanceData {
 export interface AppMessages {
   closeWarning: string;
   unimplemented: string;
+  illegalFileType: string;
 }
 
 export enum AppPage {
@@ -103,42 +107,11 @@ export enum AppPage {
 
 // Cursed way to kinda emulate rust enums
 export namespace AppPage {
-  export function from(pg: string): AppPage {
+  export function from(pg: string): Option<AppPage> {
     // It's like a shitty match statement :D (visually not under the hood)
-    if (pg.includes("start") || pg.includes("start.html")) return AppPage.StartPage;
-    else if (pg.includes("app") || pg.includes("app.html")) return AppPage.Application;
-    else if (pg.includes("settings") || pg.includes("settings.html")) return AppPage.Settings;
-    else throw Error(`INVALID NAVIGATION TARGET: ${pg}`);
+    if (pg.includes("start") || pg.includes("start.html")) return new Some(AppPage.StartPage);
+    else if (pg.includes("app") || pg.includes("app.html")) return new Some(AppPage.Application);
+    else if (pg.includes("settings") || pg.includes("settings.html")) return new Some(AppPage.Settings);
+    else return new None();
   }
-}
-
-// export class AppPage {
-//   // This is pretty hacky but basically this should allow me to make it via "from"
-//   // instead of the constructor
-//   // declare makes a gaurantee the PAGE value will exist at runtime
-//   // See https://stackoverflow.com/questions/67351411/what-s-the-difference-between-definite-assignment-assertion-and-ambient-declarat
-//   PAGE: "start.html" | "app.html" | "settings.html";
-
-//   private constructor(pg: string) {
-//     if (pg.includes("start") || pg.includes("start.html")) {
-//       this.PAGE = "start.html";
-//     } else if (pg.includes("app") || pg.includes("app.html")) {
-//       this.PAGE = "app.html";
-//     } else if (pg.includes("settings") || pg.includes("settings.html")) {
-//       this.PAGE = "settings.html";
-//     } else {
-//       throw Error(`INVALID NAVIGATION TARGET: ${pg}`);
-//     }
-//   }
-
-//   static from(pg: string): AppPage {
-//     return new AppPage(pg);
-//   }
-// }
-
-// FIXME: App data should be this not the nonsense in load.ts
-interface ProjectData {
-  header: { appID: "DCDDB-Appearances-View"; version: string };
-  meta: { character?: string; options: FilterOptions };
-  data: ListEntry[];
 }

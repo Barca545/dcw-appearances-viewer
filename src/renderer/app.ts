@@ -26,6 +26,7 @@ function handleSubmit() {
       window.api.form.submit(data).then(
         // Returns an object version of ListEntry[]
         ({ appearances, character }) => {
+          console.log(appearances);
           displayElements(appearances, character);
         },
         () => {

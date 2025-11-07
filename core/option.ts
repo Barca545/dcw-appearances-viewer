@@ -1,4 +1,6 @@
 export class Some<T> implements OptionInterface<T> {
+  toString?: never;
+
   private value: T;
 
   constructor(val: T) {
@@ -23,9 +25,15 @@ export class Some<T> implements OptionInterface<T> {
   isSome(): boolean {
     return true;
   }
+
+  dbg(): string {
+    return `Some(${this.value})`;
+  }
 }
 
 export class None<T> implements OptionInterface<T> {
+  toString?: never;
+
   isNone(): boolean {
     return true;
   }
@@ -45,9 +53,15 @@ export class None<T> implements OptionInterface<T> {
   isSome(): boolean {
     return false;
   }
+
+  dbg(): string {
+    return `None`;
+  }
 }
 
 interface OptionInterface<T> {
+  toString?: never;
+
   /**Returns the value contained inside the Option. Panics if the option is None. */
   unwrap(): T | never;
 
@@ -61,6 +75,8 @@ interface OptionInterface<T> {
 
   unwrap_or_else(f: () => T): T;
 
+  dbg(): string;
+
   // /**Takes the value from an Option leaving a None in it's place. */
   // take(): Option<T>;
 }
@@ -68,11 +84,7 @@ interface OptionInterface<T> {
 // Should option be an intereface or class not type
 export type Option<T> = Some<T> | None<T>;
 
-export function match<T, R>(
-  option: Option<T>,
-  some: (val: T) => R,
-  none: () => R
-): R {
+export function match<T, R>(option: Option<T>, some: (val: T) => R, none: () => R): R {
   if (option instanceof Some) {
     return some(option.unwrap());
   } else {

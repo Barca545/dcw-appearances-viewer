@@ -1,12 +1,12 @@
-import { BrowserWindow, dialog, Menu, nativeTheme } from "electron";
+import { app, BrowserWindow, dialog, Menu, nativeTheme } from "electron";
 import { ListEntry, pubDateSort } from "../../core/pub-sort";
 import path from "path";
-import { SaveFormat, loadList, sessionFromJSON, sessionToJSON } from "../../core/load";
+import { ProjectData, loadList, ProjectDataFromJSON, ProjectDataToJSON, Path } from "../../core/load";
 import { AppPage, FilterOptions, Settings } from "../common/apiTypes";
 import { None, Some, Option } from "../../core/option";
 import fs, { PathLike } from "fs";
 import { MenuTemplate, openFileDialog } from "./menu";
-import { __userdata, IS_DEV } from "./helpers";
+import { __userdata, IS_DEV, MESSAGES } from "./helpers";
 
 export declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 export declare const MAIN_WINDOW_VITE_NAME: string;
@@ -19,17 +19,14 @@ export const MAIN_WINDOW_PRELOAD_VITE_ENTRY = path.join(__dirname, `preload.js`)
 // TODO: Maybe eventually find a way to stick every part of the program into this structure but for now just using it to store file data works
 export class Session {
   win: BrowserWindow;
-  savePath: Path;
-  fileData: ListEntry[];
+  savePath: Option<Path>;
+  projectData: ProjectData;
   opt: FilterOptions;
   /**Field indicating whether the `Session` has unsaved changes.*/
   isClean: {
     task: boolean;
     settings: boolean;
   };
-  saveFn: () => Promise<void>;
-  shouldClose: boolean;
-  onClose: (args: any) => Promise<void>;
   settings: Settings;
 
   constructor(onClose: (args: any) => Promise<void>, saveFn?: () => Promise<void>) {
@@ -39,16 +36,12 @@ export class Session {
     this.opt = new FilterOptions();
     // Only mark dirty once a task is open
     this.isClean = { settings: true, task: true };
-    this.fileData = [];
-    this.savePath = new Path();
+    this.projectData = ProjectData.empty();
+    this.savePath = new None();
     this.settings = settings;
-    // Each window will need to register its own save handler
-    this.saveFn = saveFn ? saveFn : this.close;
-    this.shouldClose = false;
-    this.onClose = onClose;
 
     // Basically this needs to run after all the fields are set up
-    this.navigateToPage();
+    this.openAppPage();
     this.win.setMenu(Menu.buildFromTemplate(MenuTemplate(this)));
   }
 
@@ -150,7 +143,6 @@ export class Session {
    */
   async close() {
     console.log("closing functions");
-    this.shouldClose = true;
     this.win.close();
   }
 
@@ -169,68 +161,73 @@ export class Session {
 
   /** Open a new file for the `Session`. */
   async openFile() {
-    const res = await openFileDialog();
-
-    const newPath = res.filePaths[0];
+    const res = openFileDialog();
 
     // If the action was canceled, abort and return early
-    if (res.canceled || !newPath) {
+    if (res.isNone()) {
+      // FIXME: This needs to error and say the path does not exist
       return;
     }
+
+    const newPath = res.unwrap();
 
     // Update the save path to match the path of the current file
     // TODO: Should this give an error if it fails?
     if (newPath) {
-      this.savePath = new Path(newPath);
+      this.savePath = new Some(new Path(newPath));
     }
 
-    const ext = this.savePath.type().unwrap();
+    // We know it is valid by the time we reach here because we set and checked it above
+    const ext = this.savePath.unwrap().ext();
 
     // TODO: Set the server side list to list before yeeting it back over.
-    let file: SaveFormat;
+    let file: ProjectData;
     if (ext == ".xml")
       file = {
-        isAppearances: "DC DATABASE APPEARANCE DATA",
-        opt: new FilterOptions(),
-        data: loadList(this.savePath.toString()),
+        header: { appID: "DCDB-Appearances-View", version: app.getVersion() },
+        meta: { options: new FilterOptions() },
+        data: loadList(this.savePath.unwrap()),
       };
-    else {
+    else if (ext == ".json") {
       try {
         // FIXME: My understanding is this catch block should still work but I need to confirm
-        file = sessionFromJSON(this.savePath.toString()) as SaveFormat;
+        file = ProjectDataFromJSON(this.savePath.unwrap()) as ProjectData;
       } catch (err) {
+        console.log("fail point");
         dialog.showErrorBox("Load Failed", (err as Error).message);
         return;
       }
+    } else {
+      dialog.showErrorBox("Load Failed", MESSAGES.illegalFileType);
+      return;
     }
 
     // Reflow expects fileData to already be set
-    this.fileData = file.data;
-    this.fileData = this.reflow();
+    this.projectData = file;
+    this.projectData.data = this.reflow();
 
     // Open the page
-    this.navigateToPage(AppPage.from(this.savePath.toString()));
+    this.openAppPage(AppPage.Application);
     // Send the data over
     this.win.webContents.on("did-finish-load", () => {
-      this.win.webContents.send("file-opened", {
-        opt: file.opt ?? this.opt,
-        data: this.fileData,
-      });
+      // TODO: Why use this instead of ipcMain?
+      this.win.webContents.send("data:response", file);
     });
 
     // Set the window name to the title of the file
-    this.win.title = path.basename(this.savePath.toString(), this.savePath.type().unwrap());
+    this.win.title = this.savePath.unwrap().fileName();
   }
 
   /**Save a file to the disk. If `saveas` is  `true` the file operation will be performed as a save as operation.*/
-  async saveFile(saveas = false) {
+  async saveFile(shouldPrompt: boolean) {
     // If there is no save_path set one or if this is explicitly a save as command
-    if (saveas || typeof this.savePath === "undefined" || this.savePath === null) {
+    if (this.savePath.isNone() || shouldPrompt) {
       const res = await dialog.showSaveDialog({
         // FIXME: Can't be this and openFile figure out the difference
         properties: ["createDirectory", "showOverwriteConfirmation"],
         filters: [
-          { name: ".txt", extensions: ["txt"] },
+          // I don't really think there is a reason to add txt saving since JSONs are plaintext but maybe
+          // { name: ".txt", extensions: ["txt"] },
           { name: ".json", extensions: ["json"] },
         ],
       });
@@ -239,25 +236,25 @@ export class Session {
       if (res.canceled || !res.filePath) return;
 
       // Update the save path
-      this.savePath = new Path(res.filePath);
+      this.savePath = new Some(new Path(res.filePath));
 
       // Retitle the window
-      this.win.title = path.basename(res.filePath, this.savePath.type().unwrap());
+      this.win.title = path.basename(res.filePath, this.savePath.unwrap().ext());
     }
 
     // FIXME: Unclear if a try/catch block is needed
-    sessionToJSON(this.opt, this.fileData, this.savePath.toString());
+    ProjectDataToJSON(this.projectData, this.savePath.unwrap());
     // If all this completes successfully mark the session as clean (until the next change)
     this.isClean.task = true;
   }
 
   /**Recalculate the layout of the results section and return the new layout.*/
   reflow(): ListEntry[] {
-    let sorted = this.fileData;
+    let sorted = this.projectData.data;
     // TODO: Basically move all this logic serverside
     switch (this.opt.sortOrder) {
       case "PUB": {
-        sorted = pubDateSort(this.fileData);
+        sorted = pubDateSort(sorted);
         break;
       }
       case "A-Z": {
@@ -282,12 +279,12 @@ export class Session {
 
     return sorted;
   }
-  /**Replace the current window content with content for another page
+  /**Replace the current tab's content with content for another AppPage.
    * Wrapper for this.win.loadFile and this.win.loadURL that uses the appropriate one and path depending on context.
    * DO NOT INCLUDE A DIRNAME JUST THE FILE'S NAME.
    * Loads `index.html` by default.
    * */
-  navigateToPage(src = AppPage.StartPage) {
+  openAppPage(src = AppPage.StartPage) {
     if (IS_DEV) {
       // TODO: Don't love having the directory be constant here but this only loads pages so it should be fine
       this.win.loadURL(`${ROOT_DIRECTORY}/src/renderer/${src}`);
@@ -299,40 +296,5 @@ export class Session {
 
   setMenu(menu: Electron.Menu | null) {
     this.win.setMenu(menu);
-  }
-}
-
-// TODO: Do I actually really need this? If I need it is there a way I can add it to the real path instead of doing this?
-class Path {
-  private path: string;
-
-  constructor(pathStr?: PathLike) {
-    // FIXME: Confirm it is a valid path and error if not
-    this.path = pathStr ? pathStr.toString() : "";
-  }
-
-  /**Returns the name of a path's file if it has one */
-  fileName(): Option<string> {
-    const name = path.basename(this.path);
-
-    if (typeof name == "undefined") {
-      return new None();
-    } else {
-      return new Some(name);
-    }
-  }
-
-  /**Returns the filetype of the file the path references. Returns None if there is no extension. */
-  type(): Option<string> {
-    const ty = path.extname(this.path);
-    if (ty == "") {
-      return new None();
-    } else {
-      return new Some(ty);
-    }
-  }
-
-  toString() {
-    return this.path.toString();
   }
 }

@@ -1,18 +1,19 @@
-import fs from "fs";
+import fs, { PathLike } from "fs";
 import convert from "xml-js";
 import { ListEntry } from "./pub-sort.js";
 import { templateStringToListEntry } from "./helpers.js";
 import { FilterOptions } from "../src/common/apiTypes.js";
+import path from "path";
 
 /**
  * Loads and parses a locally stored XML list of appearance data into a list of ListEntrys.
  * @param path
  * @returns
  */
-export function loadList(path: string): ListEntry[] {
+export function loadList(path: Path): ListEntry[] {
   // Load the xml file and convert it to a json
   const json = JSON.parse(
-    convert.xml2json(fs.readFileSync(path, "utf-8"), {
+    convert.xml2json(fs.readFileSync(path.path, "utf-8"), {
       compact: true,
       spaces: 4,
     }),
@@ -26,11 +27,22 @@ export function loadList(path: string): ListEntry[] {
   return appearances;
 }
 
-export interface SaveFormat {
-  characters?: Character;
-  isAppearances: "DC DATABASE APPEARANCE DATA";
-  opt: FilterOptions;
+// FIXME: Is there a reason this is not a class?
+export interface ProjectData {
+  header: { appID: "DCDB-Appearances-View"; version: string };
+  meta: { character?: string; options: FilterOptions };
   data: ListEntry[];
+}
+
+export namespace ProjectData {
+  export function empty(): ProjectData {
+    return {
+      // Unsure if not having versions is theoretically a problem
+      header: { appID: "DCDB-Appearances-View", version: "" },
+      meta: { options: new FilterOptions() },
+      data: [],
+    };
+  }
 }
 
 export interface Character {
@@ -38,35 +50,45 @@ export interface Character {
   link: string;
 }
 
-// .txt is probably unnessecary but there is an chance ppl might want plaintext for somereason
-type FileType = ".txt" | ".json";
+export class Path {
+  readonly path: string;
+  toString?: never;
 
-/**Save the  sessions FilterOptions as a json */
-export function sessionToJSON(opt: FilterOptions, data: ListEntry[], path: string, ftype: FileType = ".json") {
-  // This ensures the file type is correct
-  const pos = path.lastIndexOf(".");
-  path = path.substring(0, pos < 0 ? path.length : pos) + ftype;
-  // Convert the data to a string
-  // TODO: Ensure this still saves with the is appeances field or the file should not load
-  const file = JSON.stringify({
-    isAppearances: "DC DATABASE APPEARANCE DATA",
-    opt: opt,
-    data: data,
-  } as SaveFormat);
-  fs.writeFileSync(path, file, { encoding: "utf8" });
+  constructor(pathStr?: PathLike) {
+    // FIXME: Confirm it is a valid path and error if not
+    this.path = pathStr ? pathStr.toString() : "";
+  }
+
+  /**Returns the name of a path's file if it has one */
+  fileName(): string {
+    return path.basename(this.path);
+  }
+
+  /**Returns the filetype of the file the path references. Returns None if there is no extension. */
+  ext(): string {
+    return path.extname(this.path);
+  }
 }
 
-export function sessionFromJSON(path: string): SaveFormat {
+/**Save the  sessions FilterOptions as a json */
+export function ProjectDataToJSON(data: ProjectData, path: Path) {
+  // Convert the data to a string
+  const file = JSON.stringify(data);
+  fs.writeFileSync(path.path, file, { encoding: "utf8" });
+}
+
+export function ProjectDataFromJSON(filePath: Path): ProjectData {
   // Return early with an error if the wrong filetype is passed
-  const ext = path.substring(path.lastIndexOf("."));
-  if (!/.txt|.json/.test(ext)) throw new Error("Incorrect file type.");
-  const file = fs.readFileSync(path, { encoding: "utf8" });
-  const data = JSON.parse(file) as SaveFormat;
+  if (!/.txt|.json/.test(filePath.ext())) throw new Error("Incorrect file type.");
+  const file = fs.readFileSync(filePath.path, { encoding: "utf8" });
+  const data = JSON.parse(file) as ProjectData;
+
+  console.log(filePath.path);
+  console.log(file);
 
   // Convert the entries to list entries because right now they don't actually have the class' metadata and functions
   let entries = [];
   for (const entry of data.data) {
-    console.log(entry.synopsis);
     entries.push(
       new ListEntry(
         entry.title,
@@ -80,6 +102,7 @@ export function sessionFromJSON(path: string): SaveFormat {
 
   data.data = entries;
 
-  if (data.isAppearances) return data;
+  // TODO: I would prefer not to hard code this but it's not a huge deal
+  if (data.header.appID == "DCDB-Appearances-View") return data;
   else throw Error("Incorrect file structure.");
 }

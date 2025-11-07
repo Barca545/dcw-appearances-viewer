@@ -88,10 +88,6 @@ export function templateStringToListEntry(data: string): ListEntry {
 
   const synopsis = template.get("Synopsis1").unwrap_or("Issue is missing a synopsis") as string;
 
-  console.log("story" + synopsis);
-
   const entry = new ListEntry(title, synopsis, year, month, day, template.get("Link").unwrap_or("") as string);
-  console.log(entry);
-  console.log(entry.synopsis);
   return entry;
 }
