@@ -1,5 +1,5 @@
 import { Session } from "./session";
-import { UNIMPLEMENTED_FEATURE, IS_MAC, IS_DEV } from "./helpers";
+import { UNIMPLEMENTED_FEATURE, IS_MAC, IS_DEV } from "./main_utils";
 import { dialog } from "electron";
 import { AppPage } from "../common/apiTypes";
 import { None, Option, Some } from "../../core/option";

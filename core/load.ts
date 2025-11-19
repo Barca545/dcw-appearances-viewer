@@ -1,9 +1,10 @@
 import fs, { PathLike } from "fs";
 import convert from "xml-js";
 import { ListEntry } from "./pub-sort.js";
-import { templateStringToListEntry } from "./helpers.js";
+import { templateStringToListEntry } from "./utils.js";
 import { FilterOptions } from "../src/common/apiTypes.js";
 import path from "path";
+import { AppearancesDataResponse } from "./coreTypes.js";
 
 /**
  * Loads and parses a locally stored XML list of appearance data into a list of ListEntrys.
@@ -17,12 +18,12 @@ export function loadList(path: Path): ListEntry[] {
       compact: true,
       spaces: 4,
     }),
-  );
+  ) as AppearancesDataResponse;
 
   // Convert each appearance into a list entry
   let appearances: ListEntry[] = [];
   for (const entry of json.mediawiki.page) {
-    appearances.push(templateStringToListEntry(entry.revision.text._text as string));
+    appearances.push(templateStringToListEntry({ title: entry.title._text, rawTemplate: entry.revision.text._text }));
   }
   return appearances;
 }
@@ -82,9 +83,6 @@ export function ProjectDataFromJSON(filePath: Path): ProjectData {
   if (!/.txt|.json/.test(filePath.ext())) throw new Error("Incorrect file type.");
   const file = fs.readFileSync(filePath.path, { encoding: "utf8" });
   const data = JSON.parse(file) as ProjectData;
-
-  console.log(filePath.path);
-  console.log(file);
 
   // Convert the entries to list entries because right now they don't actually have the class' metadata and functions
   let entries = [];

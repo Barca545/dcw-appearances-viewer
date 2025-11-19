@@ -4,11 +4,11 @@ import { defineConfig } from "vite";
 export default defineConfig({
   root: ".",
   build: {
-    // lib: {
-    //   entry: "src/preload/preload.ts",
-    //   formats: ["cjs"],
-    // },
-    // outDir: ".vite/build/src/preload",
-    emptyOutDir: true,
+    lib: {
+      entry: "src/preload/preload.ts",
+      formats: ["cjs"],
+    },
+    // outDir: ".vite/build/preload",
+    // emptyOutDir: true,
   },
 });

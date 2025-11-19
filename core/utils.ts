@@ -1,9 +1,9 @@
 import { TemplateParser } from "./parser.js";
+import { TitleAndTemplate, OptionMap } from "./coreTypes.js";
 import { ListEntry } from "./pub-sort.js";
-import { OptionMap } from "./coreTypes.js";
 
 /**Convert the text field of the appearances XML into a list entry. */
-export function templateStringToListEntry(data: string): ListEntry {
+export function templateStringToListEntry(data: TitleAndTemplate): ListEntry {
   const months = new OptionMap(
     Object.entries({
       January: "1",
@@ -33,28 +33,7 @@ export function templateStringToListEntry(data: string): ListEntry {
     }),
   );
 
-  const template = new TemplateParser(data).parse(true);
-  // FIXME: This feels fragile
-  // Need to remove the any appearance of "Vol \d*" if the title has it to avoid duplicates
-  let title = (template.get("Title").unwrap() as string).replaceAll(/ Vol \d*/g, "");
-
-  // If there is a volume number add it
-  // FIXME: This is basically my bad way of trying to replicate "if...let" statements
-  if (template.get("Volume").isSome()) {
-    const vol = template.get("Volume").unwrap();
-    title += " " + "Vol" + " " + `${vol}`;
-  }
-
-  // FIXME: This is basically my bad way of trying to replicate "if...let" statements
-  if (template.get("Issue").isSome() || template.get("Chapter").isSome()) {
-    const issue = template.get("Issue").unwrap_or_else(() => template.get("").unwrap());
-    title += " " + `${issue}`;
-  }
-
-  if (template.getName().unwrap() == "DC Database:Digital Comic Template") {
-    // Space is intentional
-    title += " (Digital)";
-  }
+  const template = new TemplateParser(data.rawTemplate).parse(true);
 
   // Create the date
   // Need to also pull release date
@@ -88,6 +67,6 @@ export function templateStringToListEntry(data: string): ListEntry {
 
   const synopsis = template.get("Synopsis1").unwrap_or("Issue is missing a synopsis") as string;
 
-  const entry = new ListEntry(title, synopsis, year, month, day, template.get("Link").unwrap_or("") as string);
+  const entry = new ListEntry(data.title, synopsis, year, month, day, template.get("Link").unwrap_or("") as string);
   return entry;
 }

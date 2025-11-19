@@ -1,7 +1,7 @@
 // See the Electron documentation for details on how to use preload scripts:
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
 
-import type { AppPage, FilterOptions, SearchRequest, Settings } from "../common/apiTypes.js";
+import type { AppPage, FilterOptions, SearchRequest, Settings, SubmitResponse } from "../common/apiTypes.js";
 import { contextBridge, ipcRenderer } from "electron";
 // REMINDER: Handle only takes invokes not sends
 console.log("PRELOAD RUNNING...");
@@ -9,10 +9,15 @@ console.log("PRELOAD RUNNING...");
 // TODO: If this ends up being overly granular merge taking inspiration from
 // https://stackoverflow.com/questions/66266205/how-to-read-a-local-file-in-javascript-running-from-an-electron-app
 contextBridge.exposeInMainWorld("api", {
+  // TODO: Form is maybe the wrong word
   form: {
-    submit: (data: SearchRequest) => {
-      // TODO: Can I handle the conversion into the correct format here instead of the functions?
-      return ipcRenderer.invoke("form:submit", data);
+    submit: async (req: SearchRequest) => {
+      const res = (await ipcRenderer.invoke("form:submit", req)) as SubmitResponse;
+      if (res.success) {
+        return res;
+      } else {
+        return Promise.reject(`Failed to fetch ${res.character}`);
+      }
     },
   },
   open: {
@@ -34,8 +39,8 @@ contextBridge.exposeInMainWorld("api", {
     // FIXME: This is no longer needed becaues now it is simply a tag so close behavior will be shared
     close: () => ipcRenderer.send("settings:close"),
   },
-  // TODO: This could be renamed "requestReflow"
-  filterOptions: (state: FilterOptions) => {
+  // TODO: This could also be under form
+  requestReflow: (state: FilterOptions) => {
     // TODO: Can I handle the conversion into the correct format here instead of the functions?
     return ipcRenderer.invoke("filterOptions", state);
   },
@@ -43,6 +48,11 @@ contextBridge.exposeInMainWorld("api", {
   // TODO: Does this *need* to be a callback instead of just recieving the data
   recieveData: (callback: (data: any) => any) => ipcRenderer.on("data:response", (_event, res) => callback(res)),
   dataRequest: (data: any) => ipcRenderer.on("data:request", () => ipcRenderer.send("data:response", data)),
+  displayError: (title: string, error: string) => {
+    console.log(title);
+    console.log(error);
+    ipcRenderer.invoke("error:show", title, error);
+  },
 });
 
 console.log("PRELOAD FINSHED...");

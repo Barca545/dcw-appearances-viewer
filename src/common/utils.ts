@@ -5,12 +5,12 @@ export function createCharacterName(data: SearchRequest): string {
   // Then trim their entry
   // Then create the string
 
-  const character = data["character-selection"].trim();
+  const character = data.character.trim();
 
   let result;
 
-  if (!data["universe-select"]) {
-    data["universe-select"] = "(Prime Earth)";
+  if (!data.universe) {
+    data.universe = "(Prime Earth)";
   }
 
   // This does not feel robust since a character might have parentheses for other reasons but mandating it be at the end should catch most edge cases
@@ -21,7 +21,7 @@ export function createCharacterName(data: SearchRequest): string {
     result = character;
   } else {
     // Get universe and add it to the character name if the universe was not included in the string
-    result = character + " " + data["universe-select"].trim();
+    result = character + " " + data.universe.trim();
   }
 
   return result;

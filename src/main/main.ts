@@ -1,14 +1,22 @@
-import { app, ipcMain, shell } from "electron";
+import { app, dialog, ipcMain, shell } from "electron";
 import { Session } from "./session";
 import { createCharacterName } from "../common/utils";
-import { fetchList } from "../../core/fetch.js";
-import { AppearanceData } from "../common/apiTypes";
-import { IS_MAC } from "./helpers";
+import { fetchList } from "../../core/fetch";
+import { SubmitResponse } from "../common/apiTypes";
+import { IS_MAC, LOG } from "./main_utils";
+
+process.on("uncaughtException", (err) => {
+  LOG(err.name, err.stack);
+});
 
 // TODO: I am not actually sure if holding the session here at the top level after init is needed
 // It would be in rust but it's possible that is not the case in JS
 let session: Session;
-app.whenReady().then(() => init());
+
+app.whenReady().then(() => {
+  init();
+  LOG("Session exists", JSON.stringify(session));
+});
 
 // NOTE: This adds a bunch of listeners to the main process it needs to function
 
@@ -36,6 +44,20 @@ async function init() {
   // This must be created after the app is ready
   session = new Session(async () => {});
 
+  // MAC BEHAVIOR
+  // Quit the application when all windows/tabs are closed
+  ipcMain.on("window-all-closed", (_e) => {
+    if (!IS_MAC) app.quit();
+  });
+
+  // FIXME: Ideally this would be part of creating the session
+  session.win.on("close", (e) => {
+    if (!session.isClean) {
+      e.preventDefault();
+      session.saveFile(false);
+    }
+  });
+
   // NAVIGATION LISTENERS
 
   // FIXME: This needs to get split into navigate:page and navigate:file
@@ -45,35 +67,39 @@ async function init() {
   ipcMain.on("open:file", (_e, _page) => session.openFile());
   ipcMain.on("open:URL", (_e, url) => shell.openExternal(url));
 
-  // Quit the application when all windows/tabs are closed
-  ipcMain.on("window-all-closed", (_e) => {
-    if (!IS_MAC) app.quit();
-  });
-
   ipcMain.handle("form:submit", async (_e, data) => {
     const character = createCharacterName(data);
     // Confirm this actually updates session. I am not positive session is actually a mutable reference
     session.projectData.meta.character = character;
-    session.projectData.data = await fetchList(character);
-    // This needs to be here because renderer can't import
-    // Send back to the renderer (clientside)
+    const res = await fetchList(character);
+
+    // FIXME: This is pretty janky reventyally I want to send the actual data over
+    if (!res.ok()) {
+      return { success: false, character: character };
+    }
+
+    session.projectData.data = res.unwrap();
     // TODO: Use an alert to show a proper error for if the name is wrong (basically if fetch comes back empty)
 
-    const res: { appearances: AppearanceData[]; character: string } = {
+    const send: SubmitResponse = {
+      success: true,
       appearances: session.projectData.data,
       character: character,
     };
 
-    console.log(session.projectData.data);
-    return res;
+    session.isClean.task = false;
+    return send;
   });
 
   // TODO: Figure out why it randomly errors sometimes and says the reflow function does not exist
   ipcMain.handle("filterOptions", (_e, options) => {
     // TODO: If I just target the focused I don't see how it could go wrong but maybe there are edge cases where it does?
     session.opt = options;
+    session.isClean.task = false;
     return session.reflow();
   });
+
+  ipcMain.handle("error:show", (_e, title, msg) => dialog.showErrorBox(title, msg));
 
   // SETTINGS LISTENERS
 
@@ -100,5 +126,15 @@ async function init() {
   // Don't love this will probably ditch it
   ipcMain.on("data:response", (_e, data) => {
     console.log(data);
+  });
+
+  // TODO: Theoretically this stuff should go into the init of session
+  // TODO: Fill out this logic
+  session.win.on("blur", () => {
+    // It should save on blur and on close
+  });
+
+  session.win.on("close", () => {
+    // It should save on blur and on close
   });
 }

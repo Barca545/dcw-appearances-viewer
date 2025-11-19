@@ -1,68 +1,71 @@
 import { ListEntry } from "../../core/pub-sort.js";
 import { createResultsList, createDenseResultsList } from "./elements.js";
-import { AppearanceData, FilterOptions } from "../common/apiTypes.js";
+import { AppearanceData, FilterOptions, SortOrder } from "../common/apiTypes.js";
+
+// TODO: Have a loading symbol that starts once submit happens and stops when new data is recieved
 
 // FIXME: Having this variable in two places risks getting out of sync
 // Once the clientside stuff is updated, I am skeptical it needs to be retained
 let filterOptions = new FilterOptions();
 
-handleSubmit();
-handleFilter();
+// FIXME: Probalby unnessecary since the script being at the bottom of the dom means it always loads last
+window.addEventListener("DOMContentLoaded", async () => {
+  handleSubmit();
+  handleFilter();
+});
 
 function handleSubmit() {
-  window.addEventListener("DOMContentLoaded", async () => {
-    const form = document.getElementById("character-search-form") as HTMLFormElement;
+  const form = document.getElementById("character-search-form") as HTMLFormElement;
 
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
 
-      const msg = new FormData(e.target as HTMLFormElement);
-      const rawData = Object.fromEntries(msg.entries());
-      const data = {
-        "character-selection": rawData["character-selection"] as unknown as string,
-        "universe-select": rawData["universe-select"] as unknown as string,
-      };
+    const msg = new FormData(e.target as HTMLFormElement);
+    const rawData = Object.fromEntries(msg.entries());
+    const data = {
+      character: rawData["character-selection"] as unknown as string,
+      universe: rawData["universe-select"] as unknown as string,
+    };
 
-      window.api.form.submit(data).then(
-        // Returns an object version of ListEntry[]
-        ({ appearances, character }) => {
-          console.log(appearances);
-          displayElements(appearances, character);
-        },
-        () => {
-          // TODO: Create a dialog saying lookup failed if an error is returned
-        },
-      );
-    });
+    // Clear the current results to prep for new ones
+    document.getElementById("results-container").replaceChildren(...[]);
+    // Tell user a load is happening
+    setLoading(true);
+    window.api.form
+      .submit(data)
+      .then(
+        (res) => displayResults(res.appearances, res.character),
+        (err: string) => displayError("Search Failed", err),
+      )
+      .finally(() => setLoading(false));
   });
 }
 
 function handleFilter() {
-  window.addEventListener("DOMContentLoaded", async () => {
-    document.getElementById("display-style")?.addEventListener("change", (e) => {
-      // FIXME: This needs to be updated so what it does is send the button press to main
-      // main will handle it
-      const form = new FormData(e.currentTarget as HTMLFormElement);
+  document.getElementById("display-style")?.addEventListener("change", (e) => {
+    // FIXME: This needs to be updated so what it does is send the button press to main
+    // main will handle it
+    const form = new FormData(e.currentTarget as HTMLFormElement);
 
-      filterOptions = new FilterOptions().setAscending(form.get("ascending") as unknown as boolean);
+    filterOptions = new FilterOptions().setAscending(form.get("ascending") as unknown as boolean);
 
-      if (form.get("sort-type")) {
-        const sort_type = form.get("sort-type") as unknown as "PUB" | "A-Z";
-        filterOptions.setOrder(sort_type);
-      }
+    if (form.get("sort-type")) {
+      const sort_type = SortOrder.from(form.get("sort-type") as string).unwrap();
+      filterOptions.setOrder(sort_type);
+    }
 
-      if (form.get("density")) {
-        const density = form.get("density") as unknown as "DENSE" | "NORM";
-        filterOptions.setDensity(density);
-      }
+    if (form.get("density")) {
+      const density = form.get("density") as unknown as "DENSE" | "NORM";
+      filterOptions.setDensity(density);
+    }
 
-      // FIXME: Why am I passing in the options here when it's already sorted on server side
-      window.api.filterOptions(filterOptions).then((appearances) => displayElements(appearances));
-    });
+    // FIXME: Why am I passing in the options here when it's already sorted on server side
+    window.api.filterOptions(filterOptions).then((appearances) => displayResults(appearances));
   });
 }
 
-export function displayElements(data: AppearanceData[], character?: string, opt?: FilterOptions) {
+// TODO: Why is this an export?
+export function displayResults(data: AppearanceData[], character?: string, opt?: FilterOptions) {
   // FIXME: Annoyingly sending it makes it into a json so I need to reconvert it to a list of ListEntrys
   const appearances = data.map((element) => {
     const date = element.date;
@@ -92,5 +95,15 @@ export function displayElements(data: AppearanceData[], character?: string, opt?
   }
 }
 
+function displayError(title: string, error: string) {
+  window.api.displayError(title, error);
+}
+
 // This sets up a callback so the page renders new data when it recieves it
-window.api.recieveData((res) => displayElements(res.data, undefined, res.opt));
+window.api.recieveData((res) => displayResults(res.data, undefined, res.opt));
+
+/** Set the loading state of the document and control how the loading */
+function setLoading(state: boolean) {
+  document.getElementById("spinner").style.display = state ? "block" : "none";
+  document.getElementById("results-container").style.visibility = !state ? "visible" : "hidden";
+}

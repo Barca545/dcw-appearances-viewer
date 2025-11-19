@@ -8,10 +8,7 @@ import { Template } from "../types";
 test("consumeIf", (_) => {
   const template = "ABC";
   let parser = new TemplateParser(template);
-  return (
-    assert.deepEqual(true, parser.consumeIf("A")) &&
-    assert.deepEqual("B", parser.src.next())
-  );
+  return assert.deepEqual(true, parser.consumeIf("A")) && assert.deepEqual("B", parser.src.next());
 });
 
 test("Parse single level template w/ key & value", (_) => {
@@ -46,9 +43,7 @@ test("Parse 3 level nested template", (_t) => {
   const template = "{{Name|Key = {{Name1|Key1 = {{Name2|Key2 = {{Value}}}}}}}}";
   const res = new TemplateParser(template).parse(true);
   let expected = new Template();
-  let name2 = new Template()
-    .setName("Name2")
-    .set("Key2", new Template().setName("Value"));
+  let name2 = new Template().setName("Name2").set("Key2", new Template().setName("Value"));
   let name1 = new Template().setName("Name1").set("Key1", name2);
   expected.setName("Name").set("Key", name1);
 
@@ -56,10 +51,7 @@ test("Parse 3 level nested template", (_t) => {
 });
 
 test("XML to JSON", (_t) => {
-  const xml = fs.readFileSync(
-    process.cwd() + "/test/Scarlett Scott Apearances.xml",
-    "utf-8"
-  );
+  const xml = fs.readFileSync(process.cwd() + "/test/Scarlett Scott Apearances.xml", "utf-8");
 
   const list = xmlToJSON(xml);
 
@@ -68,8 +60,7 @@ test("XML to JSON", (_t) => {
       _attributes: {
         xmlns: "http://www.mediawiki.org/xml/export-0.11/",
         "xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
-        "xsi:schemaLocation":
-          "http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd",
+        "xsi:schemaLocation": "http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd",
         version: "0.11",
         "xml:lang": "en",
       },

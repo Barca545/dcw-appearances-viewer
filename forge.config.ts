@@ -10,10 +10,22 @@ import { FuseV1Options, FuseVersion } from "@electron/fuses";
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
-    appBundleId: "DCDB-Appearances-View",
+    appBundleId: "DCDB-Appearances-Viewer",
+    // name: "",
+    executableName: "DCDB Appearance Viewer",
+    extraResource: ["./resources/appMessages.json", "./resources/settings.json"],
+    icon: "assets/dcdc_appearance_viewer_icon.png",
   },
   rebuildConfig: {},
-  makers: [new MakerSquirrel({}), new MakerZIP({}, ["darwin"]), new MakerRpm({}), new MakerDeb({})],
+  makers: [
+    new MakerSquirrel({
+      // loadingGif:
+      setupExe: "DCDB Appearance Viewer Install.exe",
+    }),
+    new MakerZIP({}, ["darwin"]),
+    new MakerRpm({}),
+    new MakerDeb({}),
+  ],
   plugins: [
     new VitePlugin({
       // `build` can specify multiple entry builds, which can be Main process, Preload scripts, Worker process, etc.
@@ -33,7 +45,6 @@ const config: ForgeConfig = {
       ],
       renderer: [
         {
-          // FIXME: This is not what I want the name of the main window to be or where I want it defined
           name: "main_window",
           config: "vite.renderer.config.ts",
         },
@@ -48,7 +59,7 @@ const config: ForgeConfig = {
       [FuseV1Options.EnableNodeOptionsEnvironmentVariable]: false,
       [FuseV1Options.EnableNodeCliInspectArguments]: false,
       [FuseV1Options.EnableEmbeddedAsarIntegrityValidation]: true,
-      [FuseV1Options.OnlyLoadAppFromAsar]: true,
+      // [FuseV1Options.OnlyLoadAppFromAsar]: true,
     }),
   ],
 };

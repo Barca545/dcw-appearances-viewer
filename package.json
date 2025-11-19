@@ -1,16 +1,20 @@
 {
   "version": "0.0.1",
-  "name": "dc_database_appearances_viewer",
+  "name": "dcdb_appearances_viewer",
   "main": ".vite/build/main.js",
   "scripts": {
     "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "publish": "electron-forge publish",
+    "lint": "eslint --ext .ts,.tsx .",
     "test": "npm run build && tsx --test",
-    "dev": "vite",
-    "build": "tsc --build src --force",
-    "build:preload": " tsc --project src/preload/tsconfig.json",
-    "build:src": "tsc --project src/tsconfig.json",
-    "build:watch": "tsc --build src --force --watch"
+    "build": "tsc --build --force"
   },
+  "keywords": [],
+  "author": "Yami545",
+  "license": "ISC",
+  "description": "An app for viewing a list of a character's appearances in DC comics. App uses data from the DC Database Wiki.",
   "dependencies": {
     "npm": "^11.6.0",
     "xml-js": "1.6.11"
@@ -26,24 +30,22 @@
     "@electron-forge/plugin-vite": "^7.10.2",
     "@electron/fuses": "^1.8.0",
     "@types/electron-squirrel-startup": "^1.0.2",
+    "@types/lodash-es": "^4.17.12",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",
-    "electron": "39.0.0",
+    "electron": "^39.1.2",
+    "electron-prebuilt-compile": "^8.2.0",
     "eslint": "^8.57.1",
     "eslint-plugin-import": "^2.32.0",
     "lodash-es": "^4.17.21",
     "nodemon": "^3.1.10",
     "terser-webpack-plugin": "^5.3.14",
     "tsx": "^4.20.5",
-    "typescript": "~4.5.4",
-    "vite": "^5.4.21"
+    "typescript": "^5.9.3",
+    "vite": "^7.2.2"
   },
   "directories": {
     "test": "test",
     "src": "src/**"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": ""
+  }
 }

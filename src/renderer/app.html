@@ -5,6 +5,7 @@
     <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
     <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" />
     <link rel="stylesheet" type="text/css" href="./styles.css" />
+    <link rel="stylesheet" type="text/css" href="./app.css" />
   </head>
   <body>
     <!-- Basically how this should work is screen lets you choose to either open a
@@ -45,9 +46,12 @@
         </select>
       </form>
       <!-- TODO: I don't love having the templates just floating here, there has to be a better way to store them -->
+
+      <div id="spinner" style="display: none">Loading...</div>
       <template id="template-results-full">
         <details class="result-details">
           <summary class="result-summary">
+            <!-- TODO: Could the anchor just be directly around the name? -->
             <div class="result-title">
               <!-- This anchor does nothing -->
               <!-- The logic to handle the click is inserted during its creation in elements.ts-->
@@ -59,21 +63,22 @@
               <span class="result-date"> </span>
             </div>
           </summary>
+          <!-- TODO: rename -->
           <div class="result-body">
             <!--Synopsis goes here-->
             Synopsis
           </div>
         </details>
       </template>
-      <template id="template-results-partial">
-        <div class="result-title">
-          <a class="result-url" href=""><span class="result-name"></span></a>
-          <span class="result-date"> </span>
-        </div>
-      </template>
-      <section id="results">
-        <!--This empty div is where the results will go-->
-      </section>
+      <div id="results-container">
+        <!--This empty section is where the results will go-->
+        <template id="template-results-partial">
+          <div class="result-title">
+            <a class="result-url" href=""><span class="result-name"></span></a>
+            <span class="result-date"> </span>
+          </div>
+        </template>
+      </div>
     </section>
     <!-- TODO: Should I use defer or something here? -->
     <script type="module" src="app.ts"></script>

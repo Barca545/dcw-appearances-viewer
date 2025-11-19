@@ -17,8 +17,6 @@ async function registerFetchData() {
     if (setting?.tagName == "FIELDSET") {
       let inputs = setting.querySelectorAll(`[name="${key}"]`) as NodeListOf<HTMLInputElement>;
       inputs.forEach((input) => {
-        console.log(key);
-        console.log(value);
         // This will unselect all radios except the one the user selected
         input.checked = input.value == value;
         // input.dispatchEvent(new Event("change", { bubbles: true }));

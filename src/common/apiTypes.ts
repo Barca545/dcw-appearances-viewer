@@ -6,19 +6,47 @@ import { None, Option, Some } from "../../core/option";
 // - AppearanceData
 
 export interface SearchRequest {
-  "character-selection": string;
-  "universe-select": string;
+  /** The first and last name of the character. */
+  character: string;
+  /**The character's home universe */
+  universe: string;
+}
+
+export enum SortOrder {
+  AlphaNumeric,
+  PubDate,
+}
+
+/**The response to a request to fetch appearences from the wiki. */
+export interface SubmitResponse {
+  success: boolean;
+  character: string;
+  appearances?: AppearanceData[];
+}
+
+export namespace SortOrder {
+  export function from(value: string): Option<SortOrder> {
+    switch (value) {
+      case "A-Z": {
+        return new Some(SortOrder.AlphaNumeric);
+      }
+      case "PUB": {
+        return new Some(SortOrder.PubDate);
+      }
+    }
+    return new None();
+  }
 }
 
 export class FilterOptions {
-  sortOrder: "PUB" | "A-Z";
+  sortOrder: SortOrder;
   density: "NORM" | "DENSE";
   ascending: boolean;
 
   /**Create a new set of FilterOptions with the default parameters (density = "NORM", order = "PUB"). */
   constructor() {
     this.density = "NORM";
-    this.sortOrder = "PUB";
+    this.sortOrder = SortOrder.PubDate;
     this.ascending = true;
   }
 
@@ -26,7 +54,7 @@ export class FilterOptions {
     this.density = dense;
     return this;
   }
-  setOrder(ord: "PUB" | "A-Z") {
+  setOrder(ord: SortOrder) {
     this.sortOrder = ord;
     return this;
   }
@@ -53,7 +81,7 @@ declare global {
 
       form: {
         /**Submits the form to the main process and returns the result to the renderer. */
-        submit: (data: SearchRequest) => Promise<{ appearances: AppearanceData[]; character: string }>;
+        submit: (data: SearchRequest) => Promise<SubmitResponse>;
       };
       open: {
         /**Open a  new AppPage in the current tab. */
@@ -69,6 +97,7 @@ declare global {
       filterOptions: (state: FilterOptions) => Promise<AppearanceData[]>;
       recieveData: (callback: (res: any) => any) => void;
       dataRequest: (data: any) => void;
+      displayError: (title: string, msg: string) => void;
     };
   }
 }
@@ -107,11 +136,11 @@ export enum AppPage {
 
 // Cursed way to kinda emulate rust enums
 export namespace AppPage {
-  export function from(pg: string): Option<AppPage> {
+  export function from(value: string): Option<AppPage> {
     // It's like a shitty match statement :D (visually not under the hood)
-    if (pg.includes("start") || pg.includes("start.html")) return new Some(AppPage.StartPage);
-    else if (pg.includes("app") || pg.includes("app.html")) return new Some(AppPage.Application);
-    else if (pg.includes("settings") || pg.includes("settings.html")) return new Some(AppPage.Settings);
+    if (value.includes("start") || value.includes("start.html")) return new Some(AppPage.StartPage);
+    else if (value.includes("app") || value.includes("app.html")) return new Some(AppPage.Application);
+    else if (value.includes("settings") || value.includes("settings.html")) return new Some(AppPage.Settings);
     else return new None();
   }
 }

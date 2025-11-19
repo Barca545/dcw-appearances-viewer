@@ -10,9 +10,10 @@
     "noUnusedLocals": true,
     "sourceMap": true,
     "baseUrl": ".",
+    "rootDir": ".",
     "outDir": "dist",
     "moduleResolution": "node",
     "resolveJsonModule": true
   },
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "dist"]
 }

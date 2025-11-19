@@ -1,0 +1,6 @@
+#spinner {
+  font-size: 2rem; /* increase text size */
+  color: white;
+  font-weight: bold;
+  place-content: center;
+}

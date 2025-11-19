@@ -1,46 +1,67 @@
-import { templateStringToListEntry } from "./helpers.js";
-import { xmlToJSON } from "./parser.js";
-import { ListEntry } from "./pub-sort.js";
+import { templateStringToListEntry } from "./utils";
+import { ListEntry } from "./pub-sort";
+import { TitleAndTemplate, AppearancesResposeJSONStructure, Result, Ok, Err } from "./coreTypes";
 
-export async function getAppearances(char: string): Promise<string[]> {
-  let cmcontinue: string | undefined = "";
-  let appearances = [];
+/**Returns a list containing an interface with the `character`'s appearences' title and the raw string of their template.  */
+export async function getAppearances(character: string): Promise<Result<TitleAndTemplate[]>> {
+  // Format the name by clear the spaces out of the name
+  character = character.replaceAll(/\s/g, "_");
+  let gcmcontinue: string | undefined = "";
+  let appearances = [] as TitleAndTemplate[];
 
-  while (cmcontinue != undefined) {
+  while (gcmcontinue != undefined) {
     let params = new URLSearchParams({
       action: "query",
-      list: "categorymembers",
-      // Sanitize the name
-      cmtitle: `Category:${char.replaceAll(/\s/g, "_")}/Appearances`,
-      cmlimit: "50",
+
+      // Generators
+      // list: "categorymembers",
+      generator: "categorymembers",
+      gcmtitle: `Category:${character}/Appearances`,
+      gcmtype: "page",
+      gcmlimit: "50",
       format: "json",
+      formatversion: "2",
+      utf8: "1",
+
+      // TODO: Figure out why generators don't work, might be a thing because I'm treated as a bot
+      // Properties
+      prop: "revisions",
+      rvprop: "content",
+      rvslots: "main",
     });
 
-    if (cmcontinue) params.set("cmcontinue", cmcontinue);
+    if (gcmcontinue) params.set("gcmcontinue", gcmcontinue);
 
-    const url = new URL(`https://dc.fandom.com/api.php?${params.toString()}`);
+    const url = new URL(`https://dc.fandom.com/api.php`);
 
     const res = await fetch(url, {
+      method: "POST",
       headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
         "User-Agent": "Node.js https request",
       },
+      body: params.toString(),
     });
 
     if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
+      throw new Err(new Error(`HTTP error! status: ${res.status}`));
     }
 
-    // @ts-ignore
-    let data: CategoryMembersResponse = await res.json();
+    let data = (await res.json()) as AppearancesResposeJSONStructure;
 
-    appearances.push(...data.query.categorymembers);
+    if (data.query == undefined) {
+      return new Err(new Error("Search failed. Please check the name and try again."));
+    }
 
-    cmcontinue = data.continue?.cmcontinue;
+    // TODO: Ideally a more efficient way to do this
+    data.query.pages.forEach((page) => {
+      appearances.push({ title: page.title, rawTemplate: page.revisions[0].slots.main.content });
+    });
+
+    gcmcontinue = data.continue?.gcmcontinue;
   }
 
-  return appearances.map((appearance) => {
-    return appearance.title;
-  });
+  return new Ok(appearances);
 }
 
 export async function getRealitiesList(): Promise<any[]> {
@@ -55,11 +76,12 @@ export async function getRealitiesList(): Promise<any[]> {
       cmtitle: `Category:realities`,
       cmlimit: "50",
       format: "json",
+      utf8: "1",
     });
 
     if (cmcontinue) params.set("cmcontinue", cmcontinue);
 
-    const url = new URL(`https://dc.fandom.com/api.php?${params.toString()}`);
+    const url = new URL(`https://dc.fandom.com/api.php${params.toString()}`);
 
     const res = await fetch(url, {
       headers: {
@@ -93,52 +115,25 @@ export async function getRealitiesList(): Promise<any[]> {
   });
 }
 
-// FIXME: Should return an object fitting the export
-/**Returns a string containing the XML file containing the site response. */
-export async function getAppearancePages(titles: string[]): Promise<string> {
-  // Sanitize the titles to get rid of spaces
-  titles = titles.map((title) => {
-    return title.replaceAll(/\s/g, "_");
-  });
-
-  let params = new URLSearchParams({
-    pages: titles.join("\r\n"),
-    curonly: "1",
-  });
-
-  const url = new URL(`https://dc.fandom.com/Special:Export?${params.toString()}`);
-
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      "User-Agent": "Node.js https request",
-    },
-  });
-
-  if (!res.ok) {
-    throw new Error(`HTTP error! status: ${res.status}`);
-  }
-
-  return res.text();
-}
-
 /**
  * Fetches the apearance data for the requested character and parses it into a list of ListEntrys.
- * @param path
- * @returns
+ * @param character
+ * @returns Promise<ListEntry[]>
  */
-export async function fetchList(character: string): Promise<ListEntry[]> {
+export async function fetchList(character: string): Promise<Result<ListEntry[]>> {
   // Fetch the file and convert it into a json
 
-  const res = await getAppearancePages(await getAppearances(character));
+  const res = await getAppearances(character);
 
-  const json = xmlToJSON(res);
+  if (!res.ok()) {
+    return new Err(res.unwrapp_err());
+  }
 
   // Convert each appearance into a list entry
   let appearances: ListEntry[] = [];
-  for (const entry of json.mediawiki.page) {
-    appearances.push(templateStringToListEntry(entry.revision.text._text as string));
+  for (const entry of res.unwrap()) {
+    appearances.push(templateStringToListEntry(entry));
   }
 
-  return appearances;
+  return new Ok(appearances);
 }

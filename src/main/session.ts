@@ -2,11 +2,11 @@ import { app, BrowserWindow, dialog, Menu, nativeTheme } from "electron";
 import { ListEntry, pubDateSort } from "../../core/pub-sort";
 import path from "path";
 import { ProjectData, loadList, ProjectDataFromJSON, ProjectDataToJSON, Path } from "../../core/load";
-import { AppPage, FilterOptions, Settings } from "../common/apiTypes";
+import { AppPage, FilterOptions, Settings, SortOrder } from "../common/apiTypes";
 import { None, Some, Option } from "../../core/option";
-import fs, { PathLike } from "fs";
+import fs from "fs";
 import { MenuTemplate, openFileDialog } from "./menu";
-import { __userdata, IS_DEV, MESSAGES } from "./helpers";
+import { __userdata, IS_DEV, LOG, MESSAGES, RESOURCE_PATH, UNIMPLEMENTED_FEATURE } from "./main_utils";
 
 export declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 export declare const MAIN_WINDOW_VITE_NAME: string;
@@ -31,18 +31,32 @@ export class Session {
 
   constructor(onClose: (args: any) => Promise<void>, saveFn?: () => Promise<void>) {
     const settings = Session.getSettings();
-
     this.win = Session.makeWindow(settings);
     this.opt = new FilterOptions();
-    // Only mark dirty once a task is open
-    this.isClean = { settings: true, task: true };
     this.projectData = ProjectData.empty();
     this.savePath = new None();
     this.settings = settings;
+    // Only mark dirty once a task is open
+    // This means the landing page won't count as a document edit
+    // However opening a project will because reflow marks as dirty and opening a project calls reflow
+    this.isClean = { settings: true, task: true };
 
     // Basically this needs to run after all the fields are set up
     this.openAppPage();
     this.win.setMenu(Menu.buildFromTemplate(MenuTemplate(this)));
+
+    // Register listeners
+    this.win.on("close", (_e) => {
+      // Check whether a save is needed
+      if (!this.isClean.task) {
+        // Prompt them to save the the document before exiting
+        // Only pop up a dialog if there is no filename
+        this.saveFile(false);
+      }
+      if (!this.isClean.settings) {
+        UNIMPLEMENTED_FEATURE();
+      }
+    });
   }
 
   /**Applies current settings file to all windows and updates the settings field.*/
@@ -72,17 +86,14 @@ export class Session {
     const file = JSON.stringify(this.settings);
 
     // In dev, save to dev settings folder
-    if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-      fs.writeFileSync("settings.json", file);
+    // TODO: DO this if then where root directory is defined and then just use that everywhere
+    if (IS_DEV) {
+      fs.writeFileSync(path.join(ROOT_DIRECTORY, "settings.json"), file, { encoding: "utf-8" });
     } else {
-      // If there is no userdata folder make one and add the settings to
-      if (!fs.existsSync(`${__userdata}/DCDB Appearances/`)) {
-        fs.mkdirSync(`${__userdata}/DCDB Appearances/`);
-      }
-      fs.writeFileSync(`${__userdata}/DCDB Appearances/settings.json`, file);
-    }
+      fs.writeFileSync(path.join(__userdata, "settings.json"), file, { encoding: "utf-8" });
 
-    this.isClean.settings = true;
+      this.isClean.settings = true;
+    }
   }
 
   private static makeWindow(settings: Settings): BrowserWindow {
@@ -98,6 +109,8 @@ export class Session {
         preload: MAIN_WINDOW_PRELOAD_VITE_ENTRY,
       },
     });
+
+    LOG("Preload Path", `${MAIN_WINDOW_PRELOAD_VITE_ENTRY}`);
 
     win.webContents.on("did-finish-load", () => {
       if (!win) {
@@ -116,23 +129,26 @@ export class Session {
   }
 
   private static getSettings(): Settings {
-    // FIXME: There should be a way to have it make a settings file if there is none
-    // Maybe that can be done as part of the installation process?
-
+    const settingsSrc = path.join(RESOURCE_PATH, "settings.json");
     // Skip the production stuff below if we're in dev
-    if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-      // @ts-ignore
-      return JSON.parse(fs.readFileSync("settings.json")) as Settings;
+    if (IS_DEV) {
+      return JSON.parse(fs.readFileSync(settingsSrc, { encoding: "utf-8" })) as Settings;
     } else {
-      // If there is no userdata folder make one and add the settings to
-      if (!fs.existsSync(`${__userdata}/DCDB Appearances/`)) {
-        fs.mkdirSync(`${__userdata}/DCDB Appearances/`);
-        // Copy the default settings file into userdata
-        fs.copyFileSync("settings.json", __userdata);
+      // Settings location in userdata
+      const settingsDst = path.join(__userdata, "settings.json");
+      // This will copy settings to the userdata directory as long as it does not already have a settings file
+
+      // TODO: No actual reason to log the error if this fails
+      try {
+        fs.copyFileSync(settingsSrc, settingsDst, fs.constants.COPYFILE_EXCL);
+      } catch {
+        /*just discard the error no need to print*/
       }
 
-      // @ts-ignore
-      return JSON.parse(fs.readFileSync(`${__userdata}/DCDB Appearances/settings.json`)) as Settings;
+      // Load settings
+      const settings = fs.readFileSync(settingsDst, { encoding: "utf-8" });
+
+      return JSON.parse(settings) as Settings;
     }
   }
 
@@ -142,7 +158,6 @@ export class Session {
    * the close event. Will skip `onClose` behavior.
    */
   async close() {
-    console.log("closing functions");
     this.win.close();
   }
 
@@ -193,7 +208,6 @@ export class Session {
         // FIXME: My understanding is this catch block should still work but I need to confirm
         file = ProjectDataFromJSON(this.savePath.unwrap()) as ProjectData;
       } catch (err) {
-        console.log("fail point");
         dialog.showErrorBox("Load Failed", (err as Error).message);
         return;
       }
@@ -249,15 +263,17 @@ export class Session {
   }
 
   /**Recalculate the layout of the results section and return the new layout.*/
+  // TODO:  Maybe this can be part of a bigger update function or something
+  // This being where the isDirty flag is reset feels awkward
   reflow(): ListEntry[] {
     let sorted = this.projectData.data;
     // TODO: Basically move all this logic serverside
     switch (this.opt.sortOrder) {
-      case "PUB": {
+      case SortOrder.PubDate: {
         sorted = pubDateSort(sorted);
         break;
       }
-      case "A-Z": {
+      case SortOrder.AlphaNumeric: {
         // TODO: This type of sorting needs to be checked for correctness
         sorted = sorted.sort((a, b) => {
           if (a.title < b.title) {
@@ -277,6 +293,10 @@ export class Session {
       sorted = sorted.reverse();
     }
 
+    // FIXME: Not sure I love this here
+    // Mark the file as needing a save
+    this.isClean.task = false;
+
     return sorted;
   }
   /**Replace the current tab's content with content for another AppPage.
@@ -289,8 +309,12 @@ export class Session {
       // TODO: Don't love having the directory be constant here but this only loads pages so it should be fine
       this.win.loadURL(`${ROOT_DIRECTORY}/src/renderer/${src}`);
     } else {
-      // TODO: Doublecheck
-      this.win.loadFile(path.join(ROOT_DIRECTORY, `../renderer/${MAIN_WINDOW_VITE_NAME}/${src}`));
+      const filePath = path.join(__dirname, "..", "renderer", MAIN_WINDOW_VITE_NAME, "src", "renderer", src.toString());
+
+      for (const file of fs.readdirSync(path.join(filePath, "..", "..", ".."), { encoding: "utf-8" })) {
+        LOG("src/renderer internals", file);
+      }
+      this.win.loadFile(filePath);
     }
   }
 

@@ -1,13 +1,9 @@
 # 0.0.1
 
-## Session saving
+## Searching
 
-- [ ] Every change to a document should mark it as `isDirty`
-- [x] Store the name of the character as part of save data
-- [ ] Exiting an unsaved page should autosave or prompt a save (user preference)
-- [ ] Save prompt [on window exit](https://stackoverflow.com/questions/45677600/)
-- [ ] Save as markdown reading list with entries as "`- [ ] [name](link)\n`"
-- [x] Open saved files
+- [x] Add ability to search for a character's appearances and display them
+- [x] Add indication showing a request is bending + indication if a request fails
 
 ## Miscellaneous
 
@@ -17,8 +13,18 @@
 - [x] Figure out how to have it create a settings file in userdata
 - [ ] View should not show dev stuff when packaged
 - [x] Open dialog should be a modal
+- [ ] Set up resources folder
 
 # 0.0.2
+
+## Session saving
+
+- [ ] Every change to a project should mark it as `isDirty`
+- [ ] Saving should update a document's `isDirty` to clean
+- [x] Store the name of the character as part of save data
+- [x] Save prompt [on window exit](https://stackoverflow.com/questions/45677600/)
+- [ ] Save as markdown reading list with entries as "`- [ ] [name](link)\n`"
+- [x] Open saved files
 
 ## Organize project
 
@@ -38,6 +44,8 @@
 - [ ] Replace casts with `Options` + `unwrap`s
 - [ ] Update architecture.md
 - [ ] Save previous searches in a document to autofill them into the search
+- [ ] Fetch should return an error if it fails
+- [ ] Figure out .asar instead of copying resources
 
 # 0.0.3
 
@@ -64,8 +72,14 @@
 
 ## Multiple Tabs
 
-- [ ] Extend `onLeave` save behavior to tabs
-- [ ] Tab should indicate if unsaved
+- [x] Exiting a tab should autosave or prompt a save if it is untitled
+- [ ] Tab should indicate if unsaved like VSCode
+
+# 0.0.6
+
+## Filtering
+
+- [ ] Add ability to filter for a specific date range
 
 # 0.0.9
 
