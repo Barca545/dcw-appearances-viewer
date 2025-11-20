@@ -31,7 +31,9 @@ export class Session {
 
   constructor(onClose: (args: any) => Promise<void>, saveFn?: () => Promise<void>) {
     const settings = Session.getSettings();
+    LOG("Settings made?", JSON.stringify(settings));
     this.win = Session.makeWindow(settings);
+    LOG("Win made?", JSON.stringify(this.win));
     this.opt = new FilterOptions();
     this.projectData = ProjectData.empty();
     this.savePath = new None();
@@ -309,11 +311,8 @@ export class Session {
       // TODO: Don't love having the directory be constant here but this only loads pages so it should be fine
       this.win.loadURL(`${ROOT_DIRECTORY}/src/renderer/${src}`);
     } else {
-      const filePath = path.join(__dirname, "..", "renderer", MAIN_WINDOW_VITE_NAME, "src", "renderer", src.toString());
+      const filePath = path.join(__dirname, "..", "renderer", MAIN_WINDOW_VITE_NAME, "src", "renderer", `${src}`);
 
-      for (const file of fs.readdirSync(path.join(filePath, "..", "..", ".."), { encoding: "utf-8" })) {
-        LOG("src/renderer internals", file);
-      }
       this.win.loadFile(filePath);
     }
   }

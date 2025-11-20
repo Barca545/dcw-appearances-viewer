@@ -45,7 +45,7 @@ export function MenuTemplate(session: Session): MenuTemplate {
           label: "Settings",
           accelerator: "CommandOrControl+,",
           // TODO: Once tabbing is set up, just have the settings open in a new tab
-          click: (_item, _base, _e) => UNIMPLEMENTED_FEATURE,
+          click: (_item, _base, _e) => UNIMPLEMENTED_FEATURE(),
         },
         { type: "separator" },
         IS_MAC ? { role: "close" } : { role: "quit" },
