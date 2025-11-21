@@ -123,7 +123,7 @@ export interface AppearanceData {
 // TODO: List entry should be in shared?
 
 export interface AppMessages {
-  closeWarning: string;
+  unsavedChanges: string;
   unimplemented: string;
   illegalFileType: string;
 }

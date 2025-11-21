@@ -9,11 +9,13 @@ It allows for sorting the lists, currently only alphabetical order and publicati
 
 # Releases and Updates
 
-Updates via [github releases]() versioning follows [semver](https://semver.org/).
+Updates via [github releases](https://github.com/Barca545/publication_date_sort/releases) versioning follows [semver](https://semver.org/).
 
 # Known Problems
 
 - Only the first synopsis from an issue is shown.
+- Synopsis will terminate if it includes templates
 - The Dropdown that includes all the earths preloaded is very tempermental.
 - (Dev) Sometimes preload disappears from the `.vite/build` directory. It is annoying and why is unclear. Reloading will return it.
 - Changing the theme in settings changes the window size and position.
+- If a new character is loaded in, they cannot be reflowed

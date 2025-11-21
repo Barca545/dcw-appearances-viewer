@@ -14,17 +14,25 @@
 - [x] View should not show dev stuff when packaged
 - [x] Open dialog should be a modal
 - [x] Set up resources folder
-- [ ] Creating a new project needs to reset the project data being stored not reload the same
-- [ ] If a new character is loaded in, they cannot be reflowed
 
 # 0.1.1
+
+## Installation and Uninstallation
 
 - [ ] Add shortcuts during install
 - [ ] Copy resources to userdata during install
 - [ ] Remove shortcuts during uninstall
 - [ ] Delete userdata during uninstall
+
+## Updating
+
 - [ ] Add Github releases
 - [ ] Add stable autoupdate if possible
+
+## Miscellaneous
+
+- [ ] Creating a new project needs to reset the project data being stored
+- [ ] Finish unsaved changes exit prompt
 
 # 0.2.0
 

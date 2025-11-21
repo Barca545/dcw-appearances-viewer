@@ -8,7 +8,10 @@ import path from "path";
 import Child from "child_process";
 import fs from "fs";
 
+// TODO: Error dialog boxes do not need a ready app, use to display any installation errors that occur
+
 // Prevent multiple startups during installation
+if (handleStartupEvent()) app.quit();
 
 process.on("uncaughtException", (err) => {
   LOG(err.name, err.stack as string);
@@ -66,8 +69,9 @@ function handleStartupEvent(): boolean {
       return true;
     }
     case "--squirrel-updated": {
+      // Will update shortcut if needed
       spawnUpdate("--create-shortcut", exeName, "--shortcut-locations=Desktop,StartMenu");
-      // TODO: Move logic to create necessary folders for resources here
+      // TODO: Need some way to install new settings but keep existing user ones
       return true;
     }
     case "--squirrel-obsolete":
@@ -78,8 +82,6 @@ function handleStartupEvent(): boolean {
   }
   return false;
 }
-
-if (handleStartupEvent()) app.quit();
 
 // TODO: I am not actually sure if holding the session here at the top level after init is needed
 // It would be in rust but it's possible that is not the case in JS
