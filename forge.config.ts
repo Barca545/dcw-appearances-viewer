@@ -10,17 +10,29 @@ import { FuseV1Options, FuseVersion } from "@electron/fuses";
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
-    appBundleId: "DCDB-Appearances-Viewer",
-    // name: "",
+    name: "dcdb-appearance-viewer",
+    appBundleId: "DCDB-Appearance-Viewer",
     executableName: "DCDB Appearance Viewer",
     extraResource: ["./resources/appMessages.json", "./resources/settings.json"],
-    icon: "assets/dcdc_appearance_viewer_icon.png",
+    icon: "assets/dcdc_appearance_viewer_icon.ico",
+    overwrite: true,
   },
   rebuildConfig: {},
+  publishers: [
+    {
+      name: "@electron-forge/publisher-github",
+      config: {
+        repository: {},
+      },
+    },
+  ],
   makers: [
     new MakerSquirrel({
       // loadingGif:
+      // remoteReleases:
+      // remoteToken:
       setupExe: "DCDB Appearance Viewer Install.exe",
+      skipUpdateIcon: true,
     }),
     new MakerZIP({}, ["darwin"]),
     new MakerRpm({}),

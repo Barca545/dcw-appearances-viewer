@@ -6,12 +6,10 @@ import { AppPage, FilterOptions, Settings, SortOrder } from "../common/apiTypes"
 import { None, Some, Option } from "../../core/option";
 import fs from "fs";
 import { MenuTemplate, openFileDialog } from "./menu";
-import { __userdata, IS_DEV, LOG, MESSAGES, RESOURCE_PATH, UNIMPLEMENTED_FEATURE } from "./main_utils";
+import { __userdata, IS_DEV, ROOT_DIRECTORY, MESSAGES, RESOURCE_PATH, UNIMPLEMENTED_FEATURE } from "./main_utils";
 
 export declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 export declare const MAIN_WINDOW_VITE_NAME: string;
-/**Address of the root directory */
-export const ROOT_DIRECTORY = IS_DEV ? MAIN_WINDOW_VITE_DEV_SERVER_URL : __dirname;
 
 // FIXME: It does not seem as if vite supports this for vite as it does webpack but maybe they will eventually
 export const MAIN_WINDOW_PRELOAD_VITE_ENTRY = path.join(__dirname, `preload.js`);
@@ -29,11 +27,9 @@ export class Session {
   };
   settings: Settings;
 
-  constructor(onClose: (args: any) => Promise<void>, saveFn?: () => Promise<void>) {
+  constructor() {
     const settings = Session.getSettings();
-    LOG("Settings made?", JSON.stringify(settings));
     this.win = Session.makeWindow(settings);
-    LOG("Win made?", JSON.stringify(this.win));
     this.opt = new FilterOptions();
     this.projectData = ProjectData.empty();
     this.savePath = new None();
@@ -112,8 +108,6 @@ export class Session {
       },
     });
 
-    LOG("Preload Path", `${MAIN_WINDOW_PRELOAD_VITE_ENTRY}`);
-
     win.webContents.on("did-finish-load", () => {
       if (!win) {
         throw new Error('"win" is not defined');
@@ -136,19 +130,8 @@ export class Session {
     if (IS_DEV) {
       return JSON.parse(fs.readFileSync(settingsSrc, { encoding: "utf-8" })) as Settings;
     } else {
-      // Settings location in userdata
-      const settingsDst = path.join(__userdata, "settings.json");
-      // This will copy settings to the userdata directory as long as it does not already have a settings file
-
-      // TODO: No actual reason to log the error if this fails
-      try {
-        fs.copyFileSync(settingsSrc, settingsDst, fs.constants.COPYFILE_EXCL);
-      } catch {
-        /*just discard the error no need to print*/
-      }
-
       // Load settings
-      const settings = fs.readFileSync(settingsDst, { encoding: "utf-8" });
+      const settings = fs.readFileSync(path.join(__userdata, "settings.json"), { encoding: "utf-8" });
 
       return JSON.parse(settings) as Settings;
     }
@@ -201,7 +184,7 @@ export class Session {
     let file: ProjectData;
     if (ext == ".xml")
       file = {
-        header: { appID: "DCDB-Appearances-View", version: app.getVersion() },
+        header: { appID: "DCDB-Appearance-Viewer", version: app.getVersion() },
         meta: { options: new FilterOptions() },
         data: loadList(this.savePath.unwrap()),
       };
@@ -301,12 +284,27 @@ export class Session {
 
     return sorted;
   }
+
+  /**Reset the current tab to the blank tab state. */
+  resetTab() {
+    this.projectData = ProjectData.empty();
+    this.opt = new FilterOptions();
+    this.savePath = new None();
+    this.isClean = { settings: true, task: true };
+  }
+
   /**Replace the current tab's content with content for another AppPage.
    * Wrapper for this.win.loadFile and this.win.loadURL that uses the appropriate one and path depending on context.
    * DO NOT INCLUDE A DIRNAME JUST THE FILE'S NAME.
    * Loads `index.html` by default.
    * */
   openAppPage(src = AppPage.StartPage) {
+    // If it is currently an Application page, it should save before exiting and then wipe all old data
+    // Include a check because when the page initially loads because on startup the app has no loaded page
+    if (this.win.webContents.getURL() && AppPage.from(this.win.webContents.getURL()).unwrap() == AppPage.Application) {
+      this.saveFile(false);
+      this.resetTab();
+    }
     if (IS_DEV) {
       // TODO: Don't love having the directory be constant here but this only loads pages so it should be fine
       this.win.loadURL(`${ROOT_DIRECTORY}/src/renderer/${src}`);

@@ -30,7 +30,7 @@ export function loadList(path: Path): ListEntry[] {
 
 // FIXME: Is there a reason this is not a class?
 export interface ProjectData {
-  header: { appID: "DCDB-Appearances-View"; version: string };
+  header: { appID: "DCDB-Appearance-Viewer"; version: string };
   meta: { character?: string; options: FilterOptions };
   data: ListEntry[];
 }
@@ -39,7 +39,7 @@ export namespace ProjectData {
   export function empty(): ProjectData {
     return {
       // Unsure if not having versions is theoretically a problem
-      header: { appID: "DCDB-Appearances-View", version: "" },
+      header: { appID: "DCDB-Appearance-Viewer", version: "" },
       meta: { options: new FilterOptions() },
       data: [],
     };
@@ -101,6 +101,6 @@ export function ProjectDataFromJSON(filePath: Path): ProjectData {
   data.data = entries;
 
   // TODO: I would prefer not to hard code this but it's not a huge deal
-  if (data.header.appID == "DCDB-Appearances-View") return data;
+  if (data.header.appID == "DCDB-Appearance-Viewer") return data;
   else throw Error("Incorrect file structure.");
 }

@@ -7,4 +7,9 @@ export default defineConfig({
   //   // outDir: ".vite/build/main",
   //   // emptyOutDir: true,
   // },
+  // build: {
+  //   rollupOptions: {
+  //     external: ["electron-squirrel-startup"],
+  //   },
+  // },
 });

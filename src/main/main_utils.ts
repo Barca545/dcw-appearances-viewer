@@ -20,7 +20,7 @@ export const UNIMPLEMENTED_FEATURE = () => {
   dialog.showMessageBoxSync(win, { message: MESSAGES.unimplemented, buttons: ["OK"] });
 };
 
-/** Path to the Application's userdata folder. */
+/** Path to the Application's resource folder. */
 export const RESOURCE_PATH = IS_DEV ? `${process.cwd()}/resources` : `${process.resourcesPath}`;
 
 export const MESSAGES: AppMessages = JSON.parse(fs.readFileSync(`${RESOURCE_PATH}/appMessages.json`, { encoding: "utf-8" }));
@@ -31,10 +31,13 @@ export const APP_NAME = "dcdb_appearances_viewer";
  * Some environments may backup this directory to cloud storage. */
 export const __userdata = `${app.getPath("userData")}`;
 
+/**Address of the root directory */
+export const ROOT_DIRECTORY = IS_DEV ? MAIN_WINDOW_VITE_DEV_SERVER_URL : __dirname;
+
 // LOGGING
 
 // TODO: Change the prod path in real dev
-const LOG_PATH = IS_DEV ? path.join(process.cwd(), "logs") : `C:/Users/jamar/Documents/Hobbies/Coding/publication_date_sort/logs`; //path.join(app.getPath("userData"), "logs");
+const LOG_PATH = IS_DEV ? path.join(process.cwd(), "logs") : path.join(app.getPath("userData"), "logs");
 app.setAppLogsPath(LOG_PATH);
 
 export function LOG(name: string, err: string) {

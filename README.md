@@ -7,6 +7,10 @@ It allows for sorting the lists, currently only alphabetical order and publicati
 - The ability to filter by appearance type.
 - The ability to search for shared appearances of multiple characters, i.e. all issues that feature Batman, Superman, and Wonder Woman.
 
+# Releases and Updates
+
+Updates via [github releases]() versioning follows [semver](https://semver.org/).
+
 # Known Problems
 
 - Only the first synopsis from an issue is shown.

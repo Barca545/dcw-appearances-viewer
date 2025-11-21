@@ -1,4 +1,4 @@
-# 0.0.1
+# 0.1.0
 
 ## Searching
 
@@ -11,11 +11,22 @@
 - [x] Fix renderer files for the start and settings pages are not compiling
 - [x] The `ListEntry`s actually need to capture the history field
 - [x] Figure out how to have it create a settings file in userdata
-- [ ] View should not show dev stuff when packaged
+- [x] View should not show dev stuff when packaged
 - [x] Open dialog should be a modal
-- [ ] Set up resources folder
+- [x] Set up resources folder
+- [ ] Creating a new project needs to reset the project data being stored not reload the same
+- [ ] If a new character is loaded in, they cannot be reflowed
 
-# 0.0.2
+# 0.1.1
+
+- [ ] Add shortcuts during install
+- [ ] Copy resources to userdata during install
+- [ ] Remove shortcuts during uninstall
+- [ ] Delete userdata during uninstall
+- [ ] Add Github releases
+- [ ] Add stable autoupdate if possible
+
+# 0.2.0
 
 ## Session saving
 
@@ -43,11 +54,10 @@
 
 - [ ] Replace casts with `Options` + `unwrap`s
 - [ ] Update architecture.md
-- [ ] Save previous searches in a document to autofill them into the search
-- [ ] Fetch should return an error if it fails
-- [ ] Figure out .asar instead of copying resources
+- [x] Fetch should return an error if it fails
+- [ ] Fix issue where synopsis does not load fully; seems to be an error caused by failing to parse the templates in the synopsis properly.
 
-# 0.0.3
+# 0.3.0
 
 ## Renderer Refactor
 
@@ -58,7 +68,12 @@
 
 - [ ] Recent documents list on the start page
 
-# 0.0.5
+## QOL
+
+- [ ] Save previous searches in a document to autofill them into the search
+- [ ] Add recent documents menu option to continue a previous project
+
+# 0.5.0
 
 ## Settings
 
@@ -72,17 +87,19 @@
 
 ## Multiple Tabs
 
-- [x] Exiting a tab should autosave or prompt a save if it is untitled
+- [ ] Exiting a tab should autosave or prompt a save if it is untitled
 - [ ] Tab should indicate if unsaved like VSCode
 
-# 0.0.6
+# 0.6.0
 
 ## Filtering
 
 - [ ] Add ability to filter for a specific date range
-
-# 0.0.9
-
-- [ ] Multiple Characters
 - [ ] Sorting by type of appearance
+- [ ] Multiple Characters
+
+## QOL
+
 - [ ] Character inference for `.xml` files
+
+# 0.9.0

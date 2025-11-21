@@ -3,11 +3,83 @@ import { Session } from "./session";
 import { createCharacterName } from "../common/utils";
 import { fetchList } from "../../core/fetch";
 import { SubmitResponse } from "../common/apiTypes";
-import { IS_MAC, LOG } from "./main_utils";
+import { __userdata, IS_MAC, LOG, RESOURCE_PATH, ROOT_DIRECTORY } from "./main_utils";
+import path from "path";
+import Child from "child_process";
+import fs from "fs";
+
+// Prevent multiple startups during installation
 
 process.on("uncaughtException", (err) => {
-  LOG(err.name, err.stack);
+  LOG(err.name, err.stack as string);
 });
+
+// From here: https://stackoverflow.com/questions/43989408/creating-a-desktop-shortcut-via-squirrel-events-with-electron
+function handleStartupEvent(): boolean {
+  // Exit if there are no events
+  if (process.argv.length < 2) {
+    return false;
+  }
+  const event = process.argv[1];
+  const updateDotExe = path.resolve(path.join(ROOT_DIRECTORY, "Update.exe"));
+  const exeName = path.basename(process.execPath);
+
+  function spawn(cmd: string, ...args: string[]): Child.ChildProcessWithoutNullStreams {
+    let spawnedProcess;
+
+    try {
+      spawnedProcess = Child.spawn(cmd, args, { detached: true });
+    } catch (e) {
+      const err = e as Error;
+      // TODO: Figure out if not catching it here will cause a log to happen
+      LOG(err.name, err.stack as string);
+      // TODO: I don't love needing to have this here but whatever
+      // FIXME: Explicit error do not exit silently
+      throw new Error(err.message);
+    }
+
+    return spawnedProcess;
+  }
+
+  function spawnUpdate(...args: string[]) {
+    spawn(updateDotExe, ...args);
+  }
+
+  switch (event) {
+    case "--squirrel-install": {
+      // TODO: This may need to go to the update logic or something since the original references I use stick it in update for some reason
+      spawnUpdate("--create-shortcut", exeName, "--shortcut-locations=Desktop,StartMenu");
+      // TODO: Move logic to create necessary folders for resources here
+      try {
+        const settingsSrc = path.join(RESOURCE_PATH, "settings.json");
+        const settingsDst = path.join(__userdata, "settings.json");
+        fs.copyFileSync(settingsSrc, settingsDst, fs.constants.COPYFILE_EXCL);
+      } catch (e) {
+        const err = e as Error;
+        LOG(err.name, err.stack as string);
+      }
+      return true;
+    }
+    case "--squirrel-uninstall": {
+      spawnUpdate("--removeShortcut", exeName, "--shortcut-locations=Desktop, StartMenu");
+      fs.rmdirSync(__userdata);
+      return true;
+    }
+    case "--squirrel-updated": {
+      spawnUpdate("--create-shortcut", exeName, "--shortcut-locations=Desktop,StartMenu");
+      // TODO: Move logic to create necessary folders for resources here
+      return true;
+    }
+    case "--squirrel-obsolete":
+      // This is called on the outgoing version of your app before
+      // we update to the new version - it's the opposite of
+      // --squirrel-updated
+      return true;
+  }
+  return false;
+}
+
+if (handleStartupEvent()) app.quit();
 
 // TODO: I am not actually sure if holding the session here at the top level after init is needed
 // It would be in rust but it's possible that is not the case in JS
@@ -42,7 +114,7 @@ async function init() {
   // });
 
   // This must be created after the app is ready
-  session = new Session(async () => {});
+  session = new Session();
 
   // MAC BEHAVIOR
   // Quit the application when all windows/tabs are closed
