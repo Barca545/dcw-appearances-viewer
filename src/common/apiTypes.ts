@@ -126,6 +126,7 @@ export interface AppMessages {
   unsavedChanges: string;
   unimplemented: string;
   illegalFileType: string;
+  DevContact: string;
 }
 
 export enum AppPage {

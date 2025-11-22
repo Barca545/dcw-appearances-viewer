@@ -1,4 +1,4 @@
-# 0.1.0
+# 0.0.1
 
 ## Searching
 
@@ -15,13 +15,15 @@
 - [x] Open dialog should be a modal
 - [x] Set up resources folder
 
-# 0.1.1
+# 0.1.0
 
 ## Installation and Uninstallation
 
-- [ ] Add shortcuts during install
+- [ ] Add a send logs option to the menu
+- [x] Add desktop shortcut during install
+- [x] Add startmenu shortcut during install
 - [ ] Copy resources to userdata during install
-- [ ] Remove shortcuts during uninstall
+- [x] Remove shortcuts during uninstall
 - [ ] Delete userdata during uninstall
 
 ## Updating

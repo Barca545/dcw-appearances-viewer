@@ -1,6 +1,6 @@
 import { Session } from "./session";
-import { UNIMPLEMENTED_FEATURE, IS_MAC, IS_DEV } from "./main_utils";
-import { dialog } from "electron";
+import { UNIMPLEMENTED_FEATURE, IS_MAC, IS_DEV, MESSAGES } from "./main_utils";
+import { BaseWindow, dialog } from "electron";
 import { AppPage } from "../common/apiTypes";
 import { None, Option, Some } from "../../core/option";
 
@@ -53,6 +53,19 @@ export function MenuTemplate(session: Session): MenuTemplate {
     },
     { role: "editMenu" },
     IS_DEV ? VIEW_MENU_DEV : VIEW_MENU_PROD,
+    {
+      role: "help",
+      submenu: [
+        {
+          label: "Contact Developer",
+          click: (_item, base, _e) => dialog.showMessageBoxSync(base as BaseWindow, { message: MESSAGES.DevContact }),
+        },
+        // TODO: This should open a dialog and allow them to save the logfile to a place of their choice.
+        { label: "Generate Logfile", click: (_item, _base, _e) => UNIMPLEMENTED_FEATURE() },
+        // FIXME: Send the logs and OS other metadata
+        { label: "Send Error Report", click: (_item, _base, _e) => UNIMPLEMENTED_FEATURE() },
+      ],
+    },
   ];
 }
 

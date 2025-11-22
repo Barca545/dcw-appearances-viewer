@@ -1,5 +1,6 @@
 {
   "unsavedChanges": "You have unsaved changes, would you like to save before exiting?",
   "unimplemented": "This feature is currently unimplemented.",
-  "illegalFileType": "File type must be an .xml, .txt, or .json."
+  "illegalFileType": "File type must be an .xml, .txt, or .json.",
+  "DevContact": "Please reach out for help by emailing yamibarca545@gmail.com with your logfile and a discription of your problem."
 }

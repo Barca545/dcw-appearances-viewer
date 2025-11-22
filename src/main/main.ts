@@ -3,41 +3,59 @@ import { Session } from "./session";
 import { createCharacterName } from "../common/utils";
 import { fetchList } from "../../core/fetch";
 import { SubmitResponse } from "../common/apiTypes";
-import { __userdata, IS_MAC, LOG, RESOURCE_PATH, ROOT_DIRECTORY } from "./main_utils";
+import { __userdata, IS_DEV, IS_MAC, LOGGER, RESOURCE_PATH } from "./main_utils";
 import path from "path";
 import Child from "child_process";
 import fs from "fs";
 
-// TODO: Error dialog boxes do not need a ready app, use to display any installation errors that occur
+// TODO:
+// - URGENT: merge to main
+// - URGENT: Uninstall all appstuff on uninstall
+// - URGENT: Add github release - https://www.electronforge.io/config/publishers/github
+// - URGENT: Add autoupdater - https://www.electronforge.io/config/publishers/github && https://www.electronjs.org/docs/latest/tutorial/updates
+// - URGENT: Add check for all files installed correctly on first startup and log errors if stuff is missing
+
+// Read more on getPath: https://www.electronjs.org/docs/latest/api/app#appgetpathname
+
+const log = LOGGER.default();
+
+process.on("uncaughtException", (err) => {
+  // TODO: I am not sure this should always be fatal
+  log.fatal(err.name, err.stack || err.message);
+});
 
 // Prevent multiple startups during installation
 if (handleStartupEvent()) app.quit();
 
-process.on("uncaughtException", (err) => {
-  LOG(err.name, err.stack as string);
-});
-
 // From here: https://stackoverflow.com/questions/43989408/creating-a-desktop-shortcut-via-squirrel-events-with-electron
 function handleStartupEvent(): boolean {
-  // Exit if there are no events
+  if (process.platform != "win32") {
+    // FIXME: Should error about the wrong platform
+    dialog.showErrorBox(
+      "Incompatible Platform",
+      `This application is intended for 'win32' platforms and is incompatible with ${process.platform} platforms.`,
+    );
+    return true;
+  }
+
   if (process.argv.length < 2) {
+    // TODO: Error dialog boxes do not need a ready app, use to display any installation errors that occur
+    // Exit if there are no events
     return false;
   }
   const event = process.argv[1];
-  const updateDotExe = path.resolve(path.join(ROOT_DIRECTORY, "Update.exe"));
-  const exeName = path.basename(process.execPath);
+  const updateDotExe = path.join(app.getPath("exe"), "..", "..", "Update.exe");
+  const exeName = path.basename(app.getPath("exe"));
 
   function spawn(cmd: string, ...args: string[]): Child.ChildProcessWithoutNullStreams {
     let spawnedProcess;
 
     try {
-      spawnedProcess = Child.spawn(cmd, args, { detached: true });
+      spawnedProcess = Child.spawn(cmd, args, { detached: true, stdio: "pipe" }); //shell: true,
     } catch (e) {
       const err = e as Error;
-      // TODO: Figure out if not catching it here will cause a log to happen
-      LOG(err.name, err.stack as string);
-      // TODO: I don't love needing to have this here but whatever
-      // FIXME: Explicit error do not exit silently
+      // This is fatal because if for some reason any of these fail to execute the application will experience problems
+      log.fatal(err.name, err.stack || err.message);
       throw new Error(err.message);
     }
 
@@ -45,33 +63,51 @@ function handleStartupEvent(): boolean {
   }
 
   function spawnUpdate(...args: string[]) {
-    spawn(updateDotExe, ...args);
+    const proc = spawn(updateDotExe, ...args);
+    log.info("proc.spawnargs", proc.spawnargs.toString());
+    proc.on("error", (err) => log.fatal("Squirrel Spawn Error", err.stack || err.message));
+    proc.on("exit", (code, signal) => {
+      // 0 is success
+      if (code !== null && code !== 0) {
+        log.error("Update.exe exited with code", code.toString());
+      } else {
+        log.error("Update.exe killed with signal", signal as NodeJS.Signals);
+      }
+    });
   }
 
   switch (event) {
-    case "--squirrel-install": {
-      // TODO: This may need to go to the update logic or something since the original references I use stick it in update for some reason
-      spawnUpdate("--create-shortcut", exeName, "--shortcut-locations=Desktop,StartMenu");
-      // TODO: Move logic to create necessary folders for resources here
+    // NOTE: Fall through
+    case "--squirrel-install":
+    // Squirrel installer documentation: https://github.com/electron/windows-installer
+    // case "--squirrel-firstrun":
+    case "--squirrel-updated": {
+      // Will update shortcut if needed
+      spawnUpdate("--createShortcut", exeName, "--shortcut-locations=Desktop,StartMenu");
+      // TODO: Need some way to install new settings but keep existing user ones
+      // I.e. diff the files and only paste new settings
+      // TODO: Setting up userdata should probably go under first run
       try {
         const settingsSrc = path.join(RESOURCE_PATH, "settings.json");
         const settingsDst = path.join(__userdata, "settings.json");
         fs.copyFileSync(settingsSrc, settingsDst, fs.constants.COPYFILE_EXCL);
       } catch (e) {
         const err = e as Error;
-        LOG(err.name, err.stack as string);
+        // Info cuz expected behavior but under some circumstances may indicate failure
+        log.info("Update copy fail", `${err.message}`);
       }
       return true;
     }
     case "--squirrel-uninstall": {
-      spawnUpdate("--removeShortcut", exeName, "--shortcut-locations=Desktop, StartMenu");
-      fs.rmdirSync(__userdata);
-      return true;
-    }
-    case "--squirrel-updated": {
-      // Will update shortcut if needed
-      spawnUpdate("--create-shortcut", exeName, "--shortcut-locations=Desktop,StartMenu");
-      // TODO: Need some way to install new settings but keep existing user ones
+      // TODO: This probably needs an an error dialog on fail too
+      spawnUpdate("--removeShortcut", exeName, "--shortcut-locations=Desktop,StartMenu");
+      try {
+        fs.rmSync(__userdata, { recursive: true, force: true });
+      } catch (e) {
+        const err = e as Error;
+        log.fatal(err.name, `Uninstall removal fail.\n${err.stack || err.message}`);
+        dialog.showErrorBox(`uninstall ${err.name} removal fail.`, `${err.stack || err.message}`);
+      }
       return true;
     }
     case "--squirrel-obsolete":
@@ -88,8 +124,10 @@ function handleStartupEvent(): boolean {
 let session: Session;
 
 app.whenReady().then(() => {
+  // TODO: Move this stuff out of the whenReady?
+  const LOG_DIR = IS_DEV ? path.join(process.cwd(), "logs") : path.join(app.getPath("userData"), "Logs");
+  app.setAppLogsPath(LOG_DIR);
   init();
-  LOG("Session exists", JSON.stringify(session));
 });
 
 // NOTE: This adds a bunch of listeners to the main process it needs to function
@@ -147,7 +185,7 @@ async function init() {
     session.projectData.meta.character = character;
     const res = await fetchList(character);
 
-    // FIXME: This is pretty janky reventyally I want to send the actual data over
+    // FIXME: This is pretty janky eventually I want to send the actual data over
     if (!res.ok()) {
       return { success: false, character: character };
     }
