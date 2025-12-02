@@ -63,7 +63,8 @@ export function MenuTemplate(session: Session): MenuTemplate {
         // TODO: This should open a dialog and allow them to save the logfile to a place of their choice.
         { label: "Generate Logfile", click: (_item, _base, _e) => UNIMPLEMENTED_FEATURE() },
         // FIXME: Send the logs and OS other metadata
-        { label: "Send Error Report", click: (_item, _base, _e) => UNIMPLEMENTED_FEATURE() },
+        // TODO: Look up how to send stuff to a google drive folder or some other kind of document dump
+        { label: "Send Logs", click: (_item, _base, _e) => UNIMPLEMENTED_FEATURE() },
       ],
     },
   ];

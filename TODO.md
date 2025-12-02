@@ -19,7 +19,6 @@
 
 ## Installation and Uninstallation
 
-- [ ] Add a send logs option to the menu
 - [x] Add desktop shortcut during install
 - [x] Add startmenu shortcut during install
 - [ ] Copy resources to userdata during install
@@ -28,13 +27,19 @@
 
 ## Updating
 
+- [ ] Add autoupdates
 - [ ] Add Github releases
-- [ ] Add stable autoupdate if possible
+
+## Logging
+
+- [ ] Create user info file that gets submitted with log reports
+- [ ] Add a send logs option to the menu
+- [ ] Add ability to send crash reports alongside logs
 
 ## Miscellaneous
 
-- [ ] Creating a new project needs to reset the project data being stored
-- [ ] Finish unsaved changes exit prompt
+- [ ] Creating a new project resets stored project data
+- [ ] Prompt on exiting with unsaved changes
 
 # 0.2.0
 
@@ -74,14 +79,19 @@
 - [ ] Retool pages in React
 - [ ] Allegedly no need to await `"dom-content-loaded"`
 
+## QOL
+
+- [ ] Character search recomendations when type
+- [ ] Save previous searches in a document to autofill them into the search
+- [ ] Add recent documents menu option to continue a previous project
+
+## Updating
+
+- [ ] Have nightly vs prompt options in settings to control update frequency
+
 ## Miscellaneous
 
 - [ ] Recent documents list on the start page
-
-## QOL
-
-- [ ] Save previous searches in a document to autofill them into the search
-- [ ] Add recent documents menu option to continue a previous project
 
 # 0.5.0
 

@@ -2,6 +2,8 @@ import { templateStringToListEntry } from "./utils";
 import { ListEntry } from "./pub-sort";
 import { TitleAndTemplate, AppearancesResposeJSONStructure, Result, Ok, Err } from "./coreTypes";
 
+export const WIKI_URL = new URL(`https://dc.fandom.com/api.php`);
+
 /**Returns a list containing an interface with the `character`'s appearences' title and the raw string of their template.  */
 export async function getAppearances(character: string): Promise<Result<TitleAndTemplate[]>> {
   // Format the name by clear the spaces out of the name
@@ -12,7 +14,6 @@ export async function getAppearances(character: string): Promise<Result<TitleAnd
   while (gcmcontinue != undefined) {
     let params = new URLSearchParams({
       action: "query",
-
       // Generators
       // list: "categorymembers",
       generator: "categorymembers",
@@ -22,7 +23,6 @@ export async function getAppearances(character: string): Promise<Result<TitleAnd
       format: "json",
       formatversion: "2",
       utf8: "1",
-
       // TODO: Figure out why generators don't work, might be a thing because I'm treated as a bot
       // Properties
       prop: "revisions",
@@ -32,9 +32,7 @@ export async function getAppearances(character: string): Promise<Result<TitleAnd
 
     if (gcmcontinue) params.set("gcmcontinue", gcmcontinue);
 
-    const url = new URL(`https://dc.fandom.com/api.php`);
-
-    const res = await fetch(url, {
+    const res = await fetch(WIKI_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -81,12 +79,11 @@ export async function getRealitiesList(): Promise<any[]> {
 
     if (cmcontinue) params.set("cmcontinue", cmcontinue);
 
-    const url = new URL(`https://dc.fandom.com/api.php${params.toString()}`);
-
-    const res = await fetch(url, {
+    const res = await fetch(WIKI_URL, {
       headers: {
         "User-Agent": "Node.js https request",
       },
+      body: params.toString(),
     });
 
     if (!res.ok) {

@@ -22,6 +22,8 @@ export const UNIMPLEMENTED_FEATURE = () => {
 
 /** Path to the Application's resource folder. */
 export const RESOURCE_PATH = IS_DEV ? `${process.cwd()}/resources` : `${process.resourcesPath}`;
+/**The path to the program's "Update.exe". */
+export const UPDATE_PATH = path.join(app.getPath("exe"), "..", "..", "Update.exe");
 
 export const MESSAGES: AppMessages = JSON.parse(fs.readFileSync(`${RESOURCE_PATH}/appMessages.json`, { encoding: "utf-8" }));
 export const APP_NAME = "dcdb_appearances_viewer";
@@ -39,63 +41,38 @@ export const ROOT_DIRECTORY = IS_DEV ? MAIN_WINDOW_VITE_DEV_SERVER_URL : __dirna
 
 // LOGGING
 
-// TODO: Add Log levels
-export enum LogLevel {
-  Info = "INFO",
-  Warn = "WARN",
-  Error = "ERROR",
-  Fatal = "FATAL",
-}
+/** Create a script to uninstall the program. */
+export function makeUninstallScript(folders: string[]): string {
+  let script = `@echo off
+  :loopstart
 
-/**
- *
- * # Log Levels
- * - **INFO**: Significant events.
- * - **WARN**: Abnormal situations that may indicate future problems.
- * - **ERROR**: Unrecoverable errors that affect a specific operation.
- * - **FATAL**: Unrecoverable errors that affect the entire program.
- */
-export class LOGGER {
-  logFile = path.join(app.getPath("logs"), "app.log");
+  REM %1 = first command line argument 
+  REM TODO: possibly replace %1 with file path via string interpolation
+  tasklist /fi "IMAGENAME eq ${UPDATE_PATH}" /fo csv 2>NUL | find /I "${UPDATE_PATH}"
+  
+  REM error 0 means no error was found which means the file is still running
+  
+  IF %ERRORLEVEL% EQU 0 (
+    REM wait 5 seconds before checking again
+    timeout /t 5 /nobreak >NUL
+    goto loopstart
+  )
+    
+  REM Also wait for Squirrel's Update.exe to end
+  tasklist /FI "IMAGENAME eq Update.exe" | find /I "Update.exe" >NUL
+  
+  IF %ERRORLEVEL% EQU 0 (
+    REM wait 5 seconds before checking again
+    timeout /t 5 /nobreak >NUL
+    goto loopstart
+  )
+    
+  REM /S deletes a folder and its contents and /Q keeps it from prompting the user`;
 
-  private constructor(logFile?: string) {
-    // Append a break between runs to distinguish different runs?
-    fs.appendFileSync(this.logFile, "");
-  }
-
-  static default(): LOGGER {
-    return new LOGGER();
-  }
-
-  // TODO: Consider fields for both message and stack.
-
-  /**Create a new `INFO` log. `INFO` logs indicate significant events.*/
-  info(name: string, err: string) {
-    this._log(name, err, LogLevel.Info);
-  }
-  /**Create a new `WARN` log. `WARN` logs indicate abnormal situations that may indicate future problems.*/
-  warn(name: string, err: string) {
-    this._log(name, err, LogLevel.Warn);
-  }
-  /**Create a new `ERROR` log. `ERROR` logs indicate unrecoverable errors that affect a specific operation.*/
-  error(name: string, err: string) {
-    this._log(name, err, LogLevel.Error);
-  }
-  /**Create a new `FATAL` log. `FATAL` logs indicate unrecoverable errors that affect the entire program.*/
-  fatal(name: string, err: string) {
-    this._log(name, err, LogLevel.Fatal);
+  // Add the folders to delete to the script
+  for (const folder of folders) {
+    script += `\nRMDIR /S /Q "${folder}"`;
   }
 
-  private _log(name: string, err: string, level = LogLevel.Info) {
-    const dateTime = new Intl.DateTimeFormat("en-US", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "numeric",
-      minute: "numeric",
-      second: "numeric",
-      hourCycle: "h12",
-    }).format(new Date());
-    fs.appendFileSync(this.logFile, `${dateTime}| v${app.getVersion()} | [${level}] ${name}| ${err}\n\n`, "utf-8");
-  }
+  return script;
 }

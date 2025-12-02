@@ -110,6 +110,7 @@ export interface Settings {
   height: string;
   fontSizeUseDefault: "true" | "false";
   fontSizeChoose: string;
+  updateFrequency: "auto" | "prompt";
 }
 
 /**Interface containing the data used to construct a list entry. The return result of window.api.form.submit */

@@ -3,14 +3,15 @@ import { Session } from "./session";
 import { createCharacterName } from "../common/utils";
 import { fetchList } from "../../core/fetch";
 import { SubmitResponse } from "../common/apiTypes";
-import { __userdata, IS_DEV, IS_MAC, LOGGER, RESOURCE_PATH } from "./main_utils";
+import { __userdata, IS_DEV, IS_MAC, makeUninstallScript, RESOURCE_PATH, UPDATE_PATH as UPDATE_DOT_EXE } from "./main_utils";
 import path from "path";
+import { LOGGER } from "./log";
 import Child from "child_process";
 import fs from "fs";
 
 // TODO:
 // - URGENT: merge to main
-// - URGENT: Uninstall all appstuff on uninstall
+// - URGENT: Uninstall all appstuff on uninstall -> maybe impossible https://github.com/Squirrel/Squirrel.Windows/issues/1763 and https://github.com/electron/windows-installer/issues/113cd
 // - URGENT: Add github release - https://www.electronforge.io/config/publishers/github
 // - URGENT: Add autoupdater - https://www.electronforge.io/config/publishers/github && https://www.electronjs.org/docs/latest/tutorial/updates
 // - URGENT: Add check for all files installed correctly on first startup and log errors if stuff is missing
@@ -44,7 +45,6 @@ function handleStartupEvent(): boolean {
     return false;
   }
   const event = process.argv[1];
-  const updateDotExe = path.join(app.getPath("exe"), "..", "..", "Update.exe");
   const exeName = path.basename(app.getPath("exe"));
 
   function spawn(cmd: string, ...args: string[]): Child.ChildProcessWithoutNullStreams {
@@ -63,7 +63,7 @@ function handleStartupEvent(): boolean {
   }
 
   function spawnUpdate(...args: string[]) {
-    const proc = spawn(updateDotExe, ...args);
+    const proc = spawn(UPDATE_DOT_EXE, ...args);
     log.info("proc.spawnargs", proc.spawnargs.toString());
     proc.on("error", (err) => log.fatal("Squirrel Spawn Error", err.stack || err.message));
     proc.on("exit", (code, signal) => {
@@ -99,6 +99,8 @@ function handleStartupEvent(): boolean {
       return true;
     }
     case "--squirrel-uninstall": {
+      const UNINSTALL_SCRIPT = makeUninstallScript(["appDataPath", "localAppDataPath", "userDataPath", "squirrelTempPath"]);
+
       // TODO: This probably needs an an error dialog on fail too
       spawnUpdate("--removeShortcut", exeName, "--shortcut-locations=Desktop,StartMenu");
       try {

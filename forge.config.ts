@@ -22,7 +22,16 @@ const config: ForgeConfig = {
     {
       name: "@electron-forge/publisher-github",
       config: {
-        repository: {},
+        // FIXME: Do I need to set the githubenv
+        authToken: process.env.GITHUB_TOKEN,
+        draft: true,
+        force: false,
+        generateReleaseNotes: true,
+        prerelease: false,
+        repository: {
+          name: "publication_date_sort",
+          owner: "Barca545",
+        },
       },
     },
   ],
