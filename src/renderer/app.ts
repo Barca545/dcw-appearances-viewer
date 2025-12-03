@@ -28,13 +28,13 @@ function handleSubmit() {
     };
 
     // Clear the current results to prep for new ones
-    document.getElementById("results-container").replaceChildren(...[]);
+    document.getElementById("results-container")?.replaceChildren(...[]);
     // Tell user a load is happening
     setLoading(true);
     window.api.form
       .submit(data)
       .then(
-        (res) => displayResults(res.appearances, res.character),
+        (res) => displayResults(res.appearances as AppearanceData[], res.character),
         (err: string) => displayError("Search Failed", err),
       )
       .finally(() => setLoading(false));
@@ -42,7 +42,8 @@ function handleSubmit() {
 }
 
 function handleFilter() {
-  document.getElementById("display-style")?.addEventListener("change", (e) => {
+  console.log(document.getElementById("filter-options"));
+  document.getElementById("filter-options")?.addEventListener("change", (e) => {
     // FIXME: This needs to be updated so what it does is send the button press to main
     // main will handle it
     const form = new FormData(e.currentTarget as HTMLFormElement);
@@ -60,7 +61,7 @@ function handleFilter() {
     }
 
     // FIXME: Why am I passing in the options here when it's already sorted on server side
-    window.api.filterOptions(filterOptions).then((appearances) => displayResults(appearances));
+    window.api.requestReflow(filterOptions).then((appearances) => displayResults(appearances));
   });
 }
 
@@ -104,6 +105,8 @@ window.api.recieveData((res) => displayResults(res.data, undefined, res.opt));
 
 /** Set the loading state of the document and control how the loading */
 function setLoading(state: boolean) {
-  document.getElementById("spinner").style.display = state ? "block" : "none";
-  document.getElementById("results-container").style.visibility = !state ? "visible" : "hidden";
+  let spinner = document.getElementById("spinner") as HTMLElement;
+  spinner.style.display = state ? "block" : "none";
+  let results = document.getElementById("results-container") as HTMLElement;
+  results.style.visibility = !state ? "visible" : "hidden";
 }

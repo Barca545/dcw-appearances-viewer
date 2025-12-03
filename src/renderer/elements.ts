@@ -59,6 +59,7 @@ export function createDenseResultsList(entries: ListEntry[]) {
       e.preventDefault();
       window.api.open.url(titleToURL(entry.title));
     });
+    console.log(clone);
     children.push(clone);
   }
 

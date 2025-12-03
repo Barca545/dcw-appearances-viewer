@@ -1,4 +1,4 @@
-import fs, { PathLike } from "fs";
+import fs from "fs";
 import convert from "xml-js";
 import { ListEntry } from "./pub-sort.js";
 import { templateStringToListEntry } from "./utils.js";
@@ -53,11 +53,13 @@ export interface Character {
 
 export class Path {
   readonly path: string;
-  toString?: never;
 
-  constructor(pathStr?: PathLike) {
+  constructor(pathStr: string) {
     // FIXME: Confirm it is a valid path and error if not
-    this.path = pathStr ? pathStr.toString() : "";
+    if (!fs.existsSync(pathStr)) {
+      throw new Error(`${pathStr} does not exist.`);
+    }
+    this.path = pathStr;
   }
 
   /**Returns the name of a path's file if it has one */
@@ -72,7 +74,7 @@ export class Path {
 }
 
 /**Save the  sessions FilterOptions as a json */
-export function ProjectDataToJSON(data: ProjectData, path: Path) {
+export function saveProjectDataAsJSON(data: ProjectData, path: Path) {
   // Convert the data to a string
   const file = JSON.stringify(data);
   fs.writeFileSync(path.path, file, { encoding: "utf8" });

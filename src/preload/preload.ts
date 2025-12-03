@@ -1,7 +1,15 @@
 // See the Electron documentation for details on how to use preload scripts:
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
 
-import type { AppPage, FilterOptions, SearchRequest, Settings, SubmitResponse } from "../common/apiTypes.js";
+import type {
+  AppPage,
+  FilterDensity,
+  FilterOptions,
+  SearchRequest,
+  Settings,
+  SortOrder,
+  SubmitResponse,
+} from "../common/apiTypes.js";
 import { contextBridge, ipcRenderer } from "electron";
 // REMINDER: Handle only takes invokes not sends
 console.log("PRELOAD RUNNING...");
@@ -52,6 +60,12 @@ contextBridge.exposeInMainWorld("api", {
     console.log(title);
     console.log(error);
     ipcRenderer.invoke("error:show", title, error);
+  },
+  // TODO: Update the filter options held on main
+  filter: {
+    sortOrder: (order: SortOrder) => {},
+    density: (density: FilterDensity) => {},
+    ascending: (asc: boolean) => {},
   },
 });
 

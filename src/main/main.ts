@@ -29,10 +29,12 @@ process.on("uncaughtException", (err) => {
 if (handleStartupEvent()) app.quit();
 
 // From here: https://stackoverflow.com/questions/43989408/creating-a-desktop-shortcut-via-squirrel-events-with-electron
+/**Returns `true` if a Squirrel startup event occured. */
 function handleStartupEvent(): boolean {
   if (process.platform != "win32") {
     // FIXME: Should error about the wrong platform
     dialog.showErrorBox(
+      // FIXME: This actually can't error because it shows the compiled platform not the host info
       "Incompatible Platform",
       `This application is intended for 'win32' platforms and is incompatible with ${process.platform} platforms.`,
     );
@@ -99,12 +101,20 @@ function handleStartupEvent(): boolean {
       return true;
     }
     case "--squirrel-uninstall": {
-      const UNINSTALL_SCRIPT = makeUninstallScript(["appDataPath", "localAppDataPath", "userDataPath", "squirrelTempPath"]);
+      const UNINSTALL_SCRIPT = makeUninstallScript([
+        app.getPath("appData"),
+        app.getPath("userData"),
+        // "appDataPath"
+        // "localAppDataPath",
+        // "userDataPath",
+        // "squirrelTempPath",
+      ]);
 
       // TODO: This probably needs an an error dialog on fail too
       spawnUpdate("--removeShortcut", exeName, "--shortcut-locations=Desktop,StartMenu");
       try {
-        fs.rmSync(__userdata, { recursive: true, force: true });
+        // fs.rmSync(__userdata, { recursive: true, force: true });
+        spawn(UNINSTALL_SCRIPT);
       } catch (e) {
         const err = e as Error;
         log.fatal(err.name, `Uninstall removal fail.\n${err.stack || err.message}`);
@@ -207,6 +217,7 @@ async function init() {
 
   // TODO: Figure out why it randomly errors sometimes and says the reflow function does not exist
   ipcMain.handle("filterOptions", (_e, options) => {
+    console.log(options);
     // TODO: If I just target the focused I don't see how it could go wrong but maybe there are edge cases where it does?
     session.opt = options;
     session.isClean.task = false;

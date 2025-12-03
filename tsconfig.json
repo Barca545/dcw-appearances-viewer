@@ -14,8 +14,9 @@
     "rootDir": ".",
     "outDir": "dist",
     "resolveJsonModule": true,
-    "strict": true
-    // "types": ["node"]
+    "strict": true,
+    "jsx": "react-jsx"
+    // "allowImportingTsExtensions": true
   },
   "exclude": ["node_modules", "dist"]
 }

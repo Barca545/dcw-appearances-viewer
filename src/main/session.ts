@@ -1,11 +1,12 @@
 import { app, BrowserWindow, dialog, Menu, nativeTheme } from "electron";
 import { ListEntry, pubDateSort } from "../../core/pub-sort";
 import path from "path";
-import { ProjectData, loadList, ProjectDataFromJSON, ProjectDataToJSON, Path } from "../../core/load";
+import { ProjectData, loadList, ProjectDataFromJSON, saveProjectDataAsJSON, Path } from "../../core/load";
 import { AppPage, FilterOptions, Settings, SortOrder } from "../common/apiTypes";
 import fs from "fs";
 import { MenuTemplate, openFileDialog } from "./menu";
 import { __userdata, IS_DEV, ROOT_DIRECTORY, MESSAGES, RESOURCE_PATH, UNIMPLEMENTED_FEATURE } from "./main_utils";
+import { None, Option, Some } from "../../core/option";
 
 export declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 export declare const MAIN_WINDOW_VITE_NAME: string;
@@ -16,7 +17,7 @@ export const MAIN_WINDOW_PRELOAD_VITE_ENTRY = path.join(__dirname, `preload.js`)
 // TODO: Maybe eventually find a way to stick every part of the program into this structure but for now just using it to store file data works
 export class Session {
   win: BrowserWindow;
-  savePath: Path;
+  savePath: Option<Path>;
   projectData: ProjectData;
   opt: FilterOptions;
   /**Field indicating whether the `Session` has unsaved changes.*/
@@ -32,7 +33,7 @@ export class Session {
     this.opt = new FilterOptions();
     this.projectData = ProjectData.empty();
     // Start the app save path as home
-    this.savePath = new Path(app.getPath("documents"));
+    this.savePath = new None();
     this.settings = settings;
     // Only mark dirty once a task is open
     // This means the landing page won't count as a document edit
@@ -48,11 +49,7 @@ export class Session {
       // Check whether a save is needed
       if (!this.isClean.task) {
         e.preventDefault();
-        // TODO: Pop up the do you want to save, save, saveas, cancel dialog
-        // Prompt them to save the the document before exiting
-        // Only pop up a dialog if there is no filename
-        this.unsavedChanges();
-        this.saveFile(false);
+        this.unsavedChangesPrompt();
       }
       if (!this.isClean.settings) {
         UNIMPLEMENTED_FEATURE();
@@ -60,18 +57,32 @@ export class Session {
     });
   }
 
-  unsavedChanges() {
+  unsavedChangesPrompt() {
     // FIXME: It's possible however I do tabs won't work with this but...
     // App will only have one window so that will always be the focused window
     const options = {
       title: "Unsaved Changes",
       message: MESSAGES.unsavedChanges,
       type: "question",
-      buttons: ["Save", "Don't Save", "Don't Save"],
+      buttons: ["Save", "Don't Save", "Cancel"],
       noLink: true,
     } as Electron.MessageBoxOptions;
-    const bttn = dialog.showMessageBoxSync(this.win, options);
-    console.log(bttn);
+    switch (dialog.showMessageBoxSync(this.win, options)) {
+      case 0: {
+        // Open save dialog
+        this.saveFile(false);
+        break;
+      }
+      case 1: {
+        // Exit without saving
+        this.isClean.task = true;
+        this.win.close();
+        break;
+      }
+      default:
+        // Close the dialog, cancel close attempt
+        break;
+    }
   }
 
   /**Applies current settings file to all windows and updates the settings field.*/
@@ -191,11 +202,11 @@ export class Session {
     // Update the save path to match the path of the current file
     // TODO: Should this give an error if it fails?
     if (newPath) {
-      this.savePath = new Path(newPath);
+      this.savePath = new Some(new Path(newPath));
     }
 
     // We know it is valid by the time we reach here because we set and checked it above
-    const ext = this.savePath.ext();
+    const ext = this.savePath.unwrap().ext();
 
     // TODO: Set the server side list to list before yeeting it back over.
     let file: ProjectData;
@@ -203,12 +214,12 @@ export class Session {
       file = {
         header: { appID: "DCDB-Appearance-Viewer", version: app.getVersion() },
         meta: { options: new FilterOptions() },
-        data: loadList(this.savePath),
+        data: loadList(this.savePath.unwrap()),
       };
     else if (ext == ".json") {
       try {
         // FIXME: My understanding is this catch block should still work but I need to confirm
-        file = ProjectDataFromJSON(this.savePath) as ProjectData;
+        file = ProjectDataFromJSON(this.savePath.unwrap()) as ProjectData;
       } catch (err) {
         dialog.showErrorBox("Load Failed", (err as Error).message);
         return;
@@ -231,15 +242,15 @@ export class Session {
     });
 
     // Set the window name to the title of the file
-    this.win.title = this.savePath.fileName();
+    this.win.title = this.savePath.unwrap().fileName();
   }
 
   /**Save a file to the disk. If `saveas` is  `true` the file operation will be performed as a save as operation.*/
   async saveFile(shouldPrompt: boolean) {
     // If there is no save_path set one or if this is explicitly a save as command
-    if (shouldPrompt) {
+    if (shouldPrompt || this.savePath.isNone()) {
       const res = await dialog.showSaveDialog({
-        defaultPath: this.savePath.path,
+        defaultPath: app.getPath("documents"),
         // FIXME: Can't be this and openFile figure out the difference
         properties: ["createDirectory", "showOverwriteConfirmation"],
         filters: [
@@ -252,14 +263,14 @@ export class Session {
       if (res.canceled || !res.filePath) return;
 
       // Update the save path
-      this.savePath = new Path(res.filePath);
+      this.savePath = new Some(new Path(res.filePath));
 
       // Retitle the window
-      this.win.title = path.basename(res.filePath, this.savePath.ext());
+      this.win.title = path.basename(res.filePath, this.savePath.unwrap().ext());
     }
 
     // FIXME: Unclear if a try/catch block is needed
-    ProjectDataToJSON(this.projectData, this.savePath);
+    saveProjectDataAsJSON(this.projectData, this.savePath.unwrap());
     // If all this completes successfully mark the session as clean (until the next change)
     this.isClean.task = true;
   }
@@ -306,16 +317,15 @@ export class Session {
   resetTab() {
     this.projectData = ProjectData.empty();
     this.opt = new FilterOptions();
-    this.savePath = new Path(app.getPath("documents"));
+    this.savePath = new None();
     this.isClean = { settings: true, task: true };
   }
 
   /**Replace the current tab's content with content for another AppPage.
    * Wrapper for this.win.loadFile and this.win.loadURL that uses the appropriate one and path depending on context.
    * DO NOT INCLUDE A DIRNAME JUST THE FILE'S NAME.
-   * Loads `index.html` by default.
    * */
-  openAppPage(src = AppPage.StartPage) {
+  openAppPage(src = AppPage.Index) {
     // If it is currently an Application page, it should save before exiting and then wipe all old data
     // Include a check because when the page initially loads because on startup the app has no loaded page
     if (this.win.webContents.getURL() && AppPage.from(this.win.webContents.getURL()).unwrap() == AppPage.Application) {

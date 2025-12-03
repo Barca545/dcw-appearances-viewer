@@ -16,10 +16,13 @@
   "license": "ISC",
   "description": "An app for viewing a list of a character's appearances in DC comics. App uses data from the DC Database Wiki.",
   "dependencies": {
-    "npm": "^11.6.0",
-    "xml-js": "1.6.11",
+    "@types/electron-squirrel-startup": "^1.0.2",
     "electron-squirrel-startup": "^1.0.1",
-    "@types/electron-squirrel-startup": "^1.0.2"
+    "npm": "^11.6.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router": "^7.10.0",
+    "xml-js": "1.6.11"
   },
   "devDependencies": {
     "@electron-forge/cli": "^7.10.2",
@@ -31,7 +34,10 @@
     "@electron-forge/plugin-fuses": "^7.10.2",
     "@electron-forge/plugin-vite": "^7.10.2",
     "@electron/fuses": "^1.8.0",
+    "@react-router/dev": "^7.9.2",
     "@types/lodash-es": "^4.17.12",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",
     "electron": "^39.1.2",

@@ -2,7 +2,9 @@ import path from "path";
 import fs from "fs";
 import { defineConfig } from "vite";
 
+// TODO: Should this be in another file?
 const RENDERER_DIR = path.join(__dirname, "src", "renderer");
+// This grabs every html file in the render directory
 function exportPages(): string[] {
   return fs
     .readdirSync(RENDERER_DIR, { encoding: "utf-8" })
@@ -14,12 +16,9 @@ function exportPages(): string[] {
 
 // https://vitejs.dev/config
 export default defineConfig({
-  // root: "src/renderer",
   build: {
-    // outDir: "../../.vite/build/renderer/main_window",
     emptyOutDir: true,
     rollupOptions: {
-      // This grabs every html file in the render directory
       input: exportPages(),
     },
   },

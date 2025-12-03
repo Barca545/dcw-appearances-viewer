@@ -38,9 +38,11 @@ export namespace SortOrder {
   }
 }
 
+export type FilterDensity = "NORM" | "DENSE";
+
 export class FilterOptions {
   sortOrder: SortOrder;
-  density: "NORM" | "DENSE";
+  density: FilterDensity;
   ascending: boolean;
 
   /**Create a new set of FilterOptions with the default parameters (density = "NORM", order = "PUB"). */
@@ -50,7 +52,7 @@ export class FilterOptions {
     this.ascending = true;
   }
 
-  setDensity(dense: "NORM" | "DENSE") {
+  setDensity(dense: FilterDensity) {
     this.density = dense;
     return this;
   }
@@ -92,12 +94,17 @@ declare global {
         /**Open a Project file in the current tab*/
         file: () => void;
       };
-
       // TODO: Do I need a request and send for this since saving needs to save the settings?
-      filterOptions: (state: FilterOptions) => Promise<AppearanceData[]>;
+      requestReflow: (state: FilterOptions) => Promise<AppearanceData[]>;
       recieveData: (callback: (res: any) => any) => void;
       dataRequest: (data: any) => void;
       displayError: (title: string, msg: string) => void;
+      // TODO: Update the filter options held on main
+      filter: {
+        sortOrder: (order: SortOrder) => void;
+        density: (density: FilterDensity) => void;
+        ascending: (asc: boolean) => void;
+      };
     };
   }
 }
@@ -131,6 +138,7 @@ export interface AppMessages {
 }
 
 export enum AppPage {
+  Index = "index.html",
   StartPage = "start.html",
   Application = "app.html",
   Settings = "settings.html",

@@ -73,27 +73,52 @@ export class LOGGER {
   }
 }
 
-interface UserInfo {
+/**Information on the user's system and process generated during a crash report. */
+class UserInfo {
+  /**The operating system name as returned by [`uname(3)`](https://linux.die.net/man/3/uname). */
   osType: string;
+  /**OS model and  */
   platform: string;
+  /** Arch the program was compiled for. */
   arch: string;
+  /**Physical CPU info. */
   cpuInfo: os.CpuInfo[];
-
+  /**The current application directory.*/
   app_path: string;
-}
+  /**Returns the process' [memory info](https://www.electronjs.org/docs/latest/api/structures/process-memory-info). */
+  memUse: Electron.ProcessMemoryInfo;
+  /**Returns the [process' metrics](https://www.electronjs.org/docs/latest/api/structures/process-metric). */
+  processInfo: Electron.ProcessMetric[];
 
-// TODO: Unsure this is needed
-interface AppInfo {
-  version: string;
-  platform: string;
-  memUse: string; // process.getProcessMemoryInfo() ​
-}
+  private constructor(
+    osType: string,
+    platform: string,
+    arch: string,
+    cpuInfo: os.CpuInfo[],
+    app_path: string,
+    memUse: Electron.ProcessMemoryInfo,
+    processInfo: Electron.ProcessMetric[],
+  ) {
+    this.osType = osType;
+    this.platform = platform;
+    this.arch = arch;
+    this.cpuInfo = cpuInfo;
+    this.app_path = app_path;
+    this.memUse = memUse;
+    this.processInfo = processInfo;
+  }
 
-function makeInfo() {
-  const info = {
-    osType: os.type(),
-    cpu: os.cpus(),
-  };
+  async new(): Promise<UserInfo> {
+    const osType = os.type();
+    const platform = `${os.platform()} ${process.getSystemVersion()}`;
+    const arch = os.arch();
+    const cpuInfo = os.cpus();
+    const app_path = app.getAppPath();
+    const memUse = await process.getProcessMemoryInfo();
+    const processInfo = await app.getAppMetrics();
+
+    return new UserInfo(osType, platform, arch, cpuInfo, app_path, memUse, processInfo);
+  }
 }
 
 // https://www.electronjs.org/docs/latest/api/crash-reporter

@@ -25,6 +25,12 @@
 - [x] Remove shortcuts during uninstall
 - [ ] Delete userdata during uninstall
 
+## Renderer Refactor
+
+- [ ] Retool pages in React
+- [ ] Reasses if Templates are necessary
+- [ ] Allegedly no need to await `"dom-content-loaded"`
+
 ## Updating
 
 - [ ] Add autoupdates
@@ -36,10 +42,19 @@
 - [ ] Add a send logs option to the menu
 - [ ] Add ability to send crash reports alongside logs
 
-## Miscellaneous
+## Saving
 
-- [ ] Creating a new project resets stored project data
-- [ ] Prompt on exiting with unsaved changes
+- [x] Exiting with unsaved changes prompts user to "Save", "Don't Save", or "Cancel".
+
+## Error Fixes
+
+- [ ] Creating a new project does not reset stored project data
+- [x] Prompt on exiting with unsaved changes: Two "Don't Save" buttons
+- [x] Prompt on exiting with unsaved changes: No button to exit without saving
+- [x] Prompt on exiting with unsaved changes: Clicking "Save" does nothing
+- [x] Prompt on exiting with unsaved changes: Clicking any button throws an error saying I illegally attempted to open 'C:\Users\jamar\OneDrive\Documents'
+- [ ] Filter options fails on pages; possibly a reflow issue
+- [ ] Why is there a `.vite` in the renderer folder?
 
 # 0.2.0
 
@@ -73,11 +88,6 @@
 - [ ] Fix issue where synopsis does not load fully; seems to be an error caused by failing to parse the templates in the synopsis properly.
 
 # 0.3.0
-
-## Renderer Refactor
-
-- [ ] Retool pages in React
-- [ ] Allegedly no need to await `"dom-content-loaded"`
 
 ## QOL
 
