@@ -1,3 +1,4 @@
+import { UUID } from "node:crypto";
 import { None, Option, Some } from "../../core/option";
 
 // TODO: I think some type files need to be reorganized.
@@ -12,9 +13,23 @@ export interface SearchRequest {
   universe: string;
 }
 
-export enum SortOrder {
-  AlphaNumeric,
-  PubDate,
+export enum FilterDensity {
+  Dense = "DENSE",
+  Normal = "NORM",
+}
+
+export namespace FilterDensity {
+  export function from(value: string): Option<FilterDensity> {
+    switch (value.toUpperCase()) {
+      case "DENSE": {
+        return new Some(FilterDensity.Dense);
+      }
+      case "NORM": {
+        return new Some(FilterDensity.Normal);
+      }
+    }
+    return new None();
+  }
 }
 
 /**The response to a request to fetch appearences from the wiki. */
@@ -22,6 +37,11 @@ export interface SubmitResponse {
   success: boolean;
   character: string;
   appearances?: AppearanceData[];
+}
+
+export enum SortOrder {
+  AlphaNumeric = "A-Z",
+  PubDate = "PUB",
 }
 
 export namespace SortOrder {
@@ -38,17 +58,15 @@ export namespace SortOrder {
   }
 }
 
-export type FilterDensity = "NORM" | "DENSE";
-
 export class FilterOptions {
-  sortOrder: SortOrder;
+  order: SortOrder;
   density: FilterDensity;
   ascending: boolean;
 
   /**Create a new set of FilterOptions with the default parameters (density = "NORM", order = "PUB"). */
   constructor() {
-    this.density = "NORM";
-    this.sortOrder = SortOrder.PubDate;
+    this.density = FilterDensity.Normal;
+    this.order = SortOrder.PubDate;
     this.ascending = true;
   }
 
@@ -57,7 +75,7 @@ export class FilterOptions {
     return this;
   }
   setOrder(ord: SortOrder) {
-    this.sortOrder = ord;
+    this.order = ord;
     return this;
   }
   setAscending(asc: boolean) {
@@ -98,14 +116,30 @@ declare global {
       requestReflow: (state: FilterOptions) => Promise<AppearanceData[]>;
       recieveData: (callback: (res: any) => any) => void;
       dataRequest: (data: any) => void;
-      displayError: (title: string, msg: string) => void;
       // TODO: Update the filter options held on main
       filter: {
-        sortOrder: (order: SortOrder) => void;
+        /**Set a new value for the App's filter order. */
+        order: (order: SortOrder) => void;
+        /**Set a new value for the App's filter density. */
         density: (density: FilterDensity) => void;
+        /**Set a new value for the App's filter ascent direction. */
         ascending: (asc: boolean) => void;
       };
+      // FIXME: I am not sure it should actually return void
+      reflow: (r: (data: AppearanceData[], dense: FilterDensity) => void) => void;
     };
+  }
+}
+
+/**Wrapper for sending messages through the Electron [IPC](https://www.electronjs.org/docs/latest/tutorial/ipc) to and from specific tabs.*/
+export class APIMessage<T> {
+  // TODO: Unclear how I'll actually get/make the tab IDs
+  tabID: UUID;
+  body: T;
+
+  constructor(id: UUID, msg: T) {
+    this.tabID = id;
+    this.body = msg;
   }
 }
 

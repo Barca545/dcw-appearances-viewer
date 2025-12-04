@@ -281,7 +281,7 @@ export class Session {
   reflow(): ListEntry[] {
     let sorted = this.projectData.data;
     // TODO: Basically move all this logic serverside
-    switch (this.opt.sortOrder) {
+    switch (this.opt.order) {
       case SortOrder.PubDate: {
         sorted = pubDateSort(sorted);
         break;

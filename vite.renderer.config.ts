@@ -16,6 +16,8 @@ function exportPages(): string[] {
 
 // https://vitejs.dev/config
 export default defineConfig({
+  // TODO: Add react plugin
+  plugins: [],
   build: {
     emptyOutDir: true,
     rollupOptions: {

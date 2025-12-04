@@ -2,6 +2,7 @@
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
 
 import type {
+  AppearanceData,
   AppPage,
   FilterDensity,
   FilterOptions,
@@ -56,17 +57,17 @@ contextBridge.exposeInMainWorld("api", {
   // TODO: Does this *need* to be a callback instead of just recieving the data
   recieveData: (callback: (data: any) => any) => ipcRenderer.on("data:response", (_event, res) => callback(res)),
   dataRequest: (data: any) => ipcRenderer.on("data:request", () => ipcRenderer.send("data:response", data)),
-  displayError: (title: string, error: string) => {
-    console.log(title);
-    console.log(error);
-    ipcRenderer.invoke("error:show", title, error);
-  },
   // TODO: Update the filter options held on main
   filter: {
-    sortOrder: (order: SortOrder) => {},
-    density: (density: FilterDensity) => {},
-    ascending: (asc: boolean) => {},
+    /**Set a new value for the App's filter order. */
+    order: (order: SortOrder) => ipcRenderer.send("filter:order", order),
+    /**Set a new value for the App's filter density. */
+    density: (density: FilterDensity) => ipcRenderer.send("filter:density", density),
+    /**Set a new value for the App's filter ascent direction. */
+    ascending: (asc: boolean) => ipcRenderer.send("filter:asc", asc),
   },
+  reflow: (r: (data: AppearanceData[], dense: FilterDensity) => void) =>
+    ipcRenderer.on("reflow", (_e, data, dense) => r(data, dense)),
 });
 
 console.log("PRELOAD FINSHED...");

@@ -253,6 +253,21 @@ async function init() {
     console.log(data);
   });
 
+  ipcMain.on("filter:order", (_e, order) => {
+    session.opt.order = order;
+    session.isClean.task = false;
+  });
+
+  ipcMain.on("filter:density", (_e, density) => {
+    session.opt.density = density;
+    session.isClean.task = false;
+  });
+
+  ipcMain.on("filter:asc", (_e, asc) => {
+    session.opt.ascending = asc;
+    session.isClean.task = false;
+  });
+
   // TODO: Theoretically this stuff should go into the init of session
   // TODO: Fill out this logic
   session.win.on("blur", () => {

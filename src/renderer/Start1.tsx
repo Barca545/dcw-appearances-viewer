@@ -1,6 +1,5 @@
 import { Fragment, ReactNode } from "react";
-import { AppPage } from "../common/apiTypes";
-import { useNavigate } from "react-router";
+import { useNavigate, Link } from "react-router";
 
 // FIXME: Apparently use navigate is not ideal. Check docs
 // https://reactrouter.com/start/declarative/navigating
@@ -27,11 +26,13 @@ export default function Start(): ReactNode {
   // TODO: OTOH seems like passing state might be impossible without a store: https://stackoverflow.com/questions/41466055/how-do-i-pass-state-through-react-router
   // Easiest thing to do would be to preload the session with the savepath and have it load from there on the first load
 
+  // TODO: I think I can store the path to the data in the url then use uselocation to load it in?
   return (
     <Fragment>
-      <button className="landing-button" onClick={() => navigate("app")}>
+      {/* <button className="landing-button" onClick={() => navigate("app")}>
         New
-      </button>
+      </button> */}
+      <Link to={"app"}>New</Link>
       <button className="landing-button" onClick={() => window.api.open.file()}>
         Open
       </button>
