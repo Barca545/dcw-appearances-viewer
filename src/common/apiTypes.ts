@@ -35,8 +35,9 @@ export namespace FilterDensity {
 /**The response to a request to fetch appearences from the wiki. */
 export interface SubmitResponse {
   success: boolean;
+  density: FilterDensity;
   character: string;
-  appearances?: AppearanceData[];
+  appearances: AppearanceData[];
 }
 
 export enum SortOrder {

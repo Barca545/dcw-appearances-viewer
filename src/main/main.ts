@@ -209,6 +209,7 @@ async function init() {
       success: true,
       appearances: session.projectData.data,
       character: character,
+      density: session.opt.density,
     };
 
     session.isClean.task = false;

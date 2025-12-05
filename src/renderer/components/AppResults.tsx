@@ -1,6 +1,7 @@
 import { ListEntry } from "../../../core/pub-sort";
-import { createContext, Fragment, ReactNode, useContext, useEffect, useState } from "react";
-import { FilterDensity, SortOrder } from "../../common/apiTypes";
+import { Fragment, ReactNode } from "react";
+import { AppearanceData, FilterDensity, SortOrder } from "../../common/apiTypes";
+import { useAppSelector } from "../store/hooks";
 
 // TODO: It might be better to render the ResultsList component in the main process.
 // That way no state is stored clientside and desyncing stops being a concern
@@ -12,38 +13,13 @@ function parseBool(string: string): boolean {
   return string.toLowerCase() === "true";
 }
 
-// TODO: Move these providers to the top level of the app so they can be set from the search bar?
-const defaultList = [] as ListEntry[];
-const defaultDensity = FilterDensity.Normal;
-
-const ListContext = createContext(defaultList);
-const DensityContext = createContext(defaultDensity);
-
 export default function AppResults(): ReactNode {
-  // Not sure how I want to do this with useEffect since it needs a listener
-  const [list, setList] = useState(defaultList);
-  const [density, setDensity] = useState(defaultDensity);
-
-  useEffect(() => {
-    window.api.reflow((data, dense) => {
-      const list = data.map((element) => {
-        const date = element.date;
-        return new ListEntry(element.title, element.synopsis, date.year, date.month, date.day, element.link);
-      });
-      setList(list);
-      setDensity(dense);
-    });
-    return () => {};
-  }, []);
-
+  const { character } = useAppSelector((state) => state.listState);
   return (
     <Fragment>
       <FilterBar />
-      <ListContext value={list}>
-        <DensityContext value={density}>
-          <ResultsList />
-        </DensityContext>
-      </ListContext>
+      {character}
+      <ResultsList />
     </Fragment>
   );
 }
@@ -75,30 +51,41 @@ function FilterBar(): ReactNode {
 }
 
 // TODO: Merge Dense/Normal results list functions into this one component?
+// TODO: Why does this render twice
 function ResultsList(): ReactNode {
-  const list = useContext(ListContext);
-  const density = useContext(DensityContext);
+  const { list, density } = useAppSelector((state) => state.listState);
+  console.log("Rendering ResultsList", list.length, density);
   // TODO: Wrap internally with a <div id="results-container"/>?
-  switch (density) {
-    case FilterDensity.Normal: {
-      return list.map((entry) => {
-        return (
-          <details className="result-details">
-            <summary className="result-summary">{ResultTitle(entry)}</summary>
-            {entry.synopsis}
-          </details>
-        );
-      });
+  const entries = () => {
+    switch (density) {
+      case FilterDensity.Normal: {
+        return list.map((entry) => {
+          return (
+            <details key={entry.title} className="result-details">
+              <summary className="result-summary">
+                <ResultTitle entry={entry} />
+              </summary>
+              {entry.synopsis}
+            </details>
+          );
+        });
+      }
+      case FilterDensity.Dense: {
+        return list.map((entry) => {
+          return (
+            <div className="dense-result">
+              <ResultTitle entry={entry} />
+            </div>
+          );
+        });
+      }
     }
-    case FilterDensity.Dense: {
-      return list.map((entry) => {
-        return <div className="dense-result">{ResultTitle(entry)}</div>;
-      });
-    }
-  }
+  };
+
+  return <Fragment>{entries()}</Fragment>;
 }
 
-function ResultTitle(entry: ListEntry): ReactNode {
+function ResultTitle({ entry }: { entry: ListEntry | AppearanceData }): ReactNode {
   // FIXME: Find correct type
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -106,7 +93,7 @@ function ResultTitle(entry: ListEntry): ReactNode {
   };
   return (
     <div className="result-title">
-      {/* FIXME: Style the span to look like an anchors */}
+      {/* FIXME: Style the span to look like an anchor */}
       <span className="result-name" onClick={handleClick}>
         {entry.title}
       </span>

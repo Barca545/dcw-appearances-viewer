@@ -1,3 +1,5 @@
+import { AppearanceData } from "src/common/apiTypes";
+
 export class ListEntry {
   readonly title: string;
   readonly date: EntryDate;
@@ -17,6 +19,11 @@ export class ListEntry {
     this.date = new EntryDate(year.toString(), month.toString(), day.toString());
     this.link = link ?? "";
     this.synopsis = synopsis;
+  }
+
+  from(data: AppearanceData): ListEntry {
+    const date = data.date;
+    return new ListEntry(data.title, data.synopsis, date.year, date.month, date.day, data.link);
   }
 }
 

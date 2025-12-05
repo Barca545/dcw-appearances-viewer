@@ -1,4 +1,7 @@
 import { Fragment, ReactNode } from "react";
+import { useAppDispatch } from "../store/hooks";
+import { LoadState, setError, setLoadState } from "../store/loadingStateSlice";
+import { setListState } from "../store/listStateSlice";
 // TODO:
 // - This sends data
 // - Updates the app to a loading state
@@ -9,6 +12,8 @@ import { Fragment, ReactNode } from "react";
 const EARTHS = ["Prime Earth", "New Earth", "Earth-One", "Earth-Two"];
 
 export default function CharacterSearchForm(): ReactNode {
+  const dispatch = useAppDispatch();
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -19,16 +24,15 @@ export default function CharacterSearchForm(): ReactNode {
       universe: rawData["universe-select"] as unknown as string,
     };
 
-    document.getElementById("results-container")?.replaceChildren(...[]);
     // Tell user a load is happening
-    setLoading(true);
+    dispatch(setLoadState(LoadState.Loading));
     window.api.form
       .submit(data)
       .then(
-        (res) => displayResults(res.appearances as AppearanceData[], res.character),
-        (err: string) => displayError("Search Failed", err),
+        (res) => dispatch(setListState(res)),
+        (err: string) => dispatch(setError(new Error(err))),
       )
-      .finally(() => setLoading(false));
+      .finally(() => dispatch(setLoadState(LoadState.Loaded)));
   };
 
   return (
@@ -55,7 +59,11 @@ export default function CharacterSearchForm(): ReactNode {
 
 function EarthsList(): ReactNode {
   const earths = EARTHS.map((earth) => {
-    return <option value={`(${earth})`}>{earth}</option>;
+    return (
+      <option key={earth} value={`(${earth})`}>
+        {earth}
+      </option>
+    );
   });
 
   return <datalist id="earths-list">{earths}</datalist>;
