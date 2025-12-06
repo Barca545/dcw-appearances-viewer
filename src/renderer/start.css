@@ -6,9 +6,6 @@
 html,
 body {
   height: 100%;
-}
-
-#start-body {
   text-align: center;
   display: grid;
   place-content: center;

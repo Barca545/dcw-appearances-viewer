@@ -2,7 +2,7 @@ import { app, dialog, ipcMain, shell } from "electron";
 import { Session } from "./session";
 import { createCharacterName } from "../common/utils";
 import { fetchList } from "../../core/fetch";
-import { SubmitResponse } from "../common/apiTypes";
+import { SearchRequest, TabData, TEMP_ID_WHILE_ONLY_ONE_TAB } from "../common/apiTypes";
 import { __userdata, IS_DEV, IS_MAC, makeUninstallScript, RESOURCE_PATH, UPDATE_PATH as UPDATE_DOT_EXE } from "./main_utils";
 import path from "path";
 import { LOGGER } from "./log";
@@ -191,7 +191,8 @@ async function init() {
   ipcMain.on("open:file", (_e, _page) => session.openFile());
   ipcMain.on("open:URL", (_e, url) => shell.openExternal(url));
 
-  ipcMain.handle("form:submit", async (_e, data) => {
+  // SEARCHING FOR CHARACTERS AND REFLOW LISTENERS
+  ipcMain.handle("update:request", async (_e, data: SearchRequest) => {
     const character = createCharacterName(data);
     // Confirm this actually updates session. I am not positive session is actually a mutable reference
     session.projectData.meta.character = character;
@@ -199,33 +200,31 @@ async function init() {
 
     // FIXME: This is pretty janky eventually I want to send the actual data over
     if (!res.ok()) {
-      return { success: false, character: character };
+      return {
+        meta: {
+          success: false,
+          id: TEMP_ID_WHILE_ONLY_ONE_TAB,
+          character: character,
+        },
+        appearances: session.projectData.data,
+        options: session.opt,
+      } as TabData;
     }
 
     session.projectData.data = res.unwrap();
     // TODO: Use an alert to show a proper error for if the name is wrong (basically if fetch comes back empty)
 
-    const send: SubmitResponse = {
-      success: true,
+    session.isClean.task = false;
+    return {
+      meta: {
+        success: true,
+        id: TEMP_ID_WHILE_ONLY_ONE_TAB,
+        character: character,
+      },
       appearances: session.projectData.data,
-      character: character,
-      density: session.opt.density,
-    };
-
-    session.isClean.task = false;
-    return send;
+      options: session.opt,
+    } as TabData;
   });
-
-  // TODO: Figure out why it randomly errors sometimes and says the reflow function does not exist
-  ipcMain.handle("filterOptions", (_e, options) => {
-    console.log(options);
-    // TODO: If I just target the focused I don't see how it could go wrong but maybe there are edge cases where it does?
-    session.opt = options;
-    session.isClean.task = false;
-    return session.reflow();
-  });
-
-  ipcMain.handle("error:show", (_e, title, msg) => dialog.showErrorBox(title, msg));
 
   // SETTINGS LISTENERS
 
@@ -248,25 +247,49 @@ async function init() {
     session.saveSettings();
   });
 
-  // This is a listener for a generic submission of data from the frontend
-  // Don't love this will probably ditch it
-  ipcMain.on("data:response", (_e, data) => {
-    console.log(data);
-  });
-
   ipcMain.on("filter:order", (_e, order) => {
     session.opt.order = order;
     session.isClean.task = false;
+
+    ipcMain.emit("update:recieve", {
+      meta: {
+        success: true,
+        id: TEMP_ID_WHILE_ONLY_ONE_TAB,
+        character: session.projectData.meta.character as string,
+      },
+      appearances: session.projectData.data,
+      options: session.opt,
+    });
   });
 
   ipcMain.on("filter:density", (_e, density) => {
     session.opt.density = density;
     session.isClean.task = false;
+
+    ipcMain.emit("update:recieve", {
+      meta: {
+        success: true,
+        id: TEMP_ID_WHILE_ONLY_ONE_TAB,
+        character: session.projectData.meta.character as string,
+      },
+      appearances: session.projectData.data,
+      options: session.opt,
+    });
   });
 
   ipcMain.on("filter:asc", (_e, asc) => {
     session.opt.ascending = asc;
     session.isClean.task = false;
+
+    ipcMain.emit("update:recieve", {
+      meta: {
+        success: true,
+        id: TEMP_ID_WHILE_ONLY_ONE_TAB,
+        character: session.projectData.meta.character as string,
+      },
+      appearances: session.projectData.data,
+      options: session.opt,
+    });
   });
 
   // TODO: Theoretically this stuff should go into the init of session

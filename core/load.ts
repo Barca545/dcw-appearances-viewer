@@ -2,7 +2,7 @@ import fs from "fs";
 import convert from "xml-js";
 import { ListEntry } from "./pub-sort.js";
 import { templateStringToListEntry } from "./utils.js";
-import { FilterOptions } from "../src/common/apiTypes.js";
+import { FilterOptions, DEFAULT_FILTER_OPTIONS } from "../src/common/apiTypes.js";
 import path from "path";
 import { AppearancesDataResponse } from "./coreTypes.js";
 
@@ -40,7 +40,7 @@ export namespace ProjectData {
     return {
       // Unsure if not having versions is theoretically a problem
       header: { appID: "DCDB-Appearance-Viewer", version: "" },
-      meta: { options: new FilterOptions() },
+      meta: { options: DEFAULT_FILTER_OPTIONS },
       data: [],
     };
   }

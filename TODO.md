@@ -28,13 +28,9 @@
 ## Renderer Refactor
 
 - [ ] Retool pages in React
-- [ ] Reasses if Templates are necessary
+- [ ] Download the React [DevTools](https://react.dev/link/react-devtools)
+- [ ] Delete now extraneous `.ts` pages
 - [ ] Allegedly no need to await `"dom-content-loaded"`
-
-## Updating
-
-- [ ] Add autoupdates
-- [ ] Add Github releases
 
 ## Logging
 
@@ -58,18 +54,22 @@
 
 # 0.2.0
 
-## Session saving
+## Multiple Tabs
 
-- [ ] Every change to a project should mark it as `isDirty`
-- [ ] Saving should update a document's `isDirty` to clean
-- [x] Store the name of the character as part of save data
-- [x] Save prompt [on window exit](https://stackoverflow.com/questions/45677600/)
-- [ ] Save as markdown reading list with entries as "`- [ ] [name](link)\n`"
-- [x] Open saved files
+- [ ] Tab data stored in main process
+- [ ] Updating a tab creates a new tab in the session
+- [ ] TabBar has an api listener that causes it to rerender when the main process' tab list is modified
+- [ ] `TabBar` added to `Layout`
+- [ ] Exiting a tab should autosave or prompt a save if it is untitled
+- [ ] Tab should indicate if unsaved like VSCode
+- [ ] Style tabs ([guide](https://www.w3schools.com/howto/howto_js_tabs.asp))
 
 ## Organize project
 
+- [ ] Assess whether `Layout` should have a `root` HTML element
+- [ ] Asses whether `<body>` should be the `root` HTML element in `index.html`
 - [ ] Need to clean main up and create submodules
+- [ ] Need to create proper `*.d.ts` files
 - [ ] Reorganize exports/imports between APITypes and core types
 - [ ] Many files need more descriptive names
 - [ ] Move types used by multiple modules to whichever is most logical
@@ -97,6 +97,8 @@
 
 ## Updating
 
+- [ ] Add autoupdates
+- [ ] Add Github releases
 - [ ] Have nightly vs prompt options in settings to control update frequency
 
 ## Miscellaneous
@@ -105,20 +107,12 @@
 
 # 0.5.0
 
-## Settings
-
-- [ ] Accessibility subsection
-
 ## Styling
 
 - [ ] Toggles should use [sliders](https://www.w3schools.com/howto/howto_css_switch.asp)
 - [ ] Normal list has purple links `"Name Only"` has blue ones
-- [ ] Text Size
-
-## Multiple Tabs
-
-- [ ] Exiting a tab should autosave or prompt a save if it is untitled
-- [ ] Tab should indicate if unsaved like VSCode
+- [ ] Text size needs to be scaled better
+- [ ] All sizes should be in something absoulute not `px` units
 
 # 0.6.0
 
@@ -131,5 +125,9 @@
 ## QOL
 
 - [ ] Character inference for `.xml` files
+
+# 0.7.0
+
+## Accessability
 
 # 0.9.0

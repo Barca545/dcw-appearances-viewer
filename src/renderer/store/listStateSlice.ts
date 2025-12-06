@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { AppearanceData, FilterDensity, SubmitResponse } from "../../common/apiTypes";
+import { AppearanceData, FilterDensity, TabData, TEMP_ID_WHILE_ONLY_ONE_TAB } from "../../common/apiTypes";
+import { UUID } from "crypto";
 
 interface ListState {
   density: FilterDensity;
@@ -7,22 +8,33 @@ interface ListState {
   list: AppearanceData[];
 }
 
-// Needs to be a serializable value (so not a list entry)
-
-const initialState = { density: FilterDensity.Normal, character: "", list: [] };
+interface ListStateMap {
+  [id: UUID]: ListState; // key by UUID string
+}
 
 const listStateSlice = createSlice({
   name: "listStateSlice",
-  initialState: initialState as ListState,
+  initialState: { [TEMP_ID_WHILE_ONLY_ONE_TAB]: { density: FilterDensity.Normal, character: "", list: [] } } as ListStateMap,
   reducers: {
-    setListState: (state, action: PayloadAction<SubmitResponse>) => {
-      const newState = action.payload;
-      state.density = newState.density;
-      state.character = newState.character;
-      state.list = newState.appearances;
+    updateEntry: (state, action: PayloadAction<TabData>) => {
+      const currentState = state[action.payload.meta.id];
+      if (currentState) {
+        const newState = action.payload;
+        currentState.density = newState.options.density;
+        currentState.character = newState.meta.character;
+        currentState.list = newState.appearances;
+      } else {
+        const newState = action.payload;
+        state[action.payload.meta.id] = {
+          density: newState.options.density,
+          character: newState.meta.character,
+          list: [...newState.appearances],
+        };
+      }
+      console.log(state[action.payload.meta.id].list);
     },
   },
 });
 
-export const { setListState } = listStateSlice.actions;
+export const { updateEntry } = listStateSlice.actions;
 export default listStateSlice.reducer;

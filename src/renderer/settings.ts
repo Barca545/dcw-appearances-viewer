@@ -6,7 +6,7 @@ import { Settings } from "../common/apiTypes";
 async function registerFetchData() {
   let form = document.querySelector(`[id="settings"]`) as HTMLFormElement;
   // Set the elements on the settings form to match current settings
-  const settings = await window.api.settings.request();
+  const settings = await window.API.settings.request();
 
   // Set the components of the form
   // TODO: Can't iterate over settings currently because it is not flat
@@ -46,12 +46,12 @@ function registerSaveSettings() {
       // Convert data to Settings
       const data = htmlFormtoSettings(form);
 
-      window.api.settings.save(data);
+      window.API.settings.save(data);
 
       // TODO: If name is save and close also close
 
       if ((e.target as HTMLButtonElement).id.toLowerCase().includes("close")) {
-        window.api.settings.close();
+        window.API.settings.close();
       }
     });
   });
@@ -88,11 +88,11 @@ function registerPreviewSettings() {
   const form = document.querySelector(`[id="settings"]`) as HTMLFormElement;
   form.addEventListener("change", () => {
     const data = htmlFormtoSettings(form);
-    window.api.settings.apply(data);
+    window.API.settings.apply(data);
   });
 }
 
-window.api.dataRequest("dummy data");
+window.API.dataRequest("dummy data");
 
 window.addEventListener("DOMContentLoaded", async () => {
   await registerFetchData();

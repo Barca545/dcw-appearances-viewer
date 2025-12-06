@@ -6,16 +6,21 @@ import { None, Option, Some } from "../../core/option";
 // - FilterOptions
 // - AppearanceData
 
+// FIXME: ONLY TEMP
+export const TEMP_ID_WHILE_ONLY_ONE_TAB = `${"foo"}-${"bar"}-${"fizz"}-${"bazz"}-${"string"}`;
+
 export interface SearchRequest {
   /** The first and last name of the character. */
   character: string;
   /**The character's home universe */
   universe: string;
+  /**ID of the tab making the request. Blank if the request is to open a new tab.*/
+  id?: UUID;
 }
 
 export enum FilterDensity {
-  Dense = "DENSE",
   Normal = "NORM",
+  Dense = "DENSE",
 }
 
 export namespace FilterDensity {
@@ -32,117 +37,43 @@ export namespace FilterDensity {
   }
 }
 
-/**The response to a request to fetch appearences from the wiki. */
-export interface SubmitResponse {
-  success: boolean;
-  density: FilterDensity;
-  character: string;
+/**The response to a `requestUpdate` wrapped for transit through the Electron [IPC](https://www.electronjs.org/docs/latest/tutorial/ipc) to and from specific tabs.*/
+export interface TabData {
+  meta: { id: UUID; success: boolean; character: string };
+  options: FilterOptions;
   appearances: AppearanceData[];
 }
 
-export enum SortOrder {
-  AlphaNumeric = "A-Z",
+export enum FilterOrder {
   PubDate = "PUB",
+  AlphaNumeric = "A-Z",
 }
 
-export namespace SortOrder {
-  export function from(value: string): Option<SortOrder> {
+export namespace FilterOrder {
+  export function from(value: string): Option<FilterOrder> {
     switch (value) {
       case "A-Z": {
-        return new Some(SortOrder.AlphaNumeric);
+        return new Some(FilterOrder.AlphaNumeric);
       }
       case "PUB": {
-        return new Some(SortOrder.PubDate);
+        return new Some(FilterOrder.PubDate);
       }
     }
     return new None();
   }
 }
 
-export class FilterOptions {
-  order: SortOrder;
+export interface FilterOptions {
+  order: FilterOrder;
   density: FilterDensity;
   ascending: boolean;
-
-  /**Create a new set of FilterOptions with the default parameters (density = "NORM", order = "PUB"). */
-  constructor() {
-    this.density = FilterDensity.Normal;
-    this.order = SortOrder.PubDate;
-    this.ascending = true;
-  }
-
-  setDensity(dense: FilterDensity) {
-    this.density = dense;
-    return this;
-  }
-  setOrder(ord: SortOrder) {
-    this.order = ord;
-    return this;
-  }
-  setAscending(asc: boolean) {
-    this.ascending = asc;
-    return this;
-  }
 }
 
-// TODO: Possibly this should be in common
-// This needs to mirror the API defined about is there a better way to do this consistently
-declare global {
-  interface Window {
-    api: {
-      settings: {
-        request: () => Promise<Settings>;
-        /**Save the new settings to the disk. */
-        save: (data: Settings) => void;
-        /**Send settings data to the main process without saving it to file. */
-        apply: (data: Settings) => void;
-        /**Close the window that send the request.*/
-        close: () => void;
-      };
-
-      form: {
-        /**Submits the form to the main process and returns the result to the renderer. */
-        submit: (data: SearchRequest) => Promise<SubmitResponse>;
-      };
-      open: {
-        /**Open a  new AppPage in the current tab. */
-        page: (addr: AppPage) => void;
-        /**Open a Web URL in the default browser. */
-        url: (addr: string) => void;
-        // TODO: Eventually should open in a new tab but that's beside the point
-        /**Open a Project file in the current tab*/
-        file: () => void;
-      };
-      // TODO: Do I need a request and send for this since saving needs to save the settings?
-      requestReflow: (state: FilterOptions) => Promise<AppearanceData[]>;
-      recieveData: (callback: (res: any) => any) => void;
-      dataRequest: (data: any) => void;
-      // TODO: Update the filter options held on main
-      filter: {
-        /**Set a new value for the App's filter order. */
-        order: (order: SortOrder) => void;
-        /**Set a new value for the App's filter density. */
-        density: (density: FilterDensity) => void;
-        /**Set a new value for the App's filter ascent direction. */
-        ascending: (asc: boolean) => void;
-      };
-      // FIXME: I am not sure it should actually return void
-      reflow: (r: (data: AppearanceData[], dense: FilterDensity) => void) => void;
-    };
-  }
-}
-
-/**Wrapper for sending messages through the Electron [IPC](https://www.electronjs.org/docs/latest/tutorial/ipc) to and from specific tabs.*/
-export class APIMessage<T> {
-  // TODO: Unclear how I'll actually get/make the tab IDs
-  tabID: UUID;
-  body: T;
-
-  constructor(id: UUID, msg: T) {
-    this.tabID = id;
-    this.body = msg;
-  }
-}
+export const DEFAULT_FILTER_OPTIONS: FilterOptions = {
+  order: FilterOrder.PubDate,
+  density: FilterDensity.Normal,
+  ascending: false,
+};
 
 // Keep this flat so it can be iterated over
 export interface Settings {

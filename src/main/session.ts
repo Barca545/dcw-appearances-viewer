@@ -2,16 +2,13 @@ import { app, BrowserWindow, dialog, Menu, nativeTheme } from "electron";
 import { ListEntry, pubDateSort } from "../../core/pub-sort";
 import path from "path";
 import { ProjectData, loadList, ProjectDataFromJSON, saveProjectDataAsJSON, Path } from "../../core/load";
-import { AppPage, FilterOptions, Settings, SortOrder } from "../common/apiTypes";
+import { AppPage, FilterOptions, DEFAULT_FILTER_OPTIONS, Settings, FilterOrder } from "../common/apiTypes";
 import fs from "fs";
 import { MenuTemplate, openFileDialog } from "./menu";
 import { __userdata, IS_DEV, ROOT_DIRECTORY, MESSAGES, RESOURCE_PATH, UNIMPLEMENTED_FEATURE } from "./main_utils";
 import { None, Option, Some } from "../../core/option";
 
-export declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
-export declare const MAIN_WINDOW_VITE_NAME: string;
-
-// FIXME: It does not seem as if vite supports this for vite as it does webpack but maybe they will eventually
+// FIXME: It does not seem as if forge supports this for vite as it does webpack but maybe they will eventually
 export const MAIN_WINDOW_PRELOAD_VITE_ENTRY = path.join(__dirname, `preload.js`);
 
 // TODO: Maybe eventually find a way to stick every part of the program into this structure but for now just using it to store file data works
@@ -30,7 +27,7 @@ export class Session {
   constructor() {
     const settings = Session.getSettings();
     this.win = Session.makeWindow(settings);
-    this.opt = new FilterOptions();
+    this.opt = DEFAULT_FILTER_OPTIONS;
     this.projectData = ProjectData.empty();
     // Start the app save path as home
     this.savePath = new None();
@@ -213,7 +210,7 @@ export class Session {
     if (ext == ".xml")
       file = {
         header: { appID: "DCDB-Appearance-Viewer", version: app.getVersion() },
-        meta: { options: new FilterOptions() },
+        meta: { options: DEFAULT_FILTER_OPTIONS },
         data: loadList(this.savePath.unwrap()),
       };
     else if (ext == ".json") {
@@ -282,11 +279,11 @@ export class Session {
     let sorted = this.projectData.data;
     // TODO: Basically move all this logic serverside
     switch (this.opt.order) {
-      case SortOrder.PubDate: {
+      case FilterOrder.PubDate: {
         sorted = pubDateSort(sorted);
         break;
       }
-      case SortOrder.AlphaNumeric: {
+      case FilterOrder.AlphaNumeric: {
         // TODO: This type of sorting needs to be checked for correctness
         sorted = sorted.sort((a, b) => {
           if (a.title < b.title) {
@@ -316,7 +313,7 @@ export class Session {
   /**Reset the current tab to the blank tab state. */
   resetTab() {
     this.projectData = ProjectData.empty();
-    this.opt = new FilterOptions();
+    this.opt = DEFAULT_FILTER_OPTIONS;
     this.savePath = new None();
     this.isClean = { settings: true, task: true };
   }

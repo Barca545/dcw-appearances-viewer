@@ -1,6 +1,6 @@
 import { ListEntry } from "../../../core/pub-sort";
-import { Fragment, ReactNode } from "react";
-import { AppearanceData, FilterDensity, SortOrder } from "../../common/apiTypes";
+import { Fragment, JSX } from "react";
+import { AppearanceData, FilterDensity, FilterOrder, TEMP_ID_WHILE_ONLY_ONE_TAB } from "../../common/apiTypes";
 import { useAppSelector } from "../store/hooks";
 
 // TODO: It might be better to render the ResultsList component in the main process.
@@ -9,32 +9,36 @@ import { useAppSelector } from "../store/hooks";
 type InputChangeEvent = React.ChangeEvent<HTMLSelectElement | HTMLInputElement>;
 
 // TODO: This probably belongs in a utils file
-function parseBool(string: string): boolean {
+export function parseBool(string: string): boolean {
   return string.toLowerCase() === "true";
 }
 
-export default function AppResults(): ReactNode {
-  const { character } = useAppSelector((state) => state.listState);
+export default function AppResults(): JSX.Element {
+  // FIXME: This will not work once more tabs are added I will actually need some way to grab by id
+  // TODO: Confirm this means character only updates if the function in use app selector actually returns?
+  const { character, density, list } = useAppSelector((state) => state.listState[TEMP_ID_WHILE_ONLY_ONE_TAB]);
+
   return (
     <Fragment>
       <FilterBar />
       {character}
-      <ResultsList />
+      <ResultsList density={density} list={list} />
     </Fragment>
   );
 }
 
-function FilterBar(): ReactNode {
+// TODO: For whatever reason changing this doesn't cause a results rerender
+function FilterBar(): JSX.Element {
   // Filter change handlers
-  const handleOrderChange = (e: InputChangeEvent) => window.api.filter.order(SortOrder.from(e.target.value).unwrap());
-  const handleAscChange = (e: InputChangeEvent) => window.api.filter.ascending(parseBool(e.target.value));
-  const handleDensityChange = (e: InputChangeEvent) => window.api.filter.density(FilterDensity.from(e.target.value).unwrap());
+  const handleOrderChange = (e: InputChangeEvent) => window.API.filter.order(FilterOrder.from(e.target.value).unwrap());
+  const handleAscChange = (e: InputChangeEvent) => window.API.filter.ascending(parseBool(e.target.value));
+  const handleDensityChange = (e: InputChangeEvent) => window.API.filter.density(FilterDensity.from(e.target.value).unwrap());
 
   return (
     <form id="filter-options">
-      <select name="sort-type" defaultValue={SortOrder.PubDate} id="sort-type" onChange={handleOrderChange}>
-        <option value={SortOrder.PubDate}>Publication Date</option>
-        <option value={SortOrder.AlphaNumeric}>A-Z</option>
+      <select name="sort-type" defaultValue={FilterOrder.PubDate} id="sort-type" onChange={handleOrderChange}>
+        <option value={FilterOrder.PubDate}>Publication Date</option>
+        <option value={FilterOrder.AlphaNumeric}>A-Z</option>
       </select>
       <label htmlFor="input">Ascending</label>
       <label className="toggle">
@@ -50,12 +54,11 @@ function FilterBar(): ReactNode {
   );
 }
 
-// TODO: Merge Dense/Normal results list functions into this one component?
-// TODO: Why does this render twice
-function ResultsList(): ReactNode {
-  const { list, density } = useAppSelector((state) => state.listState);
+// TODO: Why does this not render at all
+function ResultsList({ list, density }: { list: AppearanceData[]; density: FilterDensity }): JSX.Element {
+  // FIXME: This will not work once more tabs are added I will actually need some way to grab by id
+  // TODO: Confirm this means character only updates if the function in use app selector actually returns?
   console.log("Rendering ResultsList", list.length, density);
-  // TODO: Wrap internally with a <div id="results-container"/>?
   const entries = () => {
     switch (density) {
       case FilterDensity.Normal: {
@@ -85,11 +88,11 @@ function ResultsList(): ReactNode {
   return <Fragment>{entries()}</Fragment>;
 }
 
-function ResultTitle({ entry }: { entry: ListEntry | AppearanceData }): ReactNode {
+function ResultTitle({ entry }: { entry: ListEntry | AppearanceData }): JSX.Element {
   // FIXME: Find correct type
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    window.api.open.url(`https://dc.fandom.com/wiki/${entry.title.replaceAll(" ", "_")}`);
+    window.API.open.url(`https://dc.fandom.com/wiki/${entry.title.replaceAll(" ", "_")}`);
   };
   return (
     <div className="result-title">
