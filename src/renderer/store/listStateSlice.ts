@@ -17,6 +17,7 @@ const listStateSlice = createSlice({
   initialState: { [TEMP_ID_WHILE_ONLY_ONE_TAB]: { density: FilterDensity.Normal, character: "", list: [] } } as ListStateMap,
   reducers: {
     updateEntry: (state, action: PayloadAction<TabData>) => {
+      console.log("recieving entry");
       const currentState = state[action.payload.meta.id];
       if (currentState) {
         const newState = action.payload;

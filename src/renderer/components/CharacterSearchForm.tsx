@@ -1,6 +1,6 @@
 import { Fragment, useState, JSX } from "react";
 import { useAppDispatch } from "../store/hooks";
-import { LoadState, setError, setLoadState } from "../store/loadingStateSlice";
+import { setError, setLoadState } from "../store/loadingStateSlice";
 import { updateEntry } from "../store/listStateSlice";
 
 // TODO: The earths can be generated programatically by mapping a list. Either my handwritten one or the one pulled from the server
@@ -22,14 +22,14 @@ export default function CharacterSearchForm(): JSX.Element {
     };
 
     // Tell user a load is happening
-    dispatch(setLoadState(LoadState.Loading));
+    dispatch(setLoadState(true));
     window.API.update
       .request(data)
       .then(
         (res) => dispatch(updateEntry(res)),
         (err: string) => dispatch(setError(new Error(err))),
       )
-      .finally(() => dispatch(setLoadState(LoadState.Loaded)));
+      .finally(() => dispatch(setLoadState(false)));
   };
 
   return (

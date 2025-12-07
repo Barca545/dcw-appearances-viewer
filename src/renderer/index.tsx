@@ -7,8 +7,6 @@ import Start from "./Start";
 import { Provider } from "react-redux";
 import { store } from "./store/store";
 
-console.log("INDEX STARTS");
-
 const root = createRoot(document.getElementById("root") as HTMLElement);
 root.render(
   <React.StrictMode>

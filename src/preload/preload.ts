@@ -3,7 +3,6 @@
 
 // TODO: If this ends up being overly granular merge taking inspiration from
 // https://stackoverflow.com/questions/66266205/how-to-read-a-local-file-in-javascript-running-from-an-electron-app
-
 import type { AppPage, FilterDensity, SearchRequest, Settings, FilterOrder, TabData } from "../common/apiTypes.js";
 import { contextBridge, ipcRenderer } from "electron";
 // REMINDER: Handle only takes invokes not sends
@@ -28,7 +27,21 @@ contextBridge.exposeInMainWorld("API", {
         return Promise.reject(`Failed to fetch ${res.meta.character}`);
       }
     },
-    recieve: (u: (res: TabData) => void) => ipcRenderer.on("update:recieve", (_e, res) => u(res)),
+    subscribe: (handler: (res: TabData) => void) => {
+      console.log("Registering IPC listener");
+
+      const ref = (_e: Electron.IpcRendererEvent, res: TabData) => {
+        console.log("recieving data");
+        handler(res);
+      };
+
+      ipcRenderer.on("update:emit", ref);
+
+      return () => ipcRenderer.off("update:emit", ref);
+    },
+    // TODO: Debating if I should do this, it would would but require the exact same function ref be passed to
+    // subscribe: (handler: (_e: Electron.IpcRendererEvent, res: TabData) => void) => ipcRenderer.on("update:emit", handler),
+    // unsubscribe: (handler: (_e: Electron.IpcRendererEvent, res: TabData) => void) => ipcRenderer.off("update:emit", handler),
   },
   open: {
     /**Open a new AppPage in the current tab. */

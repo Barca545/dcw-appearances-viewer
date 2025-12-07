@@ -2,17 +2,11 @@ import { ListEntry } from "../../../core/pub-sort";
 import { Fragment, JSX } from "react";
 import { AppearanceData, FilterDensity, FilterOrder, TEMP_ID_WHILE_ONLY_ONE_TAB } from "../../common/apiTypes";
 import { useAppSelector } from "../store/hooks";
+import BooleanToggle from "./BooleanToggle";
+import { InputChangeEventInput, InputChangeEventSelect } from "./types";
+import LoadingSpinner from "./LoadingSpinner";
 
-// TODO: It might be better to render the ResultsList component in the main process.
-// That way no state is stored clientside and desyncing stops being a concern
-
-type InputChangeEvent = React.ChangeEvent<HTMLSelectElement | HTMLInputElement>;
-
-// TODO: This probably belongs in a utils file
-export function parseBool(string: string): boolean {
-  return string.toLowerCase() === "true";
-}
-
+// TODO: This needs to accept the initial state as a prop so it can fill in the initial filter options and list
 export default function AppResults(): JSX.Element {
   // FIXME: This will not work once more tabs are added I will actually need some way to grab by id
   // TODO: Confirm this means character only updates if the function in use app selector actually returns?
@@ -27,12 +21,12 @@ export default function AppResults(): JSX.Element {
   );
 }
 
-// TODO: For whatever reason changing this doesn't cause a results rerender
 function FilterBar(): JSX.Element {
   // Filter change handlers
-  const handleOrderChange = (e: InputChangeEvent) => window.API.filter.order(FilterOrder.from(e.target.value).unwrap());
-  const handleAscChange = (e: InputChangeEvent) => window.API.filter.ascending(parseBool(e.target.value));
-  const handleDensityChange = (e: InputChangeEvent) => window.API.filter.density(FilterDensity.from(e.target.value).unwrap());
+  const handleOrderChange = (e: InputChangeEventSelect) => window.API.filter.order(FilterOrder.from(e.target.value).unwrap());
+  const handleAscChange = (e: InputChangeEventInput) => window.API.filter.ascending(e.target.checked);
+  const handleDensityChange = (e: InputChangeEventSelect) =>
+    window.API.filter.density(FilterDensity.from(e.target.value).unwrap());
 
   return (
     <form id="filter-options">
@@ -41,10 +35,7 @@ function FilterBar(): JSX.Element {
         <option value={FilterOrder.AlphaNumeric}>A-Z</option>
       </select>
       <label htmlFor="input">Ascending</label>
-      <label className="toggle">
-        <input type="checkbox" name="ascending" id="ascending" value="1" onChange={handleAscChange} />
-        <span className="slider"></span>
-      </label>
+      <BooleanToggle onChange={handleAscChange} />
       <label>Density</label>
       <select name="density" onChange={handleDensityChange} defaultValue={FilterDensity.Normal}>
         <option value={FilterDensity.Normal} label="Normal" />
@@ -56,9 +47,12 @@ function FilterBar(): JSX.Element {
 
 // TODO: Why does this not render at all
 function ResultsList({ list, density }: { list: AppearanceData[]; density: FilterDensity }): JSX.Element {
-  // FIXME: This will not work once more tabs are added I will actually need some way to grab by id
-  // TODO: Confirm this means character only updates if the function in use app selector actually returns?
-  console.log("Rendering ResultsList", list.length, density);
+  const isLoading = useAppSelector((state) => state.loadState);
+  if (isLoading instanceof Error) {
+    return <Fragment>{isLoading.message}</Fragment>;
+  } else if (isLoading == true) {
+    return <LoadingSpinner />;
+  }
   const entries = () => {
     switch (density) {
       case FilterDensity.Normal: {
@@ -75,11 +69,7 @@ function ResultsList({ list, density }: { list: AppearanceData[]; density: Filte
       }
       case FilterDensity.Dense: {
         return list.map((entry) => {
-          return (
-            <div className="dense-result">
-              <ResultTitle entry={entry} />
-            </div>
-          );
+          return <ResultTitle key={entry.title} entry={entry} />;
         });
       }
     }
@@ -89,7 +79,6 @@ function ResultsList({ list, density }: { list: AppearanceData[]; density: Filte
 }
 
 function ResultTitle({ entry }: { entry: ListEntry | AppearanceData }): JSX.Element {
-  // FIXME: Find correct type
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     window.API.open.url(`https://dc.fandom.com/wiki/${entry.title.replaceAll(" ", "_")}`);

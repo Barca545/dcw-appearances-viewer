@@ -7,11 +7,11 @@ import fs from "fs";
 import { MenuTemplate, openFileDialog } from "./menu";
 import { __userdata, IS_DEV, ROOT_DIRECTORY, MESSAGES, RESOURCE_PATH, UNIMPLEMENTED_FEATURE } from "./main_utils";
 import { None, Option, Some } from "../../core/option";
+import { UUID } from "crypto";
 
 // FIXME: It does not seem as if forge supports this for vite as it does webpack but maybe they will eventually
 export const MAIN_WINDOW_PRELOAD_VITE_ENTRY = path.join(__dirname, `preload.js`);
 
-// TODO: Maybe eventually find a way to stick every part of the program into this structure but for now just using it to store file data works
 export class Session {
   win: BrowserWindow;
   savePath: Option<Path>;
@@ -298,7 +298,7 @@ export class Session {
       }
     }
 
-    // Make sure it does ascendingdescending
+    // Make sure it does ascending/descending
     if (!this.opt.ascending) {
       sorted = sorted.reverse();
     }

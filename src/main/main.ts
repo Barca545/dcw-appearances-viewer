@@ -251,13 +251,13 @@ async function init() {
     session.opt.order = order;
     session.isClean.task = false;
 
-    ipcMain.emit("update:recieve", {
+    session.win.webContents.send("update:emit", {
       meta: {
         success: true,
         id: TEMP_ID_WHILE_ONLY_ONE_TAB,
         character: session.projectData.meta.character as string,
       },
-      appearances: session.projectData.data,
+      appearances: session.reflow(),
       options: session.opt,
     });
   });
@@ -266,13 +266,13 @@ async function init() {
     session.opt.density = density;
     session.isClean.task = false;
 
-    ipcMain.emit("update:recieve", {
+    session.win.webContents.send("update:emit", {
       meta: {
         success: true,
         id: TEMP_ID_WHILE_ONLY_ONE_TAB,
         character: session.projectData.meta.character as string,
       },
-      appearances: session.projectData.data,
+      appearances: session.reflow(),
       options: session.opt,
     });
   });
@@ -280,14 +280,16 @@ async function init() {
   ipcMain.on("filter:asc", (_e, asc) => {
     session.opt.ascending = asc;
     session.isClean.task = false;
+    console.log(asc);
+    console.log(session.projectData.data);
 
-    ipcMain.emit("update:recieve", {
+    session.win.webContents.send("update:emit", {
       meta: {
         success: true,
         id: TEMP_ID_WHILE_ONLY_ONE_TAB,
         character: session.projectData.meta.character as string,
       },
-      appearances: session.projectData.data,
+      appearances: session.reflow(),
       options: session.opt,
     });
   });
@@ -299,6 +301,6 @@ async function init() {
   });
 
   session.win.on("close", () => {
-    // It should save on blur and on close
+    // prompt to save on close
   });
 }
