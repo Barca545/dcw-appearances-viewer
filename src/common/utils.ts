@@ -1,4 +1,4 @@
-import { SearchRequest } from "./apiTypes.js";
+import { SearchRequest } from "./TypesAPI";
 
 export function createCharacterName(data: SearchRequest): string {
   // Get the name from the form
@@ -21,7 +21,7 @@ export function createCharacterName(data: SearchRequest): string {
     result = character;
   } else {
     // Get universe and add it to the character name if the universe was not included in the string
-    result = character + " " + data.universe.trim();
+    result = `${character} ${data.universe.trim()}`;
   }
 
   return result;

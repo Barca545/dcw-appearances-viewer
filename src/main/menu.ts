@@ -1,8 +1,7 @@
-import { Session } from "./session";
 import { UNIMPLEMENTED_FEATURE, IS_MAC, IS_DEV, MESSAGES } from "./main_utils";
 import { BaseWindow, dialog } from "electron";
-import { AppPage } from "../common/apiTypes";
 import { None, Option, Some } from "../../core/option";
+import { Session } from "./session";
 
 type MenuTemplate = Electron.MenuItemConstructorOptions[];
 type MenuEntry = Electron.MenuItemConstructorOptions;
@@ -15,7 +14,7 @@ export function MenuTemplate(session: Session): MenuTemplate {
         {
           label: "New",
           accelerator: "CommandOrControl+N",
-          click: (_item, _base, _e) => session.openAppPage(AppPage.Application),
+          click: (_item, _base, _e) => session.openAppTab(false),
         },
         {
           label: "New Tab",
@@ -25,7 +24,7 @@ export function MenuTemplate(session: Session): MenuTemplate {
         {
           label: "Open File",
           accelerator: "CommandOrControl+O",
-          click: (_item, _base, _e) => session.openFile(),
+          click: (_item, _base, _e) => session.openAppTab(true),
         },
         { type: "separator" },
         { role: "recentDocuments", click: (_item, _base, _e) => UNIMPLEMENTED_FEATURE() },

@@ -1,5 +1,5 @@
-import { match, None, Option, Some } from "./option.js";
-import { Clone } from "./coreTypes.js";
+import { match, None, Option, Some } from "./option";
+import { Clone } from "./Clone";
 
 export class Peekable<T> implements Clone<Peekable<T>> {
   private src: T[];

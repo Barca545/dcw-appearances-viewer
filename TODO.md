@@ -52,8 +52,6 @@
 - [ ] Filter options fails on pages; possibly a reflow issue
 - [ ] Why is there a `.vite` in the renderer folder?
 
-# 0.2.0
-
 ## Multiple Tabs
 
 - [ ] Tab data stored in main process
@@ -64,17 +62,25 @@
 - [ ] Tab should indicate if unsaved like VSCode
 - [ ] Style tabs ([guide](https://www.w3schools.com/howto/howto_js_tabs.asp))
 
-## Organize project
+# 0.2.0
+
+## Organize Project
+
+- [ ] Look at how [TS documentation](https://www.typescriptlang.org/docs/handbook/declaration-files/library-structures.html) recommends structuring projects.
+- [ ] Standardize documentation
+- [ ] Reorganize exports/imports between APITypes and core types
+- [ ] Many files need more descriptive names
+- [ ] Move types used by multiple modules to whichever is most logical
+
+## Refactor Project
 
 - [ ] Assess whether `Layout` should have a `root` HTML element
 - [ ] Asses whether `<body>` should be the `root` HTML element in `index.html`
 - [ ] Need to clean main up and create submodules
 - [ ] Need to create proper `*.d.ts` files
-- [ ] Reorganize exports/imports between APITypes and core types
-- [ ] Many files need more descriptive names
-- [ ] Move types used by multiple modules to whichever is most logical
+- [ ] Remove unused IPC API endpoints
 
-## Add new Tests
+## Add New Tests
 
 - [ ] Update existing tests' file paths
 - [ ] add tests for electron features

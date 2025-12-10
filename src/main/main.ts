@@ -1,9 +1,6 @@
-import { app, dialog, ipcMain, shell } from "electron";
+import { app, dialog } from "electron";
 import { Session } from "./session";
-import { createCharacterName } from "../common/utils";
-import { fetchList } from "../../core/fetch";
-import { SearchRequest, TabData, TEMP_ID_WHILE_ONLY_ONE_TAB } from "../common/apiTypes";
-import { __userdata, IS_DEV, IS_MAC, makeUninstallScript, RESOURCE_PATH, UPDATE_PATH as UPDATE_DOT_EXE } from "./main_utils";
+import { __userdata, IS_DEV, makeUninstallScript, RESOURCE_PATH, UPDATE_PATH as UPDATE_DOT_EXE } from "./main_utils";
 import path from "path";
 import { LOGGER } from "./log";
 import Child from "child_process";
@@ -15,21 +12,11 @@ import fs from "fs";
 // - URGENT: Add github release - https://www.electronforge.io/config/publishers/github
 // - URGENT: Add autoupdater - https://www.electronforge.io/config/publishers/github && https://www.electronjs.org/docs/latest/tutorial/updates
 // - URGENT: Add check for all files installed correctly on first startup and log errors if stuff is missing
+// - Add Cloudflare log reporting
 
 // Read more on getPath: https://www.electronjs.org/docs/latest/api/app#appgetpathname
 
-const log = LOGGER.default();
-
-process.on("uncaughtException", (err) => {
-  // TODO: I am not sure this should always be fatal
-  log.fatal(err.name, err.stack || err.message);
-});
-
-// Prevent multiple startups during installation
-if (handleStartupEvent()) app.quit();
-
-// From here: https://stackoverflow.com/questions/43989408/creating-a-desktop-shortcut-via-squirrel-events-with-electron
-/**Returns `true` if a Squirrel startup event occured. */
+/**Returns `true` if a Squirrel startup event occured. Implementation adapted from [this Stack Overflow post](https://stackoverflow.com/questions/43989408/creating-a-desktop-shortcut-via-squirrel-events-with-electron).*/
 function handleStartupEvent(): boolean {
   if (process.platform != "win32") {
     // FIXME: Should error about the wrong platform
@@ -131,176 +118,23 @@ function handleStartupEvent(): boolean {
   return false;
 }
 
-// TODO: I am not actually sure if holding the session here at the top level after init is needed
-// It would be in rust but it's possible that is not the case in JS
-let session: Session;
+const log = LOGGER.default();
 
-app.whenReady().then(() => {
+process.on("uncaughtException", (err) => {
+  // TODO: I am not sure this should always be fatal
+  log.fatal(err.name, err.stack || err.message);
+});
+
+// Prevent multiple startups during installation
+if (handleStartupEvent()) app.quit();
+
+// TODO: I am not actually sure if holding the session here at the top level after init is needed
+// It would be in rust but it's possible that is not the case in JS/TS
+const _session = app.whenReady().then(() => {
+  let session = new Session();
   // TODO: Move this stuff out of the whenReady?
   const LOG_DIR = IS_DEV ? path.join(process.cwd(), "logs") : path.join(app.getPath("userData"), "Logs");
   app.setAppLogsPath(LOG_DIR);
-  init();
+  session.initListeners();
+  return session;
 });
-
-// NOTE: This adds a bunch of listeners to the main process it needs to function
-
-// Ok general outline of my plan:
-// - Tabs akin to what VS Code has
-// - Opening some things (like settings and new tab) automatically open a new tab
-// - User can manually open a new tab too
-// - Configurable on tab close behavior
-
-/**Revister `IPC` event handlers for communication between the renderer and main process*/
-// FIXME: Should this be a method on session?
-async function init() {
-  // FIXME: Fix MAC behavior, really I want to just make it so that closing the window closes the app
-  // damn expected MAC behavior
-
-  // Activating the app when no windows are available should open a new one.
-  // This listener gets added because MAC keeps the app running even when there are no windows
-  // so you need to listen for a situation where the app should be active but there are no windows open
-  // app.on("activate", () => {
-  //   if (BrowserWindow.getAllWindows().length === 0) {
-  //     sessions.newSession();
-  //   }
-  // });
-
-  // This must be created after the app is ready
-  session = new Session();
-
-  // MAC BEHAVIOR
-  // Quit the application when all windows/tabs are closed
-  ipcMain.on("window-all-closed", (_e) => {
-    if (!IS_MAC) app.quit();
-  });
-
-  // FIXME: Ideally this would be part of creating the session
-  session.win.on("close", (e) => {
-    if (!session.isClean) {
-      e.preventDefault();
-      session.saveFile(false);
-    }
-  });
-
-  // NAVIGATION LISTENERS
-
-  // FIXME: This needs to get split into navigate:page and navigate:file
-  ipcMain.on("open:page", (_e, page) => session.openAppPage(page));
-  // TODO: Arguably the internal open dialog should occur out here.
-  // Open file should possibly be more general and just take a filepath
-  ipcMain.on("open:file", (_e, _page) => session.openFile());
-  ipcMain.on("open:URL", (_e, url) => shell.openExternal(url));
-
-  // SEARCHING FOR CHARACTERS AND REFLOW LISTENERS
-  ipcMain.handle("update:request", async (_e, data: SearchRequest) => {
-    const character = createCharacterName(data);
-    // Confirm this actually updates session. I am not positive session is actually a mutable reference
-    session.projectData.meta.character = character;
-    const res = await fetchList(character);
-
-    // FIXME: This is pretty janky eventually I want to send the actual data over
-    if (!res.ok()) {
-      return {
-        meta: {
-          success: false,
-          id: TEMP_ID_WHILE_ONLY_ONE_TAB,
-          character: character,
-        },
-        appearances: session.projectData.data,
-        options: session.opt,
-      } as TabData;
-    }
-
-    session.projectData.data = res.unwrap();
-    // TODO: Use an alert to show a proper error for if the name is wrong (basically if fetch comes back empty)
-
-    session.isClean.task = false;
-    return {
-      meta: {
-        success: true,
-        id: TEMP_ID_WHILE_ONLY_ONE_TAB,
-        character: character,
-      },
-      appearances: session.projectData.data,
-      options: session.opt,
-    } as TabData;
-  });
-
-  // SETTINGS LISTENERS
-
-  ipcMain.handle("settings:request", (_e) => {
-    return session.settings;
-  });
-
-  ipcMain.on("settings:update", (_e, settings) => {
-    // TODO: Need update all the windows so they follow the new ones
-    // Just apply no save
-    session.applySettings(settings);
-  });
-
-  // FIXME: All the setting save logic is still kind of broken
-  ipcMain.on("settings:save", (_e, settings) => {
-    // Update settings
-    session.updateSettings(settings);
-
-    // Save settings
-    session.saveSettings();
-  });
-
-  ipcMain.on("filter:order", (_e, order) => {
-    session.opt.order = order;
-    session.isClean.task = false;
-
-    session.win.webContents.send("update:emit", {
-      meta: {
-        success: true,
-        id: TEMP_ID_WHILE_ONLY_ONE_TAB,
-        character: session.projectData.meta.character as string,
-      },
-      appearances: session.reflow(),
-      options: session.opt,
-    });
-  });
-
-  ipcMain.on("filter:density", (_e, density) => {
-    session.opt.density = density;
-    session.isClean.task = false;
-
-    session.win.webContents.send("update:emit", {
-      meta: {
-        success: true,
-        id: TEMP_ID_WHILE_ONLY_ONE_TAB,
-        character: session.projectData.meta.character as string,
-      },
-      appearances: session.reflow(),
-      options: session.opt,
-    });
-  });
-
-  ipcMain.on("filter:asc", (_e, asc) => {
-    session.opt.ascending = asc;
-    session.isClean.task = false;
-    console.log(asc);
-    console.log(session.projectData.data);
-
-    session.win.webContents.send("update:emit", {
-      meta: {
-        success: true,
-        id: TEMP_ID_WHILE_ONLY_ONE_TAB,
-        character: session.projectData.meta.character as string,
-      },
-      appearances: session.reflow(),
-      options: session.opt,
-    });
-  });
-
-  // TODO: Theoretically this stuff should go into the init of session
-  // TODO: Fill out this logic
-  session.win.on("blur", () => {
-    // It should save on blur and on close
-  });
-
-  session.win.on("close", () => {
-    // prompt to save on close
-  });
-}

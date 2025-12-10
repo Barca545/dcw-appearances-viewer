@@ -41,9 +41,8 @@ export class None<T> implements OptionInterface<T> {
     throw new Error(`Tried to unwrap option None`);
   }
 
-  // FIXME: If I want correct typing here none needs to be typed
-  unwrap_or(normal: T): T {
-    return normal;
+  unwrap_or(fallback: T): T {
+    return fallback;
   }
 
   unwrap_or_else(f: () => T): T {

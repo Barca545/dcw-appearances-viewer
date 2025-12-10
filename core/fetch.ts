@@ -1,11 +1,12 @@
 import { templateStringToListEntry } from "./utils";
 import { ListEntry } from "./pub-sort";
-import { TitleAndTemplate, AppearancesResposeJSONStructure, Result, Ok, Err } from "./coreTypes";
+import { TitleAndTemplate, AppearancesResposeJSONStructure } from "./coreTypes";
+import { Err, Ok, ResultInterface } from "./result";
 
 export const WIKI_URL = new URL(`https://dc.fandom.com/api.php`);
 
 /**Returns a list containing an interface with the `character`'s appearences' title and the raw string of their template.  */
-export async function getAppearances(character: string): Promise<Result<TitleAndTemplate[]>> {
+export async function getAppearances(character: string): Promise<ResultInterface<TitleAndTemplate[]>> {
   // Format the name by clear the spaces out of the name
   character = character.replaceAll(/\s/g, "_");
   let gcmcontinue: string | undefined = "";
@@ -117,12 +118,12 @@ export async function getRealitiesList(): Promise<any[]> {
  * @param character
  * @returns Promise<ListEntry[]>
  */
-export async function fetchList(character: string): Promise<Result<ListEntry[]>> {
+export async function fetchList(character: string): Promise<ResultInterface<ListEntry[]>> {
   // Fetch the file and convert it into a json
 
   const res = await getAppearances(character);
 
-  if (!res.ok()) {
+  if (!res.is_ok()) {
     return new Err(res.unwrapp_err());
   }
 

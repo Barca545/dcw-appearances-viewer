@@ -1,4 +1,4 @@
-import { AppearanceData } from "src/common/apiTypes";
+import { AppearanceData } from "src/common/TypesAPI";
 
 export class ListEntry {
   readonly title: string;
@@ -24,6 +24,15 @@ export class ListEntry {
   from(data: AppearanceData): ListEntry {
     const date = data.date;
     return new ListEntry(data.title, data.synopsis, date.year, date.month, date.day, data.link);
+  }
+
+  toAppearanceData(): AppearanceData {
+    return {
+      title: this.title,
+      date: { year: this.date.day, month: this.date.day, day: this.date.day },
+      synopsis: this.synopsis,
+      link: this.link,
+    };
   }
 }
 

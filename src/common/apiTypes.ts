@@ -1,78 +1,58 @@
-import { UUID } from "node:crypto";
 import { None, Option, Some } from "../../core/option";
 
-// TODO: I think some type files need to be reorganized.
-// This has some types that should probably be exported from core.
-// - FilterOptions
-// - AppearanceData
-
-// FIXME: ONLY TEMP
-export const TEMP_ID_WHILE_ONLY_ONE_TAB = `${"foo"}-${"bar"}-${"fizz"}-${"bazz"}-${"string"}`;
-
-export interface SearchRequest {
-  /** The first and last name of the character. */
-  character: string;
-  /**The character's home universe */
-  universe: string;
-  /**ID of the tab making the request. Blank if the request is to open a new tab.*/
-  id?: UUID;
-}
-
-export enum FilterDensity {
+export enum DisplayDensity {
   Normal = "NORM",
   Dense = "DENSE",
 }
 
-export namespace FilterDensity {
-  export function from(value: string): Option<FilterDensity> {
+export namespace DisplayDensity {
+  export function from(value: string): Option<DisplayDensity> {
     switch (value.toUpperCase()) {
       case "DENSE": {
-        return new Some(FilterDensity.Dense);
+        return new Some(DisplayDensity.Dense);
       }
       case "NORM": {
-        return new Some(FilterDensity.Normal);
+        return new Some(DisplayDensity.Normal);
       }
     }
     return new None();
   }
 }
 
-/**The response to a `requestUpdate` wrapped for transit through the Electron [IPC](https://www.electronjs.org/docs/latest/tutorial/ipc) to and from specific tabs.*/
-export interface TabData {
-  meta: { id: UUID; success: boolean; character: string };
-  options: FilterOptions;
-  appearances: AppearanceData[];
-}
-
-export enum FilterOrder {
+export enum DisplayOrder {
   PubDate = "PUB",
   AlphaNumeric = "A-Z",
 }
 
-export namespace FilterOrder {
-  export function from(value: string): Option<FilterOrder> {
+export namespace DisplayOrder {
+  export function from(value: string): Option<DisplayOrder> {
     switch (value) {
       case "A-Z": {
-        return new Some(FilterOrder.AlphaNumeric);
+        return new Some(DisplayOrder.AlphaNumeric);
       }
       case "PUB": {
-        return new Some(FilterOrder.PubDate);
+        return new Some(DisplayOrder.PubDate);
       }
     }
     return new None();
   }
 }
 
-export interface FilterOptions {
-  order: FilterOrder;
-  density: FilterDensity;
-  ascending: boolean;
+export enum DisplayDirection {
+  Ascending,
+  Descending,
 }
 
-export const DEFAULT_FILTER_OPTIONS: FilterOptions = {
-  order: FilterOrder.PubDate,
-  density: FilterDensity.Normal,
-  ascending: false,
+export interface DisplayOptions {
+  order: DisplayOrder;
+  density: DisplayDensity;
+  ascending: DisplayDirection;
+}
+
+export const DEFAULT_FILTER_OPTIONS: DisplayOptions = {
+  order: DisplayOrder.PubDate,
+  density: DisplayDensity.Normal,
+  ascending: DisplayDirection.Ascending,
 };
 
 // Keep this flat so it can be iterated over
@@ -86,14 +66,6 @@ export interface Settings {
   updateFrequency: "auto" | "prompt";
 }
 
-/**Interface containing the data used to construct a list entry. The return result of window.api.form.submit */
-export interface AppearanceData {
-  title: string;
-  synopsis: string;
-  date: { year: number; month: number; day: number };
-  link: string;
-}
-
 // TODO: List entry should be in shared?
 
 export interface AppMessages {
@@ -101,22 +73,4 @@ export interface AppMessages {
   unimplemented: string;
   illegalFileType: string;
   DevContact: string;
-}
-
-export enum AppPage {
-  Index = "index.html",
-  StartPage = "start.html",
-  Application = "app.html",
-  Settings = "settings.html",
-}
-
-// Cursed way to kinda emulate rust enums
-export namespace AppPage {
-  export function from(value: string): Option<AppPage> {
-    // It's like a shitty match statement :D (visually not under the hood)
-    if (value.includes("start") || value.includes("start.html")) return new Some(AppPage.StartPage);
-    else if (value.includes("app") || value.includes("app.html")) return new Some(AppPage.Application);
-    else if (value.includes("settings") || value.includes("settings.html")) return new Some(AppPage.Settings);
-    else return new None();
-  }
 }

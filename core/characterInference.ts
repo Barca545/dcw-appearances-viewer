@@ -1,4 +1,4 @@
-import { Template } from "./coreTypes";
+import { Template } from "./template";
 
 export function inferCharacter(temp: Template) {
   // Make a list of all names in the template's Appearances field
