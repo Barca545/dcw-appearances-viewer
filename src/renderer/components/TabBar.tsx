@@ -8,73 +8,72 @@
 
 // https://stackoverflow.com/questions/42495731/should-i-use-react-router-for-a-tabs-component
 
-// function TabsLayout() {
-//   return (
-//     <div>
-//       <TabBar />
-//       <Outlet /> {/* active tab content goes here */}
-//     </div>
-//   );
-// }
-
-// import { NavLink } from "react-router-dom";
-
-// function TabBar() {
-//   return (
-//     <nav>
-//       <NavLink to="/tab1">Tab 1</NavLink>
-//       <NavLink to="/tab2">Tab 2</NavLink>
-//       <NavLink to="/tab3">Tab 3</NavLink>
-//     </nav>
-//   );
-// }
-
-import { ReactNode, useEffect, useState } from "react";
+import { JSX } from "react";
 import "./TabBar.css";
-import { TabProps } from "../types";
-import { NavLink } from "react-router";
+import { NavLink, useNavigate } from "react-router";
+import { SerializedTabID } from "src/common/ipcAPI";
+import { useAppSelector } from "../store/hooks";
+import { selectBasicTabInfo } from "../store/listStateSlice";
 
-function Tab({ selected, id, key: name, onSelect }: TabProps): ReactNode {
+interface TabProps {
+  selected: boolean;
+  ID: SerializedTabID;
+  tabName: string;
+  onSelect: (e: React.MouseEvent<HTMLSpanElement>) => void;
+}
+
+// TODO: I think there is another way to do the selecting
+
+function Tab({ selected, ID, tabName, onSelect }: TabProps): JSX.Element {
+  // FIXME: I think this is routing me to the wrong place
   return (
-    <NavLink to={""} className={`tab${selected ? ":selected" : ""}`} onClick={onSelect}>
-      {name ? name : `Untitled ${id}`}
-    </NavLink>
+    <li className={`Tab${selected ? " selected" : ""}`} onClick={onSelect} draggable={true}>
+      <NavLink to={ID} className={"nav-link"}>
+        {tabName}
+      </NavLink>
+    </li>
+  );
+}
+
+function AddTab(): JSX.Element {
+  return (
+    <li className="AddTab Tab" onClick={() => window.API.open.tab()}>
+      +
+    </li>
   );
 }
 
 // Create a slice for the tabs
 
-export function TabBar(): ReactNode {
+export function TabBar(): JSX.Element {
+  const navigate = useNavigate();
   // TODO: Need to confirm this persists across rerenders
-  const [tabs, setTabs] = useState();
-  const [selectedID, setSelectedID] = useState();
+  // TODO:Need to grab the id of the first tab
 
-  useEffect(() => {
-    // Windows API listener here that updates the tabs list with new tabs whenever the user updates the list
-  }, []);
+  const tabs = useAppSelector(selectBasicTabInfo);
+  const selected = useAppSelector((state) => state.listState.selected);
 
-  // TODO: Also need to create a "+" sign for adding new tabs
-  // TODO: Need a way to get the name of a tab
+  const handleTabClick = (ID: SerializedTabID) => {
+    navigate(ID);
+    window.API.tab.setCurrent(ID);
+  };
 
-  // const createTabs = [...tabs].map((tab) => {
-  //   return <Tab id={tab[0]} key={tab[1]} selected={tab[0] === selectedID} onSelect={() => setSelectedID(tab)} />;
-  // });
-
-  // const handleAddTab = () => {
-  //   setTabs(tabs.set(crypto.randomUUID(), ""));
-  //   console.log(tabs);
-  // };
-
-  // return (
-  //   <nav className="tab-bar">
-  //     {tabArray}
-  //     <span className="add-tab" onClick={handleAddTab}>
-  //       +
-  //     </span>
-  //   </nav>
-  // );
-
-  throw new Error("TabBar unimplemented! Check TODO list.");
+  return (
+    <nav>
+      <ul className={"TabBar"}>
+        {[...tabs].map((tab) => (
+          <Tab
+            ID={tab.ID}
+            key={tab.ID}
+            tabName={tab.tabName}
+            selected={tab.ID == selected}
+            onSelect={() => handleTabClick(tab.ID)}
+          />
+        ))}
+        <AddTab />
+      </ul>
+    </nav>
+  );
 }
 
 // - need to add a way for tabs to load from a web page or file

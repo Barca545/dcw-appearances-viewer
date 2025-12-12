@@ -1,11 +1,12 @@
 import fs from "fs";
 import convert from "xml-js";
-import { ListEntry } from "./pub-sort.js";
-import { templateStringToListEntry } from "./utils.js";
-import { DisplayOptions, DEFAULT_FILTER_OPTIONS } from "../src/common/apiTypes.js";
+import { ListEntry } from "./pub-sort";
+import { templateStringToListEntry } from "./utils";
+import { DisplayOptions, DEFAULT_FILTER_OPTIONS } from "../src/common/apiTypes";
 import path from "path";
-import { AppearancesDataResponse } from "./coreTypes.js";
+import { AppearancesDataResponse } from "./coreTypes";
 import { app } from "electron";
+import { APPID } from "../src/main/main_utils";
 
 /**
  * Loads and parses a locally stored XML list of appearance data into a list of ListEntrys.

@@ -1,13 +1,12 @@
-import { ReactNode } from "react";
-import { Link } from "react-router";
+import { JSX } from "react";
 import "./start.css";
 
-export default function Start(): ReactNode {
+export default function Start(): JSX.Element {
   return (
     <div className="landing-content">
-      <Link to={"app"} className="ButtonLike">
+      <button className="ButtonLike" onClick={() => window.API.open.tab()}>
         New
-      </Link>
+      </button>
       <button className="ButtonLike" onClick={() => window.API.open.file()}>
         Open
       </button>

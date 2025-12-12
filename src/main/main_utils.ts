@@ -5,6 +5,7 @@ import { AppMessages } from "../common/apiTypes";
 import path from "node:path";
 
 // Constant declarations
+export const APPID = "DCDB-Appearance-Viewer";
 
 /**Is a dev or production build?*/
 export const IS_DEV = !app.isPackaged;
@@ -32,6 +33,9 @@ export const APP_NAME = "dcdb_appearances_viewer";
  * It is not recommended to write large files.
  * Some environments may backup this directory to cloud storage. */
 export const __userdata = `${app.getPath("userData")}`;
+
+declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
+declare const MAIN_WINDOW_VITE_NAME: string;
 
 /**Address of the root directory */
 // TODO: Arguably this should be renamed since __dirname points inside the asar

@@ -1,6 +1,7 @@
 import { TemplateParser } from "./parser.js";
-import { TitleAndTemplate, OptionMap } from "./coreTypes.js";
+import { TitleAndTemplate } from "./coreTypes.js";
 import { ListEntry } from "./pub-sort.js";
+import { OptionMap } from "./OptionMap.js";
 
 /**Convert the text field of the appearances XML into a list entry. */
 export function templateStringToListEntry(data: TitleAndTemplate): ListEntry {

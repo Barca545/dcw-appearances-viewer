@@ -3,6 +3,7 @@ export class Some<T> implements OptionInterface<T> {
 
   private value: T;
 
+  // TODO: Maybe I could inject a function into the global namespace that acts like Some<T>(v:T):Some<T>
   constructor(val: T) {
     this.value = val;
   }

@@ -1,5 +1,68 @@
-.tab {
+.TabBar {
+  /* Positioning in the window */
+  position: absolute;
+  top: 0;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 6%;
+  /* Ensure there are no sighs it is a list under the hood */
+  list-style-type: none;
+  /* Control how the contents are positioned in the box */
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  cursor: pointer;
+  /* Control Scrollbar */
+  overflow-x: auto;
+  scrollbar-gutter: stable;
+  scrollbar-color: #00000000 #00000000;
+  /* TODO: What the heck is this doing: https://stackoverflow.com/a/53781985/24660323 */
+  &:hover {
+    scrollbar-color: #bf0606 #00000000;
+  }
+}
+
+/* FIXME: Bar disappearing is very tempermental */
+
+.Tab {
+  flex: 1 1 auto;
+  flex-shrink: 0;
+  /* Positioning in the window */
+  top: 0;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  /* TODO: Min size should be the size of the favicon*/
+  /* TODO: The size of the box does not seem to be scaling properly */
+  /* TODO: Width should depend on the number of other items */
+  max-width: 40%;
+  min-width: 20%;
+  height: 100%;
   overflow: hidden;
-  border: 1px solid #ccc;
-  background-color: #48068b;
+  text-overflow: clip;
+  box-sizing: border-box;
+  border: 2px solid #ff0000;
+  background-color: #277705;
+  /* Center content */
+  display: flex; /* make tab a flex container */
+  align-items: center; /* vertical centering */
+  justify-content: center; /* horizontal centering */
+  text-align: center;
+}
+
+.selected {
+  background-color: #4ef109;
+}
+
+.AddTab {
+  flex: 0 0 40px;
+  min-width: 5%;
+}
+
+.nav-link {
+  display: block;
+  text-decoration: none;
 }

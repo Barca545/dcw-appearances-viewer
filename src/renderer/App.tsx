@@ -1,27 +1,21 @@
-import { JSX, Fragment, useEffect } from "react";
+import { JSX, Fragment } from "react";
 import CharacterSearchForm from "./components/CharacterSearchForm.js";
 import AppResults from "./components/AppResults.js";
 import "./styles.css";
-import { useAppDispatch } from "./store/hooks.js";
-import { updateEntry } from "./store/listStateSlice.js";
+import { SerializedTabID } from "../common/ipcAPI.js";
 
 // TODO: Figure out how to load an existing file.
 // - Use context to store the file url? might get complicated once tabs are involved
 
-export default function App(): JSX.Element {
-  const dispatch = useAppDispatch();
+interface AppTabProps {
+  ID: SerializedTabID;
+}
 
-  // TODO: This is not currently updating on receipt
-  useEffect(() => {
-    const unsubscribe = window.API.update.subscribe((data) => dispatch(updateEntry(data)));
-
-    return unsubscribe;
-  }, []);
-
+export default function App({ ID }: AppTabProps): JSX.Element {
   return (
     <Fragment>
-      <CharacterSearchForm />
-      <AppResults />
+      <CharacterSearchForm ID={ID} />
+      <AppResults ID={ID} />
     </Fragment>
   );
 }

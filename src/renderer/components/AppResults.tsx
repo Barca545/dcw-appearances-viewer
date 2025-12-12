@@ -1,52 +1,62 @@
 import { ListEntry } from "../../../core/pub-sort";
 import { Fragment, JSX } from "react";
-import { AppearanceData, FilterDensity, FilterOrder, TEMP_ID_WHILE_ONLY_ONE_TAB } from "../../common/apiTypes";
 import { useAppSelector } from "../store/hooks";
 import BooleanToggle from "./BooleanToggle";
 import { InputChangeEventInput, InputChangeEventSelect } from "./types";
 import LoadingSpinner from "./LoadingSpinner";
+import { SerializedAppTab, SerializedListEntry } from "../../common/TypesAPI";
+import { SerializedTabID } from "../../common/ipcAPI";
+import { DisplayDensity, DisplayDirection, DisplayOrder } from "../../common/apiTypes";
 
-// TODO: This needs to accept the initial state as a prop so it can fill in the initial filter options and list
-export default function AppResults(): JSX.Element {
-  // FIXME: This will not work once more tabs are added I will actually need some way to grab by id
+// TODO: Maybe ID can come from context or something instead of being a prop
+export default function AppResults({ ID }: { ID: SerializedTabID }): JSX.Element {
   // TODO: Confirm this means character only updates if the function in use app selector actually returns?
-  const { character, density, list } = useAppSelector((state) => state.listState[TEMP_ID_WHILE_ONLY_ONE_TAB]);
+  const { meta, opts, list } = useAppSelector((state) => state.listState.record[ID] as SerializedAppTab);
 
   return (
     <Fragment>
-      <FilterBar />
-      {character}
-      <ResultsList density={density} list={list} />
+      <FilterBar ID={ID} />
+      {meta.characterName}
+      <ResultsList density={opts.density} list={list} />
     </Fragment>
   );
 }
 
-function FilterBar(): JSX.Element {
+function FilterBar({ ID }: { ID: SerializedTabID }): JSX.Element {
+  // FIXME: Do these need trigger a rerender when they run?
+  const { order, density, dir } = useAppSelector((state) => (state.listState.record[ID] as SerializedAppTab).opts);
+
   // Filter change handlers
-  const handleOrderChange = (e: InputChangeEventSelect) => window.API.filter.order(FilterOrder.from(e.target.value).unwrap());
-  const handleAscChange = (e: InputChangeEventInput) => window.API.filter.ascending(e.target.checked);
-  const handleDensityChange = (e: InputChangeEventSelect) =>
-    window.API.filter.density(FilterDensity.from(e.target.value).unwrap());
+  // None of these dispatch because the status is updated elsewhere to preserve a single source of truth
+  const handleOrderChange = (e: InputChangeEventSelect) => {
+    window.API.filter.order({ ID, order: DisplayOrder.from(e.target.value).unwrap() });
+  };
+  const handleAscChange = (e: InputChangeEventInput) => {
+    window.API.filter.ascending({ ID, dir: DisplayDirection.from(e.target.checked) });
+  };
+  const handleDensityChange = (e: InputChangeEventSelect) => {
+    window.API.filter.density({ ID, density: DisplayDensity.from(e.target.value).unwrap() });
+  };
 
   return (
     <form id="filter-options">
-      <select name="sort-type" defaultValue={FilterOrder.PubDate} id="sort-type" onChange={handleOrderChange}>
-        <option value={FilterOrder.PubDate}>Publication Date</option>
-        <option value={FilterOrder.AlphaNumeric}>A-Z</option>
+      <select name="sort-type" defaultValue={order} id="sort-type" onChange={handleOrderChange}>
+        <option value={DisplayOrder.PubDate}>Publication Date</option>
+        <option value={DisplayOrder.AlphaNumeric}>A-Z</option>
       </select>
       <label htmlFor="input">Ascending</label>
-      <BooleanToggle onChange={handleAscChange} />
+      <BooleanToggle onChange={handleAscChange} checked={dir == DisplayDirection.Ascending ? true : false} />
       <label>Density</label>
-      <select name="density" onChange={handleDensityChange} defaultValue={FilterDensity.Normal}>
-        <option value={FilterDensity.Normal} label="Normal" />
-        <option value={FilterDensity.Dense}>Names Only</option>
+      <select name="density" onChange={handleDensityChange} defaultValue={density}>
+        <option value={DisplayDensity.Normal} label="Normal" />
+        <option value={DisplayDensity.Dense}>Names Only</option>
       </select>
     </form>
   );
 }
 
 // TODO: Why does this not render at all
-function ResultsList({ list, density }: { list: AppearanceData[]; density: FilterDensity }): JSX.Element {
+function ResultsList({ list, density }: { list: SerializedListEntry[]; density: DisplayDensity }): JSX.Element {
   const isLoading = useAppSelector((state) => state.loadState);
   if (isLoading instanceof Error) {
     return <Fragment>{isLoading.message}</Fragment>;
@@ -55,7 +65,7 @@ function ResultsList({ list, density }: { list: AppearanceData[]; density: Filte
   }
   const entries = () => {
     switch (density) {
-      case FilterDensity.Normal: {
+      case DisplayDensity.Normal: {
         return list.map((entry) => {
           return (
             <details key={entry.title} className="result-details">
@@ -67,7 +77,7 @@ function ResultsList({ list, density }: { list: AppearanceData[]; density: Filte
           );
         });
       }
-      case FilterDensity.Dense: {
+      case DisplayDensity.Dense: {
         return list.map((entry) => {
           return <ResultTitle key={entry.title} entry={entry} />;
         });
@@ -78,7 +88,7 @@ function ResultsList({ list, density }: { list: AppearanceData[]; density: Filte
   return <Fragment>{entries()}</Fragment>;
 }
 
-function ResultTitle({ entry }: { entry: ListEntry | AppearanceData }): JSX.Element {
+function ResultTitle({ entry }: { entry: ListEntry | SerializedListEntry }): JSX.Element {
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     window.API.open.url(`https://dc.fandom.com/wiki/${entry.title.replaceAll(" ", "_")}`);

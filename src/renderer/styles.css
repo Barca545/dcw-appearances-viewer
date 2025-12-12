@@ -1,9 +1,3 @@
-/* TODO: I want the result boxes to appear in rows of alternative highlights which are the same size (when closed) regardless of full or partial*/
-/* TODO: The filters need to be grouped with results not the search input */
-.results-header {
-  text-align: center;
-}
-
 @media (prefers-color-scheme: dark) {
   body {
     background: black;
@@ -16,6 +10,26 @@
     background: #ddd;
     color: black;
   }
+}
+
+html {
+  height: 100%;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  height: 100%;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+/* TODO: I want the result boxes to appear in rows of alternative highlights which are the same size (when closed) regardless of full or partial*/
+/* TODO: The filters need to be grouped with results not the search input */
+.results-header {
+  text-align: center;
 }
 
 /* TODO: Probably want some more padding here so they're not entirely flush with the side */
@@ -75,12 +89,6 @@ details {
   border-radius: 4px;
   padding: 0.5em 0.5em 0;
 }
-
-/* summary {
-  font-weight: bold;
-  margin: -0.5em -0.5em 0;
-  padding: 0.5em;
-} */
 
 .ButtonLike {
   background-color: red;

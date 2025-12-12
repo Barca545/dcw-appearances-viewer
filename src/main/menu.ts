@@ -6,7 +6,7 @@ import { Session } from "./session";
 type MenuTemplate = Electron.MenuItemConstructorOptions[];
 type MenuEntry = Electron.MenuItemConstructorOptions;
 
-export function MenuTemplate(session: Session): MenuTemplate {
+export function MENU_TEMPLATE(session: Session): MenuTemplate {
   return [
     {
       label: "File",
@@ -14,17 +14,12 @@ export function MenuTemplate(session: Session): MenuTemplate {
         {
           label: "New",
           accelerator: "CommandOrControl+N",
-          click: (_item, _base, _e) => session.openAppTab(false),
-        },
-        {
-          label: "New Tab",
-          accelerator: "CommandOrControl+Shift+N",
-          click: (_item, _base, _e) => UNIMPLEMENTED_FEATURE(),
+          click: (_item, _base, _e) => session.newAppTab(),
         },
         {
           label: "Open File",
           accelerator: "CommandOrControl+O",
-          click: (_item, _base, _e) => session.openAppTab(true),
+          click: (_item, _base, _e) => session.newAppTabFromFile(),
         },
         { type: "separator" },
         { role: "recentDocuments", click: (_item, _base, _e) => UNIMPLEMENTED_FEATURE() },

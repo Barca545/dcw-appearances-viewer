@@ -8,7 +8,5 @@ export default defineConfig({
       entry: "src/preload/preload.ts",
       formats: ["cjs"],
     },
-    // outDir: ".vite/build/preload",
-    // emptyOutDir: true,
   },
 });

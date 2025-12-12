@@ -1,4 +1,4 @@
-import { AppearanceData } from "src/common/TypesAPI";
+import { SerializedListEntry } from "src/common/TypesAPI";
 
 export class ListEntry {
   readonly title: string;
@@ -21,12 +21,12 @@ export class ListEntry {
     this.synopsis = synopsis;
   }
 
-  from(data: AppearanceData): ListEntry {
+  from(data: SerializedListEntry): ListEntry {
     const date = data.date;
     return new ListEntry(data.title, data.synopsis, date.year, date.month, date.day, data.link);
   }
 
-  toAppearanceData(): AppearanceData {
+  toAppearanceData(): SerializedListEntry {
     return {
       title: this.title,
       date: { year: this.date.day, month: this.date.day, day: this.date.day },

@@ -1,5 +1,7 @@
-import { Path } from "core/load";
-import type { FilterDensity as DisplayDensity, DisplayOptions, FilterOrder as DisplayOrder } from "./apiTypes";
+import { Path } from "../../core/load";
+import type { DisplayDensity, DisplayDirection, DisplayOptions, DisplayOrder } from "./apiTypes";
+import { SerializedTabID, TabID } from "./ipcAPI";
+import { Option } from "../../core/option";
 
 // TODO: Ideally this will eventually replace the apiTypes file
 
@@ -15,49 +17,53 @@ export interface Settings {
 }
 
 /**Interface containing the data used to construct a list entry. The return result of window.api.form.submit */
-export interface AppearanceData {
+export interface SerializedListEntry {
   title: string;
   synopsis: string;
   date: { year: number; month: number; day: number };
   link: string;
 }
 
-export type TabID = UUID;
-
 /**The basic metadata all `Tab`s contain regardless of type. */
 interface TabMetaData {
-  ID: TabID;
+  readonly ID: TabID;
+  tabName: string;
+}
+
+interface SerializedTabMetaData {
+  readonly ID: SerializedTabID;
   tabName: string;
 }
 
 export interface Tab {
   meta: TabMetaData;
   savePath: Option<Path>;
+
+  /**Converts the tab into a serialized  */
+  serialize(): SerializedTab;
 }
 
 /**A Tab which holds data. */
 export interface DataTab {
   isClean: boolean;
   data: any;
-
-  serialize(): SerializedTab;
 }
 
 export interface TabStaticInterface {
   default(...args: any[]): Tab;
 }
 
-interface SerializedTab {
-  /**Whether the search suceeded. */
-  success: boolean;
-  meta: TabMetaData;
+export interface SerializedTab {
+  meta: SerializedTabMetaData;
 }
 
 /**A serialized snapshot of an app `Tab`'s state.*/
 export interface SerializedAppTab extends SerializedTab {
-  meta: { ID: TabID; tabName: string; characterName: string };
-  options: DisplayOptions;
-  appearances: AppearanceData[];
+  meta: { ID: SerializedTabID; tabName: string; characterName: string };
+  /**Whether the search suceeded. */
+  success: boolean;
+  opts: DisplayOptions;
+  list: SerializedListEntry[];
 }
 
 /**A serialized snapshot of a setting `Tab`'s state.*/
@@ -65,34 +71,39 @@ export interface SerializedSettingsTab extends SerializedTab {
   settings: Settings;
 }
 
-export type TabData = SerializedAppTab | SerializedSettingsTab;
+export interface SerializedStartTab extends SerializedTab {}
+
+export type TabDataUpdate = SerializedAppTab | SerializedSettingsTab | SerializedStartTab;
 
 /**Request from the renderer to the server to perform a search for a character's data on the wiki. */
 export interface SearchRequest {
-  /**ID of the tab making the request. Blank if the request is to open a new tab.*/
-  id: TabID;
+  /**ID of the tab making the request.*/
+  id: SerializedTabID;
   /** The first and last name of the character. */
   character: string;
   /**The character's home universe. */
   universe: string;
 }
 
+/**Message from the renderer to the main process containing an updated value for display order. */
 export interface DisplayOrderUpdate {
-  id: TabID;
+  readonly ID: SerializedTabID;
   order: DisplayOrder;
 }
 
+/**Message from the renderer to the main process containing an updated value for display density. */
 export interface DisplayDensityUpdate {
-  id: TabID;
+  readonly ID: SerializedTabID;
   density: DisplayDensity;
 }
 
+/**Message from the renderer to the main process containing an updated value for display direction. */
 export interface DisplayDirectionUpdate {
-  id: TabID;
-  dir: DisplayDensity;
+  readonly ID: SerializedTabID;
+  dir: DisplayDirection;
 }
 
 export interface SettingsUpdate {
-  id: TabId;
+  readonly id: TabID;
   settings: Settings;
 }

@@ -2,12 +2,14 @@ import { Fragment, useState, JSX } from "react";
 import { useAppDispatch } from "../store/hooks";
 import { setError, setLoadState } from "../store/loadingStateSlice";
 import { updateEntry } from "../store/listStateSlice";
+import { SearchRequest } from "../../common/TypesAPI";
+import { SerializedTabID } from "../../common/ipcAPI";
 
 // TODO: The earths can be generated programatically by mapping a list. Either my handwritten one or the one pulled from the server
 
 const EARTHS = ["Prime Earth", "New Earth", "Earth-One", "Earth-Two"];
 
-export default function CharacterSearchForm(): JSX.Element {
+export default function CharacterSearchForm({ ID }: { ID: SerializedTabID }): JSX.Element {
   const dispatch = useAppDispatch();
   const [name, setName] = useState("");
 
@@ -17,14 +19,15 @@ export default function CharacterSearchForm(): JSX.Element {
     const msg = new FormData(e.target as HTMLFormElement);
     const rawData = Object.fromEntries(msg.entries());
     const data = {
+      id: ID,
       character: rawData["character-selection"] as unknown as string,
       universe: rawData["universe-select"] as unknown as string,
-    };
+    } satisfies SearchRequest;
 
     // Tell user a load is happening
     dispatch(setLoadState(true));
-    window.API.update
-      .request(data)
+    window.API.tab
+      .search(data)
       .then(
         (res) => dispatch(updateEntry(res)),
         (err: string) => dispatch(setError(new Error(err))),

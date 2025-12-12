@@ -1,11 +1,11 @@
 import { configureStore } from "@reduxjs/toolkit";
-import loadStateReducer from "./loadingStateSlice";
-import listStateReducer from "./listStateSlice";
+import loadStateSliceReducer from "./loadingStateSlice";
+import listStateSliceReducer from "./listStateSlice";
 
 export const store = configureStore({
   reducer: {
-    listState: listStateReducer,
-    loadState: loadStateReducer,
+    listState: listStateSliceReducer,
+    loadState: loadStateSliceReducer,
   },
 });
 

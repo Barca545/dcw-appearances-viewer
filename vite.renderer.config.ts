@@ -2,7 +2,8 @@ import path from "path";
 import fs from "fs";
 import { defineConfig } from "vite";
 
-// TODO: Should this be in another file?
+// TODO: Once I get rid of the html this should
+
 const RENDERER_DIR = path.join(__dirname, "src", "renderer");
 // This grabs every html file in the render directory
 function exportPages(): string[] {

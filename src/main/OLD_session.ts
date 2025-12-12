@@ -4,7 +4,7 @@ import path from "path";
 import { ProjectData, loadList, ProjectDataFromJSON, saveProjectDataAsJSON, Path } from "../../core/load";
 import { AppPage, DisplayOptions, DEFAULT_FILTER_OPTIONS, Settings, FilterOrder } from "../common/apiTypes";
 import fs from "fs";
-import { MenuTemplate, openFileDialog } from "./menu";
+import { MENU_TEMPLATE, openFileDialog } from "./menu";
 import { __userdata, IS_DEV, ROOT_DIRECTORY, MESSAGES, RESOURCE_PATH, UNIMPLEMENTED_FEATURE } from "./main_utils";
 import { None, Option, Some } from "../../core/option";
 import { UUID } from "crypto";
@@ -39,7 +39,7 @@ export class Session {
 
     // Basically this needs to run after all the fields are set up
     this.openAppTab();
-    this.win.setMenu(Menu.buildFromTemplate(MenuTemplate(this)));
+    this.win.setMenu(Menu.buildFromTemplate(MENU_TEMPLATE(this)));
 
     // Register listeners
     this.win.on("close", (e) => {
@@ -311,7 +311,7 @@ export class Session {
     }
 
     // Make sure it does ascending/descending
-    if (!this.opt.ascending) {
+    if (!this.opt.dir) {
       sorted = sorted.reverse();
     }
 

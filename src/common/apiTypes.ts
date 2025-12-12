@@ -43,16 +43,23 @@ export enum DisplayDirection {
   Descending,
 }
 
+export namespace DisplayDirection {
+  export function from(value: boolean): DisplayDirection {
+    if (value) return DisplayDirection.Ascending;
+    else return DisplayDirection.Descending;
+  }
+}
+
 export interface DisplayOptions {
   order: DisplayOrder;
   density: DisplayDensity;
-  ascending: DisplayDirection;
+  dir: DisplayDirection;
 }
 
 export const DEFAULT_FILTER_OPTIONS: DisplayOptions = {
   order: DisplayOrder.PubDate,
   density: DisplayDensity.Normal,
-  ascending: DisplayDirection.Ascending,
+  dir: DisplayDirection.Ascending,
 };
 
 // Keep this flat so it can be iterated over

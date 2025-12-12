@@ -1,41 +1,45 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { AppearanceData, FilterDensity, TabData, TEMP_ID_WHILE_ONLY_ONE_TAB } from "../../common/apiTypes";
-import { UUID } from "crypto";
+import { createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { TabDataUpdate } from "../../common/TypesAPI";
+import { SerializedTabID } from "../../common/ipcAPI";
+import { RootState } from "./store";
 
 interface ListState {
-  density: FilterDensity;
-  character: string;
-  list: AppearanceData[];
+  selected: SerializedTabID | null;
+  record: Record<SerializedTabID, TabDataUpdate>;
 }
 
-interface ListStateMap {
-  [id: UUID]: ListState; // key by UUID string
-}
+// TODO: I need to be memoizing or something
+// https://redux.js.org/usage/deriving-data-selectors#optimizing-selectors-with-memoization
 
 const listStateSlice = createSlice({
   name: "listStateSlice",
-  initialState: { [TEMP_ID_WHILE_ONLY_ONE_TAB]: { density: FilterDensity.Normal, character: "", list: [] } } as ListStateMap,
+  initialState: { selected: null, record: {} } as ListState,
   reducers: {
-    updateEntry: (state, action: PayloadAction<TabData>) => {
-      console.log("recieving entry");
-      const currentState = state[action.payload.meta.id];
-      if (currentState) {
-        const newState = action.payload;
-        currentState.density = newState.options.density;
-        currentState.character = newState.meta.character;
-        currentState.list = newState.appearances;
-      } else {
-        const newState = action.payload;
-        state[action.payload.meta.id] = {
-          density: newState.options.density,
-          character: newState.meta.character,
-          list: [...newState.appearances],
-        };
-      }
-      console.log(state[action.payload.meta.id].list);
+    updateEntry: (state, action: PayloadAction<TabDataUpdate>) => {
+      state.record[action.payload.meta.ID] = action.payload;
+    },
+    updateSelected: (state, action: PayloadAction<SerializedTabID>) => {
+      state.selected = action.payload;
     },
   },
 });
 
-export const { updateEntry } = listStateSlice.actions;
+export const selectAllTabs = createSelector(
+  (state: RootState) => state.listState.record,
+  (record) => Object.values(record),
+);
+
+export const selectBasicTabInfo = createSelector(
+  (state: RootState) => state.listState.record,
+  (record) =>
+    Object.values(record).map((tab) => {
+      console.log(tab.meta.ID);
+      return {
+        ID: tab.meta.ID,
+        tabName: tab.meta.tabName,
+      };
+    }),
+);
+
+export const { updateEntry, updateSelected } = listStateSlice.actions;
 export default listStateSlice.reducer;
