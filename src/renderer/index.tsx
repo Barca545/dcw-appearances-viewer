@@ -7,57 +7,84 @@ import { Provider } from "react-redux";
 import { store } from "./store/store";
 import { useAppDispatch, useAppSelector } from "./store/hooks";
 import { selectAllTabs, updateEntry } from "./store/listStateSlice";
-import { SerializedAppTab, SerializedStartTab, TabDataUpdate } from "../common/TypesAPI";
+import { isSerializedAppTab } from "../common/TypesAPI";
 import Start from "./Start";
 
 // I think here is where I need to listen for tab updates anre rerender the tabs
 
-// TODO: I think here is maybe where I can register the listeners the whole app will use?
-// window.addEventListener("");
+// FIXME:
+// - This is not properly labeling active tabs
+// - This does not properly navigate to the active tab
+// - Need to eliminate the store and have the active tab query the main process for its data on load/change
+//  - Tab
+//  - Probably have a listener that listens for incoming updates as well and discards them if they do not match the current active tab
 
-/**[Type guard](https://www.typescriptlang.org/docs/handbook/advanced-types.html#user-defined-type-guards) to check whether a `TabDataUpdate` is a `SerializedAppTab`.*/
-function isSerializedAppTab(tab: TabDataUpdate): tab is SerializedAppTab {
-  return (tab as SerializedAppTab) != undefined;
+const handleNavigate = () =>{
+  // update the active ID
+  navigate(ID)
 }
 
-/**[Type guard](https://www.typescriptlang.org/docs/handbook/advanced-types.html#user-defined-type-guards) to check whether a `TabDataUpdate` is a `SerializedStartTab`.*/
-function isSerializedStartTab(tab: TabDataUpdate): tab is SerializedStartTab {
-  return (tab as SerializedStartTab) != undefined;
-}
+// Something like
+useEffect(() => {
+  window.API.tab.getData(ID);
+}, []);
+
+useEffect(() => {
+  const update = window.API.tab.update();
+  if update.ID == ID {
+    setData( update.data)
+  }
+  return window.API.tab.update
+}, []);
+
+// When a change to the display options happens trigger the below
+// Since the DisplayOptions are a separate component I want to make sure if there is a way to pass their changes up the ladder 
+// memoize the callback?
+// look into using debounce delay too
+
+useEffect(()=>{
+   setData( window.API.displayOptions.send()) 
+},[opts])
 
 const root = createRoot(document.getElementById("root") as HTMLElement);
 root.render(
   <React.StrictMode>
     <Provider store={store}>
       <Router>
-        <TabBodies />
+        <TabRoutes />
       </Router>
     </Provider>
   </React.StrictMode>,
 );
 
-function TabBodies(): JSX.Element {
+function TabRoutes(): JSX.Element {
   const tabs = useAppSelector(selectAllTabs);
   const dispatch = useAppDispatch();
 
   useEffect(() => {
     window.API.tab.update((update) => {
-      console.log(update);
       dispatch(updateEntry(update));
     });
   }, []);
 
+  const maptabs = () => {
+    const t = tabs.map((tab) => {
+      if (isSerializedAppTab(tab)) {
+        return <Route key={tab.meta.ID} path={`/${tab.meta.ID}`} element={<App ID={tab.meta.ID} />} />;
+      } else {
+        console.log(tab.meta.ID);
+        return <Route key={tab.meta.ID} path={`/${tab.meta.ID}`} element={<Start />} />;
+      }
+    });
+    return t;
+  };
+
   // Render the tavs in routes
   return (
     <Routes>
-      <Route path="/" element={<Layout />}></Route>
-      {tabs.map((tab) => {
-        if (isSerializedAppTab(tab)) {
-          return <Route path={`/${tab.meta.ID}`} element={<App ID={tab.meta.ID} />} />;
-        } else if (isSerializedStartTab(tab)) {
-          return <Route path={`/${tab.meta.ID}`} element={<Start />} />;
-        }
-      })}
+      <Route path="/" element={<Layout />}>
+        {maptabs()}
+      </Route>
     </Routes>
   );
 }

@@ -8,73 +8,79 @@
 
 // https://stackoverflow.com/questions/42495731/should-i-use-react-router-for-a-tabs-component
 
-import { JSX } from "react";
+import { useRef, MouseEventHandler, JSX } from "react";
 import "./TabBar.css";
-import { NavLink, useNavigate } from "react-router";
+import { NavLink, To } from "react-router";
 import { SerializedTabID } from "src/common/ipcAPI";
 import { useAppSelector } from "../store/hooks";
 import { selectBasicTabInfo } from "../store/listStateSlice";
+import HorizontalScrollBar from "./ScrollBar";
+
+// TODO: Accessibility
+// - https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/tablist_role
+// - https://www.w3.org/WAI/ARIA/apg/patterns/tabs/
+
+type ButtonMouseEvent = React.MouseEvent<HTMLButtonElement, MouseEvent>;
 
 interface TabProps {
-  selected: boolean;
+  active: boolean;
   ID: SerializedTabID;
   tabName: string;
-  onSelect: (e: React.MouseEvent<HTMLSpanElement>) => void;
+  to: To;
+  onClick?: MouseEventHandler;
+  onClose?: MouseEventHandler;
 }
 
 // TODO: I think there is another way to do the selecting
 
-function Tab({ selected, ID, tabName, onSelect }: TabProps): JSX.Element {
-  // FIXME: I think this is routing me to the wrong place
-  return (
-    <li className={`Tab${selected ? " selected" : ""}`} onClick={onSelect} draggable={true}>
-      <NavLink to={ID} className={"nav-link"}>
-        {tabName}
-      </NavLink>
-    </li>
-  );
-}
+function Tab({ active, tabName, to, onClick, onClose }: TabProps): JSX.Element {
+  // TODO: onClick needs to go down to the navlink
+  // TODO: NavLink style change needs to bubble up to the Tab
+  // TODO: Dragable does not seem to get inherited
 
-function AddTab(): JSX.Element {
-  return (
-    <li className="AddTab Tab" onClick={() => window.API.open.tab()}>
-      +
-    </li>
-  );
-}
-
-// Create a slice for the tabs
-
-export function TabBar(): JSX.Element {
-  const navigate = useNavigate();
-  // TODO: Need to confirm this persists across rerenders
-  // TODO:Need to grab the id of the first tab
-
-  const tabs = useAppSelector(selectBasicTabInfo);
-  const selected = useAppSelector((state) => state.listState.selected);
-
-  const handleTabClick = (ID: SerializedTabID) => {
-    navigate(ID);
-    window.API.tab.setCurrent(ID);
+  const handleClose = (e: ButtonMouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onClose) {
+      onClose(e);
+    }
   };
 
+  console.log(active);
+
   return (
-    <nav>
-      <ul className={"TabBar"}>
-        {[...tabs].map((tab) => (
-          <Tab
-            ID={tab.ID}
-            key={tab.ID}
-            tabName={tab.tabName}
-            selected={tab.ID == selected}
-            onSelect={() => handleTabClick(tab.ID)}
-          />
-        ))}
-        <AddTab />
-      </ul>
-    </nav>
+    <li className={["Tab", active].filter(Boolean).join(":")} draggable={true} onClick={onClick}>
+      <NavLink className={"tab-content"} to={to} draggable={true} onClick={onClick}>
+        {tabName}
+      </NavLink>
+      <button className={"tab-close-button"} onClick={handleClose}>
+        X
+      </button>
+    </li>
   );
 }
 
-// - need to add a way for tabs to load from a web page or file
-// - This will also allow me to reload last state when the app closes as well
+export default function TabBar(): JSX.Element {
+  // FIXME: Should query the main process directly instead of using a store
+  const tabs = useAppSelector(selectBasicTabInfo);
+  const selected = useAppSelector((state) => state.listState.selected);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  return (
+    <div className={"TabBar"}>
+      <nav>
+        <ol className="tab-bar-contents">
+          {[...tabs].map((tab) => (
+            <Tab ID={tab.ID} key={tab.ID} tabName={tab.tabName} active={tab.ID == selected} to={tab.ID} />
+          ))}
+          <li>
+            <button className="AddTab" onClick={() => window.API.open.tab()}>
+              +
+            </button>
+          </li>
+        </ol>
+      </nav>
+      <HorizontalScrollBar contentRef={contentRef} />
+    </div>
+  );
+}

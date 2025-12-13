@@ -18,7 +18,7 @@ import type {
   Tab,
   TabDataUpdate,
   TabStaticInterface,
-  SerializedTab,
+  SerializedStartTab,
 } from "../common/TypesAPI";
 import { openFileDialog } from "./menu";
 import { pubDateSort } from "../../core/pub-sort";
@@ -29,16 +29,26 @@ import { MENU_TEMPLATE } from "./menu";
 
 // declare const MAIN_WINDOW_PRELOAD_VITE_ENTRY: string;
 
-const MAIN_WINDOW_PRELOAD_VITE_ENTRY = `C:/Users/jamar/Documents/Hobbies/Coding/publication_date_sort/.vite/build/preload.js`;
-// path.join(__dirname, `preload.js`);
+// TODO: URGENT:
+// - Figure out displaying searches (Check renderer console).
+// - Create scrollbar
+// - Figure out navigating to start page fails
+// - Ideally opening stuff in a start page should replace the current page not open a new one
+// - Need logic for closing individual tabs
+// - Figure out saving
 
-// TODO: Arguably this should just go in the session tab since agaict that is the only thing that uses it
+// TODO: Experiement with no store and just requesting the data from the main process when a component mounts
+
+const MAIN_WINDOW_PRELOAD_VITE_ENTRY = path.join(__dirname, `preload.js`);
+
 interface APIEventMap {
   [APIEvent.TabUpdate]: TabDataUpdate;
   [APIEvent.SettingsRequest]: Settings;
   [APIEvent.TabGo]: SerializedTabID;
   [APIEvent.TabClose]: SerializedTabID;
 }
+
+// TODO: I think it is fine for tab go
 
 // TODO: This definitely belongs somewhere else in a utils file in common
 function staticImplements<T>() {
@@ -97,7 +107,7 @@ export class StartTab implements Tab {
     return new StartTab(TabID.new());
   }
 
-  serialize(): SerializedTab {
+  serialize(): SerializedStartTab {
     return {
       meta: { ...this.meta, ID: this.meta.ID.id },
     };
@@ -234,19 +244,17 @@ export class Session {
   win: BrowserWindow;
   settings: Settings;
   tabs: Map<SerializedTabID, Tab>;
-  currentTab: TabID;
+  currentTab!: TabID;
 
   constructor() {
-    const startID = TabID.new();
     const settings = Session.getSettings();
-
     this.settings = settings;
     this.tabs = new Map();
     this.win = Session.makeWindow(settings);
-    this.currentTab = startID;
 
-    this.win.setMenu(Menu.buildFromTemplate(MENU_TEMPLATE(this)));
+    console.log(process.env.NODE_ENV);
 
+    // Load Contents
     // The Renderer is basically running an SPA so we only need to load the index
     if (IS_DEV) {
       this.win.loadURL(`${ROOT_DIRECTORY}/src/renderer/index.html`);
@@ -254,7 +262,12 @@ export class Session {
       this.win.loadFile(path.join(__dirname, "..", "renderer", MAIN_WINDOW_VITE_NAME, "src", "renderer", `index.html`));
     }
 
-    this.newStartTab();
+    this.win.setMenu(Menu.buildFromTemplate(MENU_TEMPLATE(this)));
+
+    this.win.webContents.on("did-finish-load", () => {
+      // Because this assigns the current tab internally it means the current tab is definitely initialized
+      this.newStartTab();
+    });
   }
 
   /**Creates a new empty `AppTab`.
@@ -316,13 +329,16 @@ export class Session {
   /**Create a new Start Tab.
    * Insert the new tab into the `Session`'s tabs list.
    * Send the data to the renderer.
+   * Return a ref to the tab.
    */
-  newStartTab() {
+  newStartTab(): StartTab {
     const tab = StartTab.default();
     this.currentTab = tab.meta.ID;
     this.tabs.set(tab.meta.ID.id, tab);
     this.sendIPC(APIEvent.TabUpdate, tab.serialize());
     this.sendIPC(APIEvent.TabGo, tab.meta.ID.id);
+
+    return tab;
   }
 
   /**Save a tab's `ProjectData` and mark the tab as clean. If no id is provided, defaults to the current tab.*/
@@ -385,8 +401,6 @@ export class Session {
     let win = new BrowserWindow({
       width: Number.parseInt(settings.width),
       height: Number.parseInt(settings.height),
-      // TODO: Look into custom buttons on hover
-      // titleBarStyle: "customButtonsOnHover",
       webPreferences: {
         contextIsolation: true,
         nodeIntegration: false,
@@ -497,8 +511,6 @@ export class Session {
    * Returns the tab's `TabData` after the update.*/
   async updateTabCharacter(req: SearchRequest): Promise<TabDataUpdate> {
     const tab = this.getTab(req.id);
-    console.log(this.tabs.keys());
-    console.log(tab);
     // TODO: These errors need to log properly
     if (!tab) {
       throw new Error(`Tab ${req.id} does not exist.`);
@@ -512,6 +524,7 @@ export class Session {
     tab.data.list = res.unwrap_or([]);
     tab.isClean = false;
 
+    console.log(tab);
     return tab.serialize();
   }
 

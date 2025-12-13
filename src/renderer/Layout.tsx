@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Outlet } from "react-router";
-import { TabBar } from "./components/TabBar";
+import TabBar from "./components/TabBar";
 
 // TODO: Does this preclude the need for a real index page?
 

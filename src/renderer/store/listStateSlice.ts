@@ -1,5 +1,5 @@
 import { createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { TabDataUpdate } from "../../common/TypesAPI";
+import { isSerializedAppTab, SerializedAppTab, SerializedStartTab, TabDataUpdate } from "../../common/TypesAPI";
 import { SerializedTabID } from "../../common/ipcAPI";
 import { RootState } from "./store";
 
@@ -33,10 +33,10 @@ export const selectBasicTabInfo = createSelector(
   (state: RootState) => state.listState.record,
   (record) =>
     Object.values(record).map((tab) => {
-      console.log(tab.meta.ID);
       return {
         ID: tab.meta.ID,
         tabName: tab.meta.tabName,
+        type: isSerializedAppTab(tab) ? "APP" : "START",
       };
     }),
 );

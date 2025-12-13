@@ -1,68 +1,134 @@
+.TabBar,
+.tab-bar-contents,
+.Tab,
+.tab-bar-nav-wrapper,
+.tab-bar-ol-wrapper {
+  /* Positioning in window */
+  top: 0;
+  left: 0;
+  /* Removing unnescessary padding */
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
 .TabBar {
+  --TabBar-height: 6vh;
   /* Positioning in the window */
   position: absolute;
-  top: 0;
-  border: 0;
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 6%;
-  /* Ensure there are no sighs it is a list under the hood */
-  list-style-type: none;
-  /* Control how the contents are positioned in the box */
+  width: 100vw;
+  height: var(--TabBar-height);
+  /* Override other styles */
+  list-style: none;
+  cursor: pointer;
+}
+
+.tab-bar-contents {
+  /* Sizing and Display */
   display: flex;
   flex-direction: row;
-  flex-wrap: nowrap;
-  align-items: stretch;
-  cursor: pointer;
-  /* Control Scrollbar */
+  white-space: unset;
+  /* Remove inherited styles */
+  list-style: none;
   overflow-x: auto;
-  scrollbar-gutter: stable;
-  scrollbar-color: #00000000 #00000000;
-  /* TODO: What the heck is this doing: https://stackoverflow.com/a/53781985/24660323 */
-  &:hover {
-    scrollbar-color: #bf0606 #00000000;
-  }
-}
 
-/* FIXME: Bar disappearing is very tempermental */
-
-.Tab {
-  flex: 1 1 auto;
-  flex-shrink: 0;
-  /* Positioning in the window */
-  top: 0;
-  border: 0;
-  margin: 0;
-  padding: 0;
-  /* TODO: Min size should be the size of the favicon*/
-  /* TODO: The size of the box does not seem to be scaling properly */
-  /* TODO: Width should depend on the number of other items */
-  max-width: 40%;
-  min-width: 20%;
   height: 100%;
-  overflow: hidden;
-  text-overflow: clip;
-  box-sizing: border-box;
-  border: 2px solid #ff0000;
+  /* align-items: stretch; */
+}
+
+/* TODO: Both have */
+.tab-bar-contents::-webkit-scrollbar {
+  display: none;
+}
+
+/* TODO: 
+ - Currently `Tab`s do not shrink 
+ - Text should be centered vertically
+ - A hovered tab should also change color
+ - Need to make sure selected is in the screen on change
+ - `Tab`s need to grow to fit the container
+ */
+.Tab {
+  /* Sizing & Display */
+  flex: 0 1 100%; /* Tab will shrink to min width but not grow because grow */
+  max-width: 30vw;
+  min-width: 5vw;
+  /* Child Content Display */
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  /* Colors */
   background-color: #277705;
-  /* Center content */
-  display: flex; /* make tab a flex container */
-  align-items: center; /* vertical centering */
-  justify-content: center; /* horizontal centering */
-  text-align: center;
+  border-left: 1px solid #ff0000;
 }
 
-.selected {
-  background-color: #4ef109;
+/* Without this the tabs don't take up the full container */
+.TabBar nav {
+  height: 100%;
 }
 
-.AddTab {
-  flex: 0 0 40px;
-  min-width: 5%;
+/* FIXME: The close button area does not inherit the active background*/
+.Tab:active {
+  border-top: 1vh solid hotpink;
+  background-color: #46d508;
 }
 
-.nav-link {
-  display: block;
+.tab-content {
+  /* Display and Sizing  */
+  flex: 1 1 auto;
+  min-width: 0;
+  /* Overflow and Wrapping */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: preserve nowrap;
+  color: inherit;
+  /* Remove inherited styles */
   text-decoration: none;
+}
+
+.tab-close-button {
+  /* all: unset; */
+  display: flex;
+  align-items: center; /* Vertically center */
+  justify-content: center;
+  height: 5vmin;
+  width: 5vmin;
+  flex: 0 0 auto;
+  color: #4000ff;
+  background-color: inherit;
+  border: solid transparent;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+/* TODO: The highlight background should be a square */
+.tab-close-button:hover {
+  color: #ff0000;
+  background-color: rgba(173, 216, 230, 0.5);
+}
+
+/* FIXME: Does not seem to fill tab contents */
+.AddTab {
+  all: unset;
+  height: var(--TabBar-height);
+  width: var(--TabBar-height);
+  /* Colors */
+  background-color: #277705;
+}
+
+.AddTab:hover {
+  background-color: azure;
+}
+
+/* FIXME: Why does this color take precedent even when not focused */
+/* .AddTab:focus {
+  background-color: #051001;
+} */
+
+.tab-content {
+  height: 100%;
+  /* Text Centering */
+  display: flex;
+  align-items: center; /* Vertically center */
+  justify-content: center;
 }

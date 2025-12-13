@@ -75,6 +75,11 @@ export interface SerializedStartTab extends SerializedTab {}
 
 export type TabDataUpdate = SerializedAppTab | SerializedSettingsTab | SerializedStartTab;
 
+/**[Type guard](https://www.typescriptlang.org/docs/handbook/advanced-types.html#user-defined-type-guards) to check whether a `TabDataUpdate` is a `SerializedAppTab`.*/
+export function isSerializedAppTab(tab: TabDataUpdate): tab is SerializedAppTab {
+  return (tab as SerializedAppTab).list != undefined;
+}
+
 /**Request from the renderer to the server to perform a search for a character's data on the wiki. */
 export interface SearchRequest {
   /**ID of the tab making the request.*/
