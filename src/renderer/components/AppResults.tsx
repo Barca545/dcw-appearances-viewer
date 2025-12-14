@@ -5,11 +5,11 @@ import BooleanToggle from "./BooleanToggle";
 import { InputChangeEventInput, InputChangeEventSelect } from "./types";
 import LoadingSpinner from "./LoadingSpinner";
 import { SerializedAppTab, SerializedListEntry } from "../../common/TypesAPI";
-import { SerializedTabID } from "../../common/ipcAPI";
+import { TabID } from "../../common/ipcAPI";
 import { DisplayDensity, DisplayDirection, DisplayOrder } from "../../common/apiTypes";
 
 // TODO: Maybe ID can come from context or something instead of being a prop
-export default function AppResults({ ID }: { ID: SerializedTabID }): JSX.Element {
+export default function AppResults({ ID }: { ID: TabID }): JSX.Element {
   // TODO: Confirm this means character only updates if the function in use app selector actually returns?
   const { meta, opts, list } = useAppSelector((state) => state.listState.record[ID] as SerializedAppTab);
 
@@ -22,7 +22,7 @@ export default function AppResults({ ID }: { ID: SerializedTabID }): JSX.Element
   );
 }
 
-function FilterBar({ ID }: { ID: SerializedTabID }): JSX.Element {
+function FilterBar({ ID }: { ID: TabID }): JSX.Element {
   // FIXME: Do these need trigger a rerender when they run?
   const { order, density, dir } = useAppSelector((state) => (state.listState.record[ID] as SerializedAppTab).opts);
 

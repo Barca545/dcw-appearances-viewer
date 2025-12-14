@@ -3,13 +3,13 @@ import { useAppDispatch } from "../store/hooks";
 import { setError, setLoadState } from "../store/loadingStateSlice";
 import { updateEntry } from "../store/listStateSlice";
 import { SearchRequest } from "../../common/TypesAPI";
-import { SerializedTabID } from "../../common/ipcAPI";
+import { TabID } from "../../common/ipcAPI";
 
 // TODO: The earths can be generated programatically by mapping a list. Either my handwritten one or the one pulled from the server
 
 const EARTHS = ["Prime Earth", "New Earth", "Earth-One", "Earth-Two"];
 
-export default function CharacterSearchForm({ ID }: { ID: SerializedTabID }): JSX.Element {
+export default function CharacterSearchForm({ ID }: { ID: TabID }): JSX.Element {
   const dispatch = useAppDispatch();
   const [name, setName] = useState("");
 

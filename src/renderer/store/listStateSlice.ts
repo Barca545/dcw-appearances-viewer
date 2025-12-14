@@ -1,11 +1,11 @@
 import { createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { isSerializedAppTab, SerializedAppTab, SerializedStartTab, TabDataUpdate } from "../../common/TypesAPI";
-import { SerializedTabID } from "../../common/ipcAPI";
+import { TabID } from "../../common/ipcAPI";
 import { RootState } from "./store";
 
 interface ListState {
-  selected: SerializedTabID | null;
-  record: Record<SerializedTabID, TabDataUpdate>;
+  selected: TabID | null;
+  record: Record<TabID, TabDataUpdate>;
 }
 
 // TODO: I need to be memoizing or something
@@ -18,7 +18,7 @@ const listStateSlice = createSlice({
     updateEntry: (state, action: PayloadAction<TabDataUpdate>) => {
       state.record[action.payload.meta.ID] = action.payload;
     },
-    updateSelected: (state, action: PayloadAction<SerializedTabID>) => {
+    updateSelected: (state, action: PayloadAction<TabID>) => {
       state.selected = action.payload;
     },
   },

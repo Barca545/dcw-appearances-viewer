@@ -1,9 +1,9 @@
 import { Path } from "../../core/load";
 import type { DisplayDensity, DisplayDirection, DisplayOptions, DisplayOrder } from "./apiTypes";
-import { SerializedTabID, TabID } from "./ipcAPI";
 import { Option } from "../../core/option";
+import { TabID } from "./ipcAPI";
 
-// TODO: Ideally this will eventually replace the apiTypes file
+// TODO: This mostly seems to control serialized stuff so reorganize into just those
 
 export interface Settings {
   theme: "system" | "light" | "dark";
@@ -25,13 +25,8 @@ export interface SerializedListEntry {
 }
 
 /**The basic metadata all `Tab`s contain regardless of type. */
-interface TabMetaData {
+export interface TabMetaData {
   readonly ID: TabID;
-  tabName: string;
-}
-
-interface SerializedTabMetaData {
-  readonly ID: SerializedTabID;
   tabName: string;
 }
 
@@ -54,12 +49,12 @@ export interface TabStaticInterface {
 }
 
 export interface SerializedTab {
-  meta: SerializedTabMetaData;
+  meta: TabMetaData;
 }
 
 /**A serialized snapshot of an app `Tab`'s state.*/
 export interface SerializedAppTab extends SerializedTab {
-  meta: { ID: SerializedTabID; tabName: string; characterName: string };
+  meta: { ID: TabID; tabName: string; characterName: string };
   /**Whether the search suceeded. */
   success: boolean;
   opts: DisplayOptions;
@@ -83,7 +78,7 @@ export function isSerializedAppTab(tab: TabDataUpdate): tab is SerializedAppTab 
 /**Request from the renderer to the server to perform a search for a character's data on the wiki. */
 export interface SearchRequest {
   /**ID of the tab making the request.*/
-  id: SerializedTabID;
+  id: TabID;
   /** The first and last name of the character. */
   character: string;
   /**The character's home universe. */
@@ -92,19 +87,19 @@ export interface SearchRequest {
 
 /**Message from the renderer to the main process containing an updated value for display order. */
 export interface DisplayOrderUpdate {
-  readonly ID: SerializedTabID;
+  readonly ID: TabID;
   order: DisplayOrder;
 }
 
 /**Message from the renderer to the main process containing an updated value for display density. */
 export interface DisplayDensityUpdate {
-  readonly ID: SerializedTabID;
+  readonly ID: TabID;
   density: DisplayDensity;
 }
 
 /**Message from the renderer to the main process containing an updated value for display direction. */
 export interface DisplayDirectionUpdate {
-  readonly ID: SerializedTabID;
+  readonly ID: TabID;
   dir: DisplayDirection;
 }
 

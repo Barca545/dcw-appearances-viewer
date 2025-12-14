@@ -10,14 +10,14 @@ import { selectAllTabs, updateEntry } from "./store/listStateSlice";
 import { isSerializedAppTab } from "../common/TypesAPI";
 import Start from "./Start";
 
-// I think here is where I need to listen for tab updates anre rerender the tabs
-
 // FIXME:
 // - This is not properly labeling active tabs
 // - This does not properly navigate to the active tab
 // - Need to eliminate the store and have the active tab query the main process for its data on load/change
-//  - Tab
 //  - Probably have a listener that listens for incoming updates as well and discards them if they do not match the current active tab
+// - Add scrollbar to TabBar
+// - Style the add tab button
+// - Add functionality to close tabs
 
 const handleNavigate = () =>{
   // update the active ID

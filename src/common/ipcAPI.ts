@@ -6,11 +6,16 @@ import {
   SearchRequest,
   Settings,
   TabDataUpdate,
+  TabMetaData,
 } from "./TypesAPI";
 
 export type VoidReturnFunction = () => void;
 
 export enum APIEvent {
+  // TODO: Merge tabs and tabbar here and in preload
+  TabBarRequestState = "tabar:request-state",
+  TabBarRequestUpdate = "tabar:request-update",
+  TabBarUpdate = "tabbar:update",
   SettingsRequest = "settings:request",
   SettingsApply = "settings:apply",
   SettingsSave = "settings:save",
@@ -27,25 +32,20 @@ export enum APIEvent {
   FilterAsc = "filter:asc",
 }
 
-type TabIDInner = UUID;
-
-export class TabID {
-  id: TabIDInner;
-
-  private constructor(id: UUID) {
-    this.id = id;
-  }
-
-  static new(): TabID {
-    return new TabID(crypto.randomUUID());
-  }
-
-  static from(value: SerializedTabID): TabID {
-    return new TabID(value);
-  }
+// TODO: Use this once we switch to single source of truth
+export interface SerializedTabBarState {
+  readonly selected: TabID;
+  readonly list: TabMetaData[];
 }
 
-export type SerializedTabID = TabIDInner;
+export type TabID = UUID;
+
+export namespace TabID {
+  /** Creates a new `TabID`. */
+  export function create(): TabID {
+    return crypto.randomUUID();
+  }
+}
 
 declare global {
   interface Window {
@@ -57,10 +57,17 @@ declare global {
         /**Send settings data to the main process without saving it to file. Previews the result of the changes.*/
         apply: (data: Settings) => void;
       };
+      tabBar: {
+        requestTabBarState: () => Promise<SerializedTabBarState>;
+        /** Requests the main process update its tab list to match the order of the data set over. Returns the main process' tab list.*/
+        requestUpdate: (state: SerializedTabBarState) => Promise<SerializedTabBarState>;
+        /** Registers a handler to process an update in the tab bar's state sent from the main process. */
+        update: (fn: (state: SerializedTabBarState) => void) => void;
+      };
       /**Handle requests which change a tab's state. */
       tab: {
         /**Notify the main process the user has switched to a new tab. */
-        setCurrent: (ID: SerializedTabID) => void;
+        setCurrent: (ID: TabID) => void;
         /**Submits the form to the main process and returns the result to the renderer. */
         search: (data: SearchRequest) => Promise<TabDataUpdate>;
         // TODO: Confirm whether go is ever handled

@@ -19,12 +19,13 @@ import type {
   TabDataUpdate,
   TabStaticInterface,
   SerializedStartTab,
+  TabMetaData,
 } from "../common/TypesAPI";
 import { openFileDialog } from "./menu";
 import { pubDateSort } from "../../core/pub-sort";
 import { createCharacterName } from "../common/utils";
 import { fetchList } from "../../core/fetch";
-import { APIEvent, SerializedTabID, TabID } from "../../src/common/ipcAPI";
+import { APIEvent, SerializedTabBarState, TabID } from "../../src/common/ipcAPI";
 import { MENU_TEMPLATE } from "./menu";
 
 // declare const MAIN_WINDOW_PRELOAD_VITE_ENTRY: string;
@@ -41,11 +42,13 @@ import { MENU_TEMPLATE } from "./menu";
 
 const MAIN_WINDOW_PRELOAD_VITE_ENTRY = path.join(__dirname, `preload.js`);
 
+// TODO: This should probably go wherever controls the API serialization and stuff
 interface APIEventMap {
   [APIEvent.TabUpdate]: TabDataUpdate;
   [APIEvent.SettingsRequest]: Settings;
-  [APIEvent.TabGo]: SerializedTabID;
-  [APIEvent.TabClose]: SerializedTabID;
+  [APIEvent.TabGo]: TabID;
+  [APIEvent.TabClose]: TabID;
+  [APIEvent.TabBarUpdate]: SerializedTabBarState;
 }
 
 // TODO: I think it is fine for tab go
@@ -67,14 +70,14 @@ export class SettingsTab implements DataTab {
   savePath: Option<Path>;
 
   private constructor() {
-    this.meta = { ID: TabID.new(), tabName: "Settings" };
+    this.meta = { ID: TabID.create(), tabName: "Settings" };
     this.data = SettingsTab.getSettings();
     this.isClean = true;
     this.savePath = new Some(new Path(app.getPath("userData"), "settings.json"));
   }
   serialize(): SerializedSettingsTab {
     return {
-      meta: { ...this.meta, ID: this.meta.ID.id },
+      meta: { ...this.meta, ID: this.meta.ID },
       settings: this.data,
     };
   }
@@ -104,12 +107,12 @@ export class StartTab implements Tab {
 
   /**Create a settings page with `TabType==Settings`.*/
   static default(): StartTab {
-    return new StartTab(TabID.new());
+    return new StartTab(TabID.create());
   }
 
   serialize(): SerializedStartTab {
     return {
-      meta: { ...this.meta, ID: this.meta.ID.id },
+      meta: { ...this.meta, ID: this.meta.ID },
     };
   }
 }
@@ -151,7 +154,7 @@ export class AppTab implements DataTab {
   serialize(): SerializedAppTab {
     return {
       success: false,
-      meta: { ...this.meta, ID: this.meta.ID.id },
+      meta: { ...this.meta, ID: this.meta.ID },
       list: this.data.list.map((entry) => entry.toAppearanceData()),
       opts: this.data.meta.opts,
     };
@@ -243,7 +246,7 @@ export class AppTab implements DataTab {
 export class Session {
   win: BrowserWindow;
   settings: Settings;
-  tabs: Map<SerializedTabID, Tab>;
+  tabs: Map<TabID, Tab>;
   currentTab!: TabID;
 
   constructor() {
@@ -279,7 +282,7 @@ export class Session {
     this.trysave();
     const tab = AppTab.default({
       meta: {
-        ID: TabID.new(),
+        ID: TabID.create(),
         // This function will return a tab with the name "Untitled + <Number of Untitled Tabs>"
         tabName: `Untitled ${this.tabs.values().reduce((acc, tab) => {
           return tab.meta.tabName.includes("Untitled") ? acc + 1 : acc;
@@ -289,9 +292,9 @@ export class Session {
     });
 
     this.currentTab = tab.meta.ID;
-    this.tabs.set(tab.meta.ID.id, tab);
+    this.tabs.set(tab.meta.ID, tab);
     this.sendIPC(APIEvent.TabUpdate, tab.serialize());
-    this.sendIPC(APIEvent.TabGo, tab.meta.ID.id);
+    this.sendIPC(APIEvent.TabGo, tab.meta.ID);
   }
 
   /** Create a new `Tab` from a file's `ProjectData`.
@@ -312,7 +315,7 @@ export class Session {
 
     const tab = AppTab.new({
       meta: {
-        ID: TabID.new(),
+        ID: TabID.create(),
         tabName: data.meta.title,
       },
       // We know it is valid by the time we reach here because we checked it with res.isNone() above
@@ -321,9 +324,9 @@ export class Session {
     });
 
     this.currentTab = tab.meta.ID;
-    this.tabs.set(tab.meta.ID.id, tab);
+    this.tabs.set(tab.meta.ID, tab);
     this.sendIPC(APIEvent.TabUpdate, tab.serialize());
-    this.sendIPC(APIEvent.TabGo, tab.meta.ID.id);
+    this.sendIPC(APIEvent.TabGo, tab.meta.ID);
   }
 
   /**Create a new Start Tab.
@@ -334,9 +337,9 @@ export class Session {
   newStartTab(): StartTab {
     const tab = StartTab.default();
     this.currentTab = tab.meta.ID;
-    this.tabs.set(tab.meta.ID.id, tab);
+    this.tabs.set(tab.meta.ID, tab);
     this.sendIPC(APIEvent.TabUpdate, tab.serialize());
-    this.sendIPC(APIEvent.TabGo, tab.meta.ID.id);
+    this.sendIPC(APIEvent.TabGo, tab.meta.ID);
 
     return tab;
   }
@@ -439,7 +442,7 @@ export class Session {
 
   /**Tell the renderer to change the current tab. */
   changeTab() {
-    this.sendIPC(APIEvent.TabGo, this.currentTab.id);
+    this.sendIPC(APIEvent.TabGo, this.currentTab);
   }
 
   /**Close all open tabs then close the window.*/
@@ -467,8 +470,8 @@ export class Session {
    * Prompt the user for how to handle an unsaved tab.
    * @returns `true` if the tab is prepared to close.
    * @returns `false` if the process was aborted. */
-  closeTab(id: TabID): boolean {
-    const tab = this.getTab(id);
+  closeTab(ID: TabID): boolean {
+    const tab = this.getTab(ID);
     if (tab instanceof StartTab) {
       return true;
     } else if ((tab instanceof AppTab || tab instanceof SettingsTab) && !tab.isClean) {
@@ -482,8 +485,8 @@ export class Session {
 
       switch (res) {
         case 0: {
-          this.saveFile(false, id);
-          this.closeTab(id);
+          this.saveFile(false, ID);
+          this.closeTab(ID);
           return true;
         }
         case 1: {
@@ -491,7 +494,7 @@ export class Session {
           if (tab instanceof SettingsTab) {
             throw new Error("Settings tab does not currently restore session settings on exit.");
           }
-          this.closeTab(id);
+          this.closeTab(ID);
           return true;
         }
         default: {
@@ -500,8 +503,8 @@ export class Session {
       }
     } else {
       // If it is not a start tab and it is not dirty, close the tab
-      this.sendIPC(APIEvent.TabClose, id.id);
-      this.tabs.delete(id.id);
+      this.sendIPC(APIEvent.TabClose, ID);
+      this.tabs.delete(ID);
       return true;
     }
   }
@@ -572,13 +575,27 @@ export class Session {
     this.win.webContents.send(type, payload);
   }
 
-  getTab(ID: TabID | SerializedTabID): Tab | undefined {
-    if (ID instanceof TabID) return this.tabs.get(ID.id);
-    else return this.tabs.get(ID);
+  getTab(ID: TabID): Tab | undefined {
+    return this.tabs.get(ID);
   }
 
-  updateCurrent(ID: SerializedTabID) {
-    this.currentTab = TabID.from(ID);
+  /** Serializes the `Session` tabs' `TabMetaData` and sends it to the main process.*/
+  updateTabBar() {
+    this.sendIPC(APIEvent.TabBarUpdate, {
+      selected: this.currentTab,
+      list: [...this.tabs.values()].map((tab) => tab.meta),
+    });
+  }
+
+  /**Reorders the Session's `Tab`'s in place to match the requested order.*/
+  reorderTabBar(req: TabMetaData[]) {
+    let newTabs: Map<TabID, Tab> = new Map();
+    req.forEach(({ ID }) => newTabs.set(ID, this.tabs.get(ID) as Tab));
+    this.tabs = newTabs;
+  }
+
+  updateCurrent(ID: TabID) {
+    this.currentTab = ID;
   }
 
   /**Register `IPC` event handlers for communication between the renderer and main process*/

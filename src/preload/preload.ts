@@ -1,7 +1,7 @@
 // TODO: If this ends up being overly granular merge taking inspiration from
 // https://stackoverflow.com/a/66270356/24660323
 import { DisplayOrder, DisplayDensity, DisplayDirection } from "src/common/apiTypes";
-import { APIEvent, SerializedTabID } from "../common/ipcAPI";
+import { APIEvent, SerializedTabBarState, TabID } from "../common/ipcAPI";
 import type { TabDataUpdate, SerializedTab, SerializedAppTab, Settings, SearchRequest } from "../common/TypesAPI";
 import { contextBridge, ipcRenderer } from "electron";
 // REMINDER: Handle only takes invokes not sends
@@ -21,9 +21,18 @@ contextBridge.exposeInMainWorld("API", {
     /**Request a preview of the settings but do not save them to disk. */
     apply: (data: Settings) => ipcRenderer.send(APIEvent.SettingsApply, data),
   },
+  tabBar: {
+    requestTabBarState: (): Promise<SerializedTabBarState> => ipcRenderer.invoke(APIEvent.TabBarRequestState),
+    /** Requests the main process update its tab list to match the order of the data set over. Returns the main process' tab list.*/
+    requestUpdate: (state: SerializedTabBarState): Promise<SerializedTabBarState> =>
+      ipcRenderer.invoke(APIEvent.TabBarRequestUpdate, state),
+    /** Registers a handler to process an update in the tab bar's state sent from the main process. */
+    update: (fn: (state: SerializedTabBarState) => void) =>
+      ipcRenderer.on(APIEvent.TabBarUpdate, (_e, state: SerializedTabBarState) => fn(state)),
+  },
   /**Updata data for a tab. */
   tab: {
-    setCurrent: (ID: SerializedTabID) => ipcRenderer.send(APIEvent.TabUpdateCurrent, ID),
+    setCurrent: (ID: TabID) => ipcRenderer.send(APIEvent.TabUpdateCurrent, ID),
     /**Submits the form to the main process and returns the result to the renderer. */
     search: async (req: SearchRequest): Promise<TabDataUpdate> => {
       const res = await ipcRenderer.invoke(APIEvent.TabSearch, req);
@@ -43,8 +52,8 @@ contextBridge.exposeInMainWorld("API", {
     /** Process request from the main process to navigate to a new project tab.
      *
      * **NOTE**: Does not update the tab. Updating must be handled separately.*/
-    go: (fn: (id: SerializedTabID) => void) => ipcRenderer.on(APIEvent.TabGo, (_e, id: SerializedTabID) => fn(id)),
-    close: (fn: (ID: SerializedTabID) => void) => ipcRenderer.on(APIEvent.TabClose, (_e, ID) => fn(ID)),
+    go: (fn: (id: TabID) => void) => ipcRenderer.on(APIEvent.TabGo, (_e, id: TabID) => fn(id)),
+    close: (fn: (ID: TabID) => void) => ipcRenderer.on(APIEvent.TabClose, (_e, ID) => fn(ID)),
     // TODO: Debating if I should do this, it would would but require the exact same function ref be passed to both
     // subscribe: (handler: (_e: Electron.IpcRendererEvent, res: TabData) => void) => ipcRenderer.on("update:emit", handler),
     // unsubscribe: (handler: (_e: Electron.IpcRendererEvent, res: TabData) => void) => ipcRenderer.off("update:emit", handler),
