@@ -2,7 +2,7 @@ import { app, dialog } from "electron";
 import { Session } from "./session";
 import { __userdata, IS_DEV, makeUninstallScript, RESOURCE_PATH, UPDATE_PATH as UPDATE_DOT_EXE } from "./main_utils";
 import path from "path";
-import { LOGGER } from "./log";
+import LOGGER from "./log";
 import Child from "child_process";
 import fs from "fs";
 
@@ -44,7 +44,7 @@ function handleStartupEvent(): boolean {
     } catch (e) {
       const err = e as Error;
       // This is fatal because if for some reason any of these fail to execute the application will experience problems
-      log.fatal(err.name, err.stack || err.message);
+      LOGGER.fatal(err.name, err.stack || err.message);
       throw new Error(err.message);
     }
 
@@ -53,14 +53,14 @@ function handleStartupEvent(): boolean {
 
   function spawnUpdate(...args: string[]) {
     const proc = spawn(UPDATE_DOT_EXE, ...args);
-    log.info("proc.spawnargs", proc.spawnargs.toString());
-    proc.on("error", (err) => log.fatal("Squirrel Spawn Error", err.stack || err.message));
+    LOGGER.info("proc.spawnargs", proc.spawnargs.toString());
+    proc.on("error", (err) => LOGGER.fatal("Squirrel Spawn Error", err.stack || err.message));
     proc.on("exit", (code, signal) => {
       // 0 is success
       if (code !== null && code !== 0) {
-        log.error("Update.exe exited with code", code.toString());
+        LOGGER.error("Update.exe exited with code", code.toString());
       } else {
-        log.error("Update.exe killed with signal", signal as NodeJS.Signals);
+        LOGGER.error("Update.exe killed with signal", signal as NodeJS.Signals);
       }
     });
   }
@@ -83,7 +83,7 @@ function handleStartupEvent(): boolean {
       } catch (e) {
         const err = e as Error;
         // Info cuz expected behavior but under some circumstances may indicate failure
-        log.info("Update copy fail", `${err.message}`);
+        LOGGER.info("Update copy fail", `${err.message}`);
       }
       return true;
     }
@@ -104,7 +104,7 @@ function handleStartupEvent(): boolean {
         spawn(UNINSTALL_SCRIPT);
       } catch (e) {
         const err = e as Error;
-        log.fatal(err.name, `Uninstall removal fail.\n${err.stack || err.message}`);
+        LOGGER.fatal(err.name, `Uninstall removal fail.\n${err.stack || err.message}`);
         dialog.showErrorBox(`uninstall ${err.name} removal fail.`, `${err.stack || err.message}`);
       }
       return true;
@@ -118,11 +118,9 @@ function handleStartupEvent(): boolean {
   return false;
 }
 
-const log = LOGGER.default();
-
 process.on("uncaughtException", (err) => {
   // TODO: I am not sure this should always be fatal
-  log.fatal(err.name, err.stack || err.message);
+  LOGGER.fatal(err.name, err.stack || err.message);
 });
 
 // Prevent multiple startups during installation

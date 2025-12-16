@@ -1,24 +1,19 @@
 import { UUID } from "crypto";
-import {
-  DisplayDensityUpdate,
-  DisplayDirectionUpdate,
-  DisplayOrderUpdate,
-  SearchRequest,
-  Settings,
-  TabDataUpdate,
-  TabMetaData,
-} from "./TypesAPI";
+import { SearchRequest, SerializedTab, Settings, TabDataUpdate, TabMetaData } from "./TypesAPI";
+import { DisplayOptions } from "./apiTypes";
 
 export type VoidReturnFunction = () => void;
 
 export enum APIEvent {
   // TODO: Merge tabs and tabbar here and in preload
-  TabBarRequestState = "tabar:request-state",
-  TabBarRequestUpdate = "tabar:request-update",
+  TabBarRequestState = "tabar:request:state",
+  TabBarRequestUpdate = "tabar:request:update",
   TabBarUpdate = "tabbar:update",
   SettingsRequest = "settings:request",
   SettingsApply = "settings:apply",
   SettingsSave = "settings:save",
+  /**Returns the state of the current tab */
+  TabRequestState = "tab:request:state",
   TabUpdateCurrent = "tab:setCurrent",
   TabSearch = "tab:search",
   TabUpdate = "tab:update",
@@ -27,15 +22,16 @@ export enum APIEvent {
   OpenTab = "open:tab",
   OpenFile = "open:file",
   OpenURL = "open:URL",
-  FilterOrder = "filter:order",
-  FilterDensity = "filter:density",
-  FilterAsc = "filter:asc",
+  DisplayOptionsRequestState = "displayopts:request:state",
+  DisplayOptionsRequestUpdate = "displayopts:request:update",
+  /**A request from the renderer for the main process to set the display options equal to the payload. */
+  DisplayOptionsUpdate = "displayopts:update",
 }
 
 // TODO: Use this once we switch to single source of truth
 export interface SerializedTabBarState {
   readonly selected: TabID;
-  readonly list: TabMetaData[];
+  readonly list: { TabType: "APP" | "START" | "SETTINGS"; meta: TabMetaData }[];
 }
 
 export type TabID = UUID;
@@ -66,10 +62,11 @@ declare global {
       };
       /**Handle requests which change a tab's state. */
       tab: {
+        requestTabState: () => Promise<SerializedTab>;
         /**Notify the main process the user has switched to a new tab. */
         setCurrent: (ID: TabID) => void;
         /**Submits the form to the main process and returns the result to the renderer. */
-        search: (data: SearchRequest) => Promise<TabDataUpdate>;
+        search: (data: SearchRequest) => void;
         // TODO: Confirm whether go is ever handled
         /** Process request from the main process to navigate to a new project tab.
          *
@@ -88,13 +85,13 @@ declare global {
         file: () => void;
       };
       /**Update the `FilterOptions` stored in the main process. */
-      filter: {
-        /**Set a new value for the App's filter order. */
-        order: (order: DisplayOrderUpdate) => void;
-        /**Set a new value for the App's filter density. */
-        density: (density: DisplayDensityUpdate) => void;
-        /**Set a new value for the App's filter ascent direction. */
-        ascending: (asc: DisplayDirectionUpdate) => void;
+      displayOptions: {
+        /**Request the main process send the current `Tab`'s `DisplayOptions`.*/
+        requestOptionsState: () => Promise<DisplayOptions>;
+        /**Request the main process set the current `Tab`'s `DisplayOptions` to match the payload.*/
+        requestOptionsUpdate: (state: DisplayOptions) => Promise<DisplayOptions>;
+        /**An incoming update from the main process of the current `Tab`'s `DisplayOptions`' state.*/
+        update: (fn: (state: DisplayOptions) => void) => void;
       };
     };
   }

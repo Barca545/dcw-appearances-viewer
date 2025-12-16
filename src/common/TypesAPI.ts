@@ -34,8 +34,11 @@ export interface Tab {
   meta: TabMetaData;
   savePath: Option<Path>;
 
-  /**Converts the tab into a serialized  */
+  /**serializes the `Tab`'s data.*/
   serialize(): SerializedTab;
+
+  /**Returns the type of the `Tab`. */
+  type(): "APP" | "START" | "SETTINGS";
 }
 
 /**A Tab which holds data. */

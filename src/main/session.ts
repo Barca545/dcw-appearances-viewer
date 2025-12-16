@@ -2,7 +2,7 @@ import { loadList, Path, ProjectData, ProjectDataFromJSON } from "../../core/loa
 import { None, Option, Some } from "../../core/option";
 import { app, BrowserWindow, dialog, ipcMain, Menu, shell } from "electron";
 import path from "node:path";
-import { DEFAULT_FILTER_OPTIONS, DisplayDensity, DisplayDirection, DisplayOrder } from "../common/apiTypes";
+import { DEFAULT_FILTER_OPTIONS, DisplayDensity, DisplayDirection, DisplayOptions, DisplayOrder } from "../common/apiTypes";
 import { RESOURCE_PATH, IS_DEV, __userdata, MESSAGES, UNIMPLEMENTED_FEATURE, IS_MAC, APPID, ROOT_DIRECTORY } from "./main_utils";
 import fs from "node:fs";
 import type {
@@ -19,7 +19,6 @@ import type {
   TabDataUpdate,
   TabStaticInterface,
   SerializedStartTab,
-  TabMetaData,
 } from "../common/TypesAPI";
 import { openFileDialog } from "./menu";
 import { pubDateSort } from "../../core/pub-sort";
@@ -75,11 +74,16 @@ export class SettingsTab implements DataTab {
     this.isClean = true;
     this.savePath = new Some(new Path(app.getPath("userData"), "settings.json"));
   }
+
   serialize(): SerializedSettingsTab {
     return {
       meta: { ...this.meta, ID: this.meta.ID },
       settings: this.data,
     };
+  }
+
+  type(): "SETTINGS" {
+    return "SETTINGS";
   }
 
   static default(): SettingsTab {
@@ -114,6 +118,10 @@ export class StartTab implements Tab {
     return {
       meta: { ...this.meta, ID: this.meta.ID },
     };
+  }
+
+  type(): "START" {
+    return "START";
   }
 }
 
@@ -158,6 +166,10 @@ export class AppTab implements DataTab {
       list: this.data.list.map((entry) => entry.toAppearanceData()),
       opts: this.data.meta.opts,
     };
+  }
+
+  type(): "APP" {
+    return "APP";
   }
 
   /**Load `ProjectData` from a file. Reflowing is unnecessary as it is assumed the file was reflowed according to its saved `FilterOptions`.*/
@@ -224,21 +236,9 @@ export class AppTab implements DataTab {
     return data;
   }
 
-  /**Update the tab's `ProjectData`'s display order and reflow the list. */
-  updateDisplayOrder(update: DisplayOrder) {
-    this.data.meta.opts.order = update;
-    this.reflow();
-  }
-
-  /**Update the tab's `ProjectData`'s display density and reflow the list. */
-  updateDisplayDensity(update: DisplayDensity) {
-    this.data.meta.opts.density = update;
-    this.reflow();
-  }
-
-  /**Update the tab's `ProjectData`'s display directon and reflow the list. */
-  updateDisplayDirection(update: DisplayDirection) {
-    this.data.meta.opts.dir = update;
+  /**Update the tab's `ProjectData`'s display options and reflow the list. */
+  updateDisplayOptions(update: DisplayOptions) {
+    this.data.meta.opts = update;
     this.reflow();
   }
 }
@@ -247,13 +247,14 @@ export class Session {
   win: BrowserWindow;
   settings: Settings;
   tabs: Map<TabID, Tab>;
-  currentTab!: TabID;
+  currentTab: Option<TabID>;
 
   constructor() {
     const settings = Session.getSettings();
     this.settings = settings;
     this.tabs = new Map();
     this.win = Session.makeWindow(settings);
+    this.currentTab = new None();
 
     console.log(process.env.NODE_ENV);
 
@@ -267,7 +268,8 @@ export class Session {
 
     this.win.setMenu(Menu.buildFromTemplate(MENU_TEMPLATE(this)));
 
-    this.win.webContents.on("did-finish-load", () => {
+    // In development if this is "on" and not "once" each save will create a new tab
+    this.win.webContents.once("did-finish-load", () => {
       // Because this assigns the current tab internally it means the current tab is definitely initialized
       this.newStartTab();
     });
@@ -291,10 +293,11 @@ export class Session {
       savePath: new None(),
     });
 
-    this.currentTab = tab.meta.ID;
+    this.currentTab = new Some(tab.meta.ID);
     this.tabs.set(tab.meta.ID, tab);
     this.sendIPC(APIEvent.TabUpdate, tab.serialize());
     this.sendIPC(APIEvent.TabGo, tab.meta.ID);
+    console.log(this.tabs);
   }
 
   /** Create a new `Tab` from a file's `ProjectData`.
@@ -323,7 +326,7 @@ export class Session {
       projectData: data,
     });
 
-    this.currentTab = tab.meta.ID;
+    this.currentTab = new Some(tab.meta.ID);
     this.tabs.set(tab.meta.ID, tab);
     this.sendIPC(APIEvent.TabUpdate, tab.serialize());
     this.sendIPC(APIEvent.TabGo, tab.meta.ID);
@@ -336,7 +339,7 @@ export class Session {
    */
   newStartTab(): StartTab {
     const tab = StartTab.default();
-    this.currentTab = tab.meta.ID;
+    this.currentTab = new Some(tab.meta.ID);
     this.tabs.set(tab.meta.ID, tab);
     this.sendIPC(APIEvent.TabUpdate, tab.serialize());
     this.sendIPC(APIEvent.TabGo, tab.meta.ID);
@@ -347,7 +350,7 @@ export class Session {
   /**Save a tab's `ProjectData` and mark the tab as clean. If no id is provided, defaults to the current tab.*/
   saveFile(mustSaveAs: boolean, id?: TabID) {
     // Confirm tab is not a start tab
-    const tab = this.getTab(id ? id : this.currentTab);
+    const tab = this.getTab(id ? id : this.currentTab.unwrap());
     if (tab instanceof StartTab) {
       return;
     } else if (!tab) {
@@ -387,7 +390,7 @@ export class Session {
 
   /**Try to save a tab. Will fail if it does not have a save path. */
   trysave(id?: TabID) {
-    const tab = this.getTab(id ? id : this.currentTab);
+    const tab = this.getTab(id ? id : this.currentTab.unwrap());
     if (tab instanceof StartTab) {
       return;
     } else if (tab instanceof AppTab && tab.savePath.isSome()) {
@@ -442,7 +445,7 @@ export class Session {
 
   /**Tell the renderer to change the current tab. */
   changeTab() {
-    this.sendIPC(APIEvent.TabGo, this.currentTab);
+    this.sendIPC(APIEvent.TabGo, this.currentTab.unwrap());
   }
 
   /**Close all open tabs then close the window.*/
@@ -503,16 +506,16 @@ export class Session {
       }
     } else {
       // If it is not a start tab and it is not dirty, close the tab
-      this.sendIPC(APIEvent.TabClose, ID);
       this.tabs.delete(ID);
+      this.sendIPC(APIEvent.TabBarUpdate, this.serializeTabBarState());
       return true;
     }
   }
 
   /**Update the character of a tab.
    * Errors if the tab does not exist or is not an AppTab.
-   * Returns the tab's `TabData` after the update.*/
-  async updateTabCharacter(req: SearchRequest): Promise<TabDataUpdate> {
+   * Sends the new data back to the tab.*/
+  async updateTabCharacter(req: SearchRequest) {
     const tab = this.getTab(req.id);
     // TODO: These errors need to log properly
     if (!tab) {
@@ -527,30 +530,15 @@ export class Session {
     tab.data.list = res.unwrap_or([]);
     tab.isClean = false;
 
-    console.log(tab);
-    return tab.serialize();
-  }
-
-  updateDisplayOrder(update: DisplayOrderUpdate) {
-    let tab = this.getTab(update.ID) as AppTab;
-
-    tab.updateDisplayOrder(update.order);
-
+    // Send the tab back
     this.sendIPC(APIEvent.TabUpdate, tab.serialize());
   }
 
-  updateDisplayDensity(update: DisplayDensityUpdate) {
-    let tab = this.getTab(update.ID) as AppTab;
+  /**Update the current `AppTab`'s `DisplayOptions`.*/
+  updateDisplayOptions(update: DisplayOptions) {
+    let tab = this.getTab(this.currentTab.unwrap()) as AppTab;
 
-    tab.updateDisplayDensity(update.density);
-
-    this.sendIPC(APIEvent.TabUpdate, tab.serialize());
-  }
-
-  updateDisplayDirection(update: DisplayDirectionUpdate) {
-    let tab = this.getTab(update.ID) as AppTab;
-
-    tab.updateDisplayDirection(update.dir);
+    tab.updateDisplayOptions(update);
 
     this.sendIPC(APIEvent.TabUpdate, tab.serialize());
   }
@@ -579,23 +567,31 @@ export class Session {
     return this.tabs.get(ID);
   }
 
+  /** Set the `current` field to the specified TabID. */
+  setCurrentTab(ID: TabID) {
+    this.currentTab = new Some(ID);
+  }
+
+  /**Reorders the Session's `Tab`'s in place to match the requested order. Returns the new state. */
+  // FIXME: This should be called whenever the tabs change
+  setTabBarState(state: SerializedTabBarState): SerializedTabBarState {
+    let newTabs: Map<TabID, Tab> = new Map();
+    state.list.forEach(({ meta }) => newTabs.set(meta.ID, this.tabs.get(meta.ID) as Tab));
+    this.tabs = newTabs;
+
+    return this.serializeTabBarState();
+  }
+
+  serializeTabBarState(): SerializedTabBarState {
+    return {
+      selected: this.currentTab.unwrap(),
+      list: [...this.tabs.values()].map((tab) => ({ TabType: tab.type(), meta: tab.meta })),
+    };
+  }
+
   /** Serializes the `Session` tabs' `TabMetaData` and sends it to the main process.*/
   updateTabBar() {
-    this.sendIPC(APIEvent.TabBarUpdate, {
-      selected: this.currentTab,
-      list: [...this.tabs.values()].map((tab) => tab.meta),
-    });
-  }
-
-  /**Reorders the Session's `Tab`'s in place to match the requested order.*/
-  reorderTabBar(req: TabMetaData[]) {
-    let newTabs: Map<TabID, Tab> = new Map();
-    req.forEach(({ ID }) => newTabs.set(ID, this.tabs.get(ID) as Tab));
-    this.tabs = newTabs;
-  }
-
-  updateCurrent(ID: TabID) {
-    this.currentTab = ID;
+    this.sendIPC(APIEvent.TabBarUpdate, this.serializeTabBarState());
   }
 
   /**Register `IPC` event handlers for communication between the renderer and main process*/
@@ -628,13 +624,18 @@ export class Session {
     // but I don't want to to be hit with a savea
     this.win.on("blur", () => this.trysave());
 
+    // TABBAR LISTENERS
+    ipcMain.handle(APIEvent.TabBarRequestState, () => this.serializeTabBarState());
+    ipcMain.handle(APIEvent.TabBarRequestUpdate, (_e, newState: SerializedTabBarState) => this.setTabBarState(newState));
+
     // NAVIGATION LISTENERS
     ipcMain.on(APIEvent.OpenTab, () => this.newAppTab());
     ipcMain.handle(APIEvent.OpenFile, () => this.newAppTabFromFile());
     ipcMain.on(APIEvent.OpenURL, (_e, url: string) => shell.openExternal(url));
 
     // SEARCHING FOR CHARACTERS AND REFLOW LISTENERS
-    ipcMain.on(APIEvent.TabUpdateCurrent, (_e, ID) => this.updateCurrent(ID));
+    ipcMain.handle(APIEvent.TabRequestState, () => this.tabs.get(this.currentTab.unwrap())?.serialize());
+    ipcMain.on(APIEvent.TabUpdateCurrent, (_e, ID) => this.setCurrentTab(ID));
     ipcMain.handle(APIEvent.TabSearch, async (_e, req: SearchRequest) => this.updateTabCharacter(req));
     ipcMain.on(APIEvent.TabClose, (_e, id: TabID) => this.closeTab(id));
 
@@ -644,8 +645,6 @@ export class Session {
     ipcMain.on(APIEvent.SettingsSave, (_e, settings: SettingsUpdate) => this.saveSettings(settings));
 
     // DISPLAY STYLE LISTENERS
-    ipcMain.on(APIEvent.FilterOrder, (_e, order: DisplayOrderUpdate) => this.updateDisplayOrder(order));
-    ipcMain.on(APIEvent.FilterDensity, (_e, density: DisplayDensityUpdate) => this.updateDisplayDensity(density));
-    ipcMain.on(APIEvent.FilterAsc, (_e, asc: DisplayDirectionUpdate) => this.updateDisplayDirection(asc));
+    ipcMain.on(APIEvent.DisplayOptionsRequestUpdate, (_e, opts: DisplayOptions) => this.updateDisplayOptions(opts));
   }
 }

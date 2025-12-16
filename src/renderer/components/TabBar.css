@@ -68,9 +68,14 @@
 }
 
 /* FIXME: The close button area does not inherit the active background*/
-.Tab:active {
+.selected {
   border-top: 1vh solid hotpink;
   background-color: #46d508;
+}
+
+.over {
+  border-style: dashed;
+  opacity: 0.5;
 }
 
 .tab-content {
