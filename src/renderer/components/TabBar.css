@@ -12,8 +12,10 @@
   padding: 0;
 }
 
+/* Variables need to be declared at the parent to be in scope for all children. */
 .TabBar {
   --TabBar-height: 6vh;
+  --border-thickness: 1vw;
   /* Positioning in the window */
   position: absolute;
   width: 100vw;
@@ -69,12 +71,12 @@
 
 /* FIXME: The close button area does not inherit the active background*/
 .selected {
-  border-top: 1vh solid hotpink;
+  border-top: var(--border-thickness) solid hotpink;
   background-color: #46d508;
 }
 
 .over {
-  border-style: dashed;
+  border-left: var(--border-thickness) solid hotpink;
   opacity: 0.5;
 }
 

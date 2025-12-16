@@ -1,4 +1,4 @@
-import { useRef, MouseEventHandler, JSX, useState, useEffect } from "react";
+import { useRef, MouseEventHandler, JSX, useState, useEffect, DragEventHandler } from "react";
 import "./TabBar.css";
 import { NavLink, To } from "react-router";
 import { SerializedTabBarState, TabID } from "src/common/ipcAPI";
@@ -18,11 +18,27 @@ interface TabProps {
   to: To;
   onClick?: MouseEventHandler;
   onClose?: MouseEventHandler;
+  onDragStart?: DragEventHandler;
+  onDragEnter?: DragEventHandler;
+  onDragLeave?: DragEventHandler;
+  onDrop?: DragEventHandler;
+  onDragEnd?: DragEventHandler;
 }
 
 // TODO: I think there is another way to do the selecting
 
-function Tab({ selected, tabName, to, onClick, onClose }: TabProps): JSX.Element {
+function Tab({
+  selected,
+  tabName,
+  to,
+  onClick,
+  onClose,
+  onDragStart,
+  onDragEnter,
+  onDragLeave,
+  onDragEnd,
+  onDrop,
+}: TabProps): JSX.Element {
   // TODO: onClick needs to go down to the navlink but also not disrupt it
   // TODO: NavLink style change needs to bubble up to the Tab
   // TODO: Dragable does not seem to get inherited
@@ -36,14 +52,24 @@ function Tab({ selected, tabName, to, onClick, onClose }: TabProps): JSX.Element
   };
 
   return (
-    <div className={["Tab", selected && "selected"].filter(Boolean).join(" ")} onClick={onClick}>
+    <li
+      // style={{ all: "unset" }}
+      className={["Tab", selected && "selected"].filter(Boolean).join(" ")}
+      onClick={onClick}
+      draggable={true}
+      onDragStart={onDragStart}
+      onDragOver={onDragEnter}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      onDragEnd={onDragEnd}
+    >
       <NavLink className={"tab-content"} to={to} onClick={onClick}>
         {tabName}
       </NavLink>
       <button className={"tab-close-button"} onClick={handleClose}>
         X
       </button>
-    </div>
+    </li>
   );
 }
 
@@ -67,14 +93,11 @@ export default function TabBar(): JSX.Element {
     window.API.tabBar.requestTabBarState().then((state) => setTabBarState(state));
 
     // Register a listener
-    window.API.tabBar.update((state) => {
-      console.log(state);
-      setTabBarState(state);
-    });
+    window.API.tabBar.update((state) => setTabBarState(state));
   }, []);
 
   function tabToIdx(node: Element): number {
-    const parent = document.querySelector(`[class]="TabBar"`) as Element;
+    const parent = document.querySelector(`[class="tab-bar-contents"]`) as Element;
     return Array.from(parent.children).indexOf(node);
   }
 
@@ -82,11 +105,13 @@ export default function TabBar(): JSX.Element {
   const handleDragStart = (e: React.DragEvent) => {
     e.dataTransfer.effectAllowed = "move";
     setDraggedTabIdx(tabToIdx(e.currentTarget as Element));
-    // e.dataTransfer.setData("text/html", (e.currentTarget as Element).innerHTML);
-    // TODO: Need to also update the selected tab
+
+    // Create a clone for the drag image
+    const dragElement = e.currentTarget as HTMLElement;
+    e.dataTransfer.setDragImage(dragElement, dragElement.offsetWidth / 2, dragElement.offsetHeight / 2);
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const onDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.effectAllowed = "move";
     // TODO: Need to define this class
@@ -108,6 +133,7 @@ export default function TabBar(): JSX.Element {
         return; // Invalid drop or dropped on itself
       }
 
+      // TODO: VSC just always drops it to the left. Is that more intuitive?
       let insertIdx;
       if (isPastHalfway(e)) {
         // TODO: Drop dragged tab to the right of the target tab
@@ -138,7 +164,14 @@ export default function TabBar(): JSX.Element {
     }
   };
 
-  const handleDragEnd = () => setDraggedTabIdx(null);
+  const handleDragEnd = () => {
+    // Gotta clean up any lingering "over" classes
+    const parent = document.querySelector(`[class="tab-bar-contents"]`) as Element;
+    [...parent.children].forEach((child) => child.classList.remove("over"));
+    setDraggedTabIdx(null);
+  };
+
+  const handleNavigate = (ID: TabID) => window.API.tab.setCurrent(ID);
 
   return (
     <div className={"TabBar"}>
@@ -146,24 +179,20 @@ export default function TabBar(): JSX.Element {
         {/* TODO: I think I want the LI to be a part of the list not built into the tabs */}
         <ol className="tab-bar-contents">
           {tabBarState?.list.map((tab) => (
-            <li
-              style={{ all: "unset" }}
+            <Tab
               key={tab.meta.ID}
-              draggable={true}
               onDragStart={handleDragStart}
-              onDragOver={handleDragOver}
+              onDragEnter={onDragEnter}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               onDragEnd={handleDragEnd}
-            >
-              <Tab
-                ID={tab.meta.ID}
-                tabName={tab.meta.tabName}
-                selected={tab.meta.ID == tabBarState.selected}
-                to={tab.meta.ID}
-                onClick={() => window.API.tab.setCurrent(tab.meta.ID)}
-              />
-            </li>
+              ID={tab.meta.ID}
+              tabName={tab.meta.tabName}
+              selected={tab.meta.ID == tabBarState.selected}
+              to={tab.meta.ID}
+              onClick={() => handleNavigate(tab.meta.ID)}
+              onClose={() => window.API.tab.close(tab.meta.ID)}
+            />
           ))}
           <li style={{ all: "unset" }}>
             <button className="AddTab" onClick={() => window.API.open.tab()}>

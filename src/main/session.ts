@@ -247,12 +247,14 @@ export class Session {
   win: BrowserWindow;
   settings: Settings;
   tabs: Map<TabID, Tab>;
+  tabEventStack: TabEvent[];
   currentTab: Option<TabID>;
 
   constructor() {
     const settings = Session.getSettings();
     this.settings = settings;
     this.tabs = new Map();
+    this.tabEventStack = [];
     this.win = Session.makeWindow(settings);
     this.currentTab = new None();
 
@@ -293,11 +295,13 @@ export class Session {
       savePath: new None(),
     });
 
-    this.currentTab = new Some(tab.meta.ID);
     this.tabs.set(tab.meta.ID, tab);
+    this.tabEventStack.push({ ID: tab.meta.ID, type: TabEventType.Open });
+    this.currentTab = new Some(tab.meta.ID);
+    this.tabEventStack.push({ ID: tab.meta.ID, type: TabEventType.Navigate });
     this.sendIPC(APIEvent.TabUpdate, tab.serialize());
+    this.sendIPC(APIEvent.TabBarUpdate, this.serializeTabBarState());
     this.sendIPC(APIEvent.TabGo, tab.meta.ID);
-    console.log(this.tabs);
   }
 
   /** Create a new `Tab` from a file's `ProjectData`.
@@ -326,8 +330,10 @@ export class Session {
       projectData: data,
     });
 
-    this.currentTab = new Some(tab.meta.ID);
     this.tabs.set(tab.meta.ID, tab);
+    this.tabEventStack.push({ ID: tab.meta.ID, type: TabEventType.Open });
+    this.currentTab = new Some(tab.meta.ID);
+    this.tabEventStack.push({ ID: tab.meta.ID, type: TabEventType.Navigate });
     this.sendIPC(APIEvent.TabUpdate, tab.serialize());
     this.sendIPC(APIEvent.TabGo, tab.meta.ID);
   }
@@ -337,14 +343,15 @@ export class Session {
    * Send the data to the renderer.
    * Return a ref to the tab.
    */
-  newStartTab(): StartTab {
+  newStartTab() {
     const tab = StartTab.default();
+    this.tabEventStack.push({ ID: tab.meta.ID, type: TabEventType.Open });
     this.currentTab = new Some(tab.meta.ID);
+    this.tabEventStack.push({ ID: tab.meta.ID, type: TabEventType.Navigate });
     this.tabs.set(tab.meta.ID, tab);
     this.sendIPC(APIEvent.TabUpdate, tab.serialize());
+    this.sendIPC(APIEvent.TabBarUpdate, this.serializeTabBarState());
     this.sendIPC(APIEvent.TabGo, tab.meta.ID);
-
-    return tab;
   }
 
   /**Save a tab's `ProjectData` and mark the tab as clean. If no id is provided, defaults to the current tab.*/
@@ -443,10 +450,24 @@ export class Session {
     }
   }
 
-  /**Tell the renderer to change the current tab. */
-  changeTab() {
-    this.sendIPC(APIEvent.TabGo, this.currentTab.unwrap());
+  /** Set the `current` field to the specified TabID. */
+  setCurrentTab(ID: TabID) {
+    // Don't navigagte to the current tab
+    if (this.currentTab.unwrap() != ID) {
+      this.currentTab = new Some(ID);
+      this.tabEventStack.push({ ID: ID, type: TabEventType.Navigate });
+      // A little inefficient but I want a fully single source of truth set up
+      this.sendIPC(APIEvent.TabBarUpdate, this.serializeTabBarState());
+    }
   }
+
+  // /**Tell the renderer to change to the current tab. */
+  // // TODO: Why does this function exist? It feels redundant
+  // changeTab() {
+  //   this.sendIPC(APIEvent.TabGo, this.currentTab.unwrap());
+  //   // Update the tab stack
+  //   this.tabEventStack.push({ ID: this.currentTab.unwrap(), type: TabEventType.Navigate });
+  // }
 
   /**Close all open tabs then close the window.*/
   close() {
@@ -461,6 +482,8 @@ export class Session {
         break;
       }
     }
+
+    this.currentTab.unwrap();
 
     // If there are no more tabs open, close the actual application
     if (this.tabs.size == 0) {
@@ -507,7 +530,18 @@ export class Session {
     } else {
       // If it is not a start tab and it is not dirty, close the tab
       this.tabs.delete(ID);
+      this.tabEventStack.push({ ID: ID, type: TabEventType.Close });
+      // Find the most recent navigate call with the tab still open and go to that
+      const targets = this.tabEventStack.toReversed().filter((event) => event.type == TabEventType.Navigate);
+      navloop: for (const event of targets) {
+        if (!this.tabs.get(event.ID)) {
+          continue navloop;
+        }
+        this.setCurrentTab(event.ID);
+        break navloop;
+      }
       this.sendIPC(APIEvent.TabBarUpdate, this.serializeTabBarState());
+
       return true;
     }
   }
@@ -565,11 +599,6 @@ export class Session {
 
   getTab(ID: TabID): Tab | undefined {
     return this.tabs.get(ID);
-  }
-
-  /** Set the `current` field to the specified TabID. */
-  setCurrentTab(ID: TabID) {
-    this.currentTab = new Some(ID);
   }
 
   /**Reorders the Session's `Tab`'s in place to match the requested order. Returns the new state. */
@@ -647,4 +676,20 @@ export class Session {
     // DISPLAY STYLE LISTENERS
     ipcMain.on(APIEvent.DisplayOptionsRequestUpdate, (_e, opts: DisplayOptions) => this.updateDisplayOptions(opts));
   }
+}
+
+// Eventually can store the closed tabs in a temporary storage on disk to facilitate reopening
+interface TabEvent {
+  ID: TabID;
+  type: TabEventType;
+}
+
+// If this.tabs.size > 1
+// Cycle back in the stack to the penultimate Navigate event
+// Navigate to that event
+
+enum TabEventType {
+  Open = "Open",
+  Close = "Close",
+  Navigate = "Navigate",
 }

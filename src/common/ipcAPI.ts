@@ -74,6 +74,8 @@ declare global {
         go: (fn: (route: string, data?: TabDataUpdate) => void) => void;
         /**Register a callback for when an incoming update event occurs. Returns a function to unsubscribe. */
         update: (fn: (data: TabDataUpdate) => void) => void;
+
+        close: (ID: TabID) => void;
       };
       open: {
         /**Create a new Application Tab. Returns the tabs `TabData`. */

@@ -40,7 +40,7 @@ contextBridge.exposeInMainWorld("API", {
      *
      * **NOTE**: Does not update the tab. Updating must be handled separately.*/
     go: (fn: (id: TabID) => void) => ipcRenderer.on(APIEvent.TabGo, (_e, id: TabID) => fn(id)),
-    close: (fn: (ID: TabID) => void) => ipcRenderer.on(APIEvent.TabClose, (_e, ID) => fn(ID)),
+    close: (ID: TabID) => ipcRenderer.send(APIEvent.TabClose, ID),
     // TODO: Debating if I should do this, it would would but require the exact same function ref be passed to both
     // subscribe: (handler: (_e: Electron.IpcRendererEvent, res: TabData) => void) => ipcRenderer.on("update:emit", handler),
     // unsubscribe: (handler: (_e: Electron.IpcRendererEvent, res: TabData) => void) => ipcRenderer.off("update:emit", handler),
