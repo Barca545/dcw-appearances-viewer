@@ -2,14 +2,11 @@ import { loadList, Path, ProjectData, ProjectDataFromJSON } from "../../core/loa
 import { None, Option, Some } from "../../core/option";
 import { app, BrowserWindow, dialog, ipcMain, Menu, shell } from "electron";
 import path from "node:path";
-import { DEFAULT_FILTER_OPTIONS, DisplayDensity, DisplayDirection, DisplayOptions, DisplayOrder } from "../common/apiTypes";
+import { DEFAULT_FILTER_OPTIONS, DisplayOptions, DisplayOrder } from "../common/apiTypes";
 import { RESOURCE_PATH, IS_DEV, __userdata, MESSAGES, UNIMPLEMENTED_FEATURE, IS_MAC, APPID, ROOT_DIRECTORY } from "./main_utils";
 import fs from "node:fs";
 import type {
   DataTab,
-  DisplayOrderUpdate,
-  DisplayDensityUpdate,
-  DisplayDirectionUpdate,
   SearchRequest,
   SerializedAppTab,
   SerializedSettingsTab,
@@ -28,14 +25,6 @@ import { APIEvent, SerializedTabBarState, TabID } from "../../src/common/ipcAPI"
 import { MENU_TEMPLATE } from "./menu";
 
 // declare const MAIN_WINDOW_PRELOAD_VITE_ENTRY: string;
-
-// TODO: URGENT:
-// - Figure out displaying searches (Check renderer console).
-// - Create scrollbar
-// - Figure out navigating to start page fails
-// - Ideally opening stuff in a start page should replace the current page not open a new one
-// - Need logic for closing individual tabs
-// - Figure out saving
 
 // TODO: Experiement with no store and just requesting the data from the main process when a component mounts
 
@@ -479,16 +468,11 @@ export class Session {
 
       // If the user cancels closing a tab abort the close process
       if (!this.closeTab(tab.meta.ID)) {
-        break;
+        return;
       }
     }
 
-    this.currentTab.unwrap();
-
-    // If there are no more tabs open, close the actual application
-    if (this.tabs.size == 0) {
-      this.win.close();
-    }
+    this.win.close();
   }
 
   /**Attempt to close a tab.
@@ -499,7 +483,7 @@ export class Session {
   closeTab(ID: TabID): boolean {
     const tab = this.getTab(ID);
     if (tab instanceof StartTab) {
-      return true;
+      this.tabs.delete(ID);
     } else if ((tab instanceof AppTab || tab instanceof SettingsTab) && !tab.isClean) {
       const res = dialog.showMessageBoxSync(this.win, {
         title: "Unsaved Changes",
@@ -513,37 +497,37 @@ export class Session {
         case 0: {
           this.saveFile(false, ID);
           this.closeTab(ID);
-          return true;
         }
         case 1: {
           tab.isClean = true;
-          if (tab instanceof SettingsTab) {
-            throw new Error("Settings tab does not currently restore session settings on exit.");
-          }
           this.closeTab(ID);
-          return true;
         }
-        default: {
+        case 2: {
           return false;
         }
       }
-    } else {
-      // If it is not a start tab and it is not dirty, close the tab
-      this.tabs.delete(ID);
-      this.tabEventStack.push({ ID: ID, type: TabEventType.Close });
-      // Find the most recent navigate call with the tab still open and go to that
-      const targets = this.tabEventStack.toReversed().filter((event) => event.type == TabEventType.Navigate);
-      navloop: for (const event of targets) {
-        if (!this.tabs.get(event.ID)) {
-          continue navloop;
-        }
-        this.setCurrentTab(event.ID);
-        break navloop;
-      }
-      this.sendIPC(APIEvent.TabBarUpdate, this.serializeTabBarState());
-
-      return true;
     }
+    // If it is a start tab or is not dirty close the tab
+    this.tabs.delete(ID);
+    // If there are no more tabs open, close the actual application
+    if (this.tabs.size == 0) {
+      this.win.close();
+    }
+
+    this.tabEventStack.push({ ID: ID, type: TabEventType.Close });
+    // Find the most recent navigate call with the tab still open and go to that
+    const targets = this.tabEventStack.toReversed().filter((event) => event.type == TabEventType.Navigate);
+    navloop: for (const event of targets) {
+      if (!this.tabs.get(event.ID)) {
+        continue navloop;
+      }
+      this.setCurrentTab(event.ID);
+      break navloop;
+    }
+
+    this.sendIPC(APIEvent.TabBarUpdate, this.serializeTabBarState());
+
+    return true;
   }
 
   /**Update the character of a tab.
@@ -623,6 +607,15 @@ export class Session {
     this.sendIPC(APIEvent.TabBarUpdate, this.serializeTabBarState());
   }
 
+  isReadyToClose(): boolean {
+    for (const tab of this.tabs) {
+      if (tab instanceof AppTab || (tab instanceof SettingsTab && !tab.isClean)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   /**Register `IPC` event handlers for communication between the renderer and main process*/
   async initListeners() {
     // FIXME: Fix MAC behavior, really I want to just make it so that closing the window closes the app
@@ -646,8 +639,10 @@ export class Session {
     });
 
     this.win.on("close", (e) => {
-      e.preventDefault();
-      this.close();
+      if (this.tabs.size > 0 || !this.isReadyToClose()) {
+        e.preventDefault();
+        this.close();
+      }
     });
     // TODO: I do want to try and save stuff on blur or on changing tabs
     // but I don't want to to be hit with a savea
@@ -683,10 +678,6 @@ interface TabEvent {
   ID: TabID;
   type: TabEventType;
 }
-
-// If this.tabs.size > 1
-// Cycle back in the stack to the penultimate Navigate event
-// Navigate to that event
 
 enum TabEventType {
   Open = "Open",

@@ -26,6 +26,7 @@ export enum APIEvent {
   DisplayOptionsRequestUpdate = "displayopts:request:update",
   /**A request from the renderer for the main process to set the display options equal to the payload. */
   DisplayOptionsUpdate = "displayopts:update",
+  Error = "ERROR",
 }
 
 // TODO: Use this once we switch to single source of truth

@@ -52,9 +52,7 @@
  */
 .Tab {
   /* Sizing & Display */
-  flex: 0 1 100%; /* Tab will shrink to min width but not grow because grow */
-  max-width: 30vw;
-  min-width: 5vw;
+  flex: 0 0 20%; /* Tab will shrink to min width but not grow because grow */
   /* Child Content Display */
   display: flex;
   flex-direction: row;
@@ -102,7 +100,7 @@
   width: 5vmin;
   flex: 0 0 auto;
   color: #4000ff;
-  background-color: inherit;
+  background-color: transparent;
   border: solid transparent;
   border-radius: 0.5rem;
   cursor: pointer;

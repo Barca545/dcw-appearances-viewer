@@ -11,6 +11,9 @@ import { ButtonMouseEvent } from "./types";
 // - https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/tablist_role
 // - https://www.w3.org/WAI/ARIA/apg/patterns/tabs/
 
+// FIXME: Causes an error before it navigates to the correct page
+// Maybe I should merge that command into one instead of using two separate ones
+
 interface TabProps {
   selected: boolean;
   ID: TabID;

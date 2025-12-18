@@ -118,9 +118,9 @@ interface SessionLog {
   logs: Log[];
 }
 
-interface Log {
+export interface Log {
   time: string;
-  level: string;
+  level: LogLevel;
   name: string;
   message: string;
 }

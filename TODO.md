@@ -27,9 +27,9 @@
 
 ## Renderer Refactor
 
-- [ ] Retool pages in React
+- [x] Retool pages in React
 - [ ] Download the React [DevTools](https://react.dev/link/react-devtools)
-- [ ] Delete now extraneous `.ts` pages
+- [ ] Delete now extraneous `.ts` and `.html` pages
 - [ ] Allegedly no need to await `"dom-content-loaded"`
 
 ## Logging

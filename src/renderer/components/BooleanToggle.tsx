@@ -1,9 +1,8 @@
 import { JSX } from "react";
 import "./BooleanToggle.css";
-import type { InputChangeEventInput } from "./types";
 
 interface BooleanToggleProps {
-  onChange?: (e: InputChangeEventInput) => void;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   checked?: boolean;
   className?: string;
 }

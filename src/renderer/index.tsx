@@ -4,17 +4,16 @@ import App from "./App";
 import { HashRouter as Router, Routes, Route, useNavigate } from "react-router";
 import Layout from "./Layout";
 import Start from "./Start";
-import { SerializedTabBarState } from "src/common/ipcAPI";
+import { SerializedTabBarState } from "../common/ipcAPI";
 
 // FIXME:
 // - Add scrollbar to TabBar
-// - Tab Bar shrinks too small before it starts expanding
-//  - I think maybe I can remove shrinking
-// - Style the add tab button
-// - Cannot close the Original Start tab even if other tabs
-// - Clicking open on a start page does nothing
 // - Start page opens in new tab instead of same tab
 // - Searching on an app tab does nothing
+// - Add logging renderer errors and sending logs to cloudflare
+
+// contains origin location
+// error.stack;
 
 const root = createRoot(document.getElementById("root") as HTMLElement);
 // Be cool if I could use a local context for the tab bar not a full store just something more straightforward

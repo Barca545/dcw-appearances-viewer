@@ -65,12 +65,14 @@ export const DEFAULT_FILTER_OPTIONS: DisplayOptions = {
 // Keep this flat so it can be iterated over
 export interface Settings {
   theme: "system" | "light" | "dark";
-  earthDropdownType: "user" | "external";
+  // FIXME: I don't want to have this,
+  // just do the same with names and have it autofill
+  // with the default value being prime earth
+  // earthDropdownType: "user" | "external";
   width: string;
   height: string;
-  fontSizeUseDefault: "true" | "false";
-  fontSizeChoose: string;
-  updateFrequency: "auto" | "prompt";
+  fontSize: string;
+  updateFrequency: "nightly" | "major" | "prompt";
 }
 
 // TODO: List entry should be in shared?
