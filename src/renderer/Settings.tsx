@@ -1,57 +1,84 @@
-import React, { JSX, useEffect, useState } from "react";
+import React, { FormEventHandler, JSX, useEffect, useState } from "react";
 import BooleanToggle from "../renderer/components/BooleanToggle";
-import { Settings } from "../common/apiTypes";
-// TODO: Why is the window.API not availible here
+import { Settings, SettingsTheme } from "../common/apiTypes";
+import "../renderer/settings.css";
+import { TabID } from "../common/ipcAPI";
+import LoadingSpinner from "./components/LoadingSpinner";
+import AccessibilitySettings from "./components/AccessibilitySettings";
+import ThemeSettings from "./components/ThemeSettings";
+import SaveSettings from "./components/SaveSettings";
 
-// TODO: Setting should always open in new window
-// TODO: I don't think I'm doing these field components properly.
-// I am not actually sure each field should be its own component even if I like modularizing it
+// TODO: Settings do not seem to be updateing
 
-export default function Settings() {
-  const [settings, setSettings] = useState<null>(null);
+export default function Settings({ ID }: { ID: TabID }) {
+  const [settings, setSettings] = useState<null | Settings>(null);
 
   useEffect(() => {
-    // TODO: This needs to load the settings file from the main process
-  });
+    window.API.settings.request().then((state) => setSettings(state));
 
-  const handleSave = (e: FormData) => {
-    // TODO: This needs to save the settings file to the main process
+    // TODO: Register a listener for updates
+    window.API.settings.onUpdate((state) => setSettings(state.settings));
+
+    return window.API.settings.removeUpdateListener;
+  }, []);
+
+  if (!settings) {
+    return <LoadingSpinner />;
+  }
+
+  const handleApply = () => window.API.settings.apply({ ID, settings });
+
+  const handleSave = () => window.API.settings.save({ ID, settings });
+
+  const handleReset = () => window.API.settings.reset(ID);
+
+  const handleSaveAndClose = () => {
+    handleSave();
+    window.API.tab.close(ID);
   };
 
-  const handleSaveAndClose = (e: FormData) => {};
+  const handleThemeChange = (e: React.FormEvent<HTMLInputElement>) =>
+    setSettings({ ...settings, theme: e.currentTarget.value as SettingsTheme });
 
-  const handleChange = (e: React.FormEvent) => {};
+  const handleSaveFrequencyChange = (value: string) =>
+    setSettings({ ...settings, saveSettings: { ...settings.saveSettings, autosaveFrequency: value } });
+
+  const handleSaveOnBlurChange = (value: boolean) =>
+    setSettings({ ...settings, saveSettings: { ...settings.saveSettings, saveOnBlur: value } });
+
+  const handleAutosaveChange = (value: boolean) => {
+    setSettings({ ...settings, saveSettings: { ...settings.saveSettings, autosave: value } });
+  };
+
+  const handleChangeFontSize = (value: string) => setSettings({ ...settings, fontSize: value });
 
   return (
-    <form id="settings" action={handleSave} onChange={handleChange}>
-      <button type="button" id="save" className="save-button" name="save-settings">
-        Save
-      </button>
-      <button type="button" id="save-and-close" className="save-button" name="save-settings">
-        Save and Close
-      </button>
-      <button>Reset Settings</button>
+    <form id="settings" className="settings-form">
+      <ThemeSettings value={settings.theme} onChange={handleThemeChange} />
+      <SaveSettings
+        saveOnBlur={settings.saveSettings.saveOnBlur}
+        onSaveOnBlurChange={handleSaveOnBlurChange}
+        onSaveFrequencyChange={handleSaveFrequencyChange}
+        autosave={settings.saveSettings.autosave}
+        onAutosaveChange={handleAutosaveChange}
+        saveFrequency={settings.saveSettings.autosaveFrequency}
+      />
+      <AccessibilitySettings fontSize={settings.fontSize} setFontSize={handleChangeFontSize} />
+      <fieldset className="settings-subsection" id="save-buttons">
+        <button type="button" id="apply" className="save-button" name="apply" onClick={handleApply}>
+          Apply
+        </button>
+        <button type="button" id="save" className="save-button" name="save-settings" onClick={handleSave}>
+          Save
+        </button>
+        <button type="button" id="save-and-close" className="save-button" name="save-settings" onClick={handleSaveAndClose}>
+          Save and Close
+        </button>
+        <button type="button" id="reset" className="save-button" onClick={handleReset}>
+          Reset Settings
+        </button>
+      </fieldset>
     </form>
-  );
-}
-
-function Theme(): JSX.Element {
-  return (
-    <fieldset className="settings-subsection" id="Theme">
-      <legend className="settings-subsection-title">Theme</legend>
-      <label className="theme-label" htmlFor="theme:system">
-        System
-      </label>
-      <input type="radio" id="theme:system" name="theme" value="system" />
-      <label className="theme-label" htmlFor="theme:dark">
-        Dark
-      </label>
-      <input type="radio" id="theme:dark" name="theme" value="dark" />
-      <label className="theme-label" htmlFor="theme:light">
-        Light
-      </label>
-      <input type="radio" id="theme:light" name="theme" value="light" />
-    </fieldset>
   );
 }
 
@@ -68,41 +95,6 @@ function WindowSize(): JSX.Element {
   );
 }
 
-function SaveSettings({ shouldAutosave }: { shouldAutosave: boolean }): JSX.Element {
-  const [checked, setChecked] = useState(shouldAutosave);
-
-  return (
-    <fieldset>
-      <legend className="settings-subsection-title">Save Settings</legend>
-      <label htmlFor="">Autosave</label>
-      <input id="save-settings-autosave" name="" type="radio" />
-      <label>Save on Blur</label>
-      <BooleanToggle checked={checked} onChange={(e) => setChecked(e.currentTarget.checked)} />
-    </fieldset>
-  );
-}
-
-function Accessibility(): JSX.Element {
-  return (
-    <fieldset id="settings-accessibility">
-      <legend className="settings-subsection-title">Accessibility Options</legend>
-      <fieldset className="settings-subsection" id="screen-reader">
-        <legend className="settings-subsection-title">Screen Reader Support</legend>
-      </fieldset>
-      <fieldset className="settings-subsection" id="ease-of-access">
-        <legend className="settings-subsection-title">Ease of Access</legend>
-      </fieldset>
-      <fieldset className="settings-subsection" id="display">
-        <legend className="settings-subsection-title">Display</legend>
-        <label htmlFor="font-size" />
-        <input type="number" min="16" id="font-size" name="font-size" />
-        <label htmlFor="high-contrast" />
-        <div id="high-contrast">UNIMPLEMENTED</div>
-      </fieldset>
-    </fieldset>
-  );
-}
-
 function UpdatePreferences(): JSX.Element {
   return (
     <fieldset className="settings-subsection">
@@ -115,14 +107,4 @@ function UpdatePreferences(): JSX.Element {
       </select>
     </fieldset>
   );
-}
-
-function htmlFormtoSettings(data: FormData): Settings {
-  return {
-    theme: data.get("theme") as "system" | "light" | "dark",
-    width: data.get("width") as string,
-    height: data.get("height") as string,
-    fontSize: data.get("font-size") as string,
-    updateFrequency: data.get("update-frequency") as "nightly" | "major" | "prompt",
-  } satisfies Settings;
 }

@@ -27,7 +27,7 @@ export default function App({ ID }: AppTabProps): JSX.Element {
 
   useEffect(
     () =>
-      window.API.tab.update((state) => {
+      window.API.tab.onUpdate((state) => {
         setTabData(state as SerializedAppTab);
         setIsPending(false);
       }),

@@ -1,1 +1,12 @@
-{ "theme": "system", "earthDropdownType": "user", "width": "900", "height": "800", "updateFrequency": "auto" }
+{
+  "theme": "system",
+  "width": "900",
+  "height": "800",
+  "fontSize": "16",
+  "updateFrequency": "MAJOR",
+  "saveSettings": {
+    "saveOnBlur": true,
+    "autosave": true,
+    "autosaveFrequency": 300000
+  }
+}

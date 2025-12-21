@@ -4,11 +4,10 @@ import App from "./App";
 import { HashRouter as Router, Routes, Route, useNavigate } from "react-router";
 import Layout from "./Layout";
 import Start from "./Start";
+import Settings from "./Settings";
 import { SerializedTabBarState } from "../common/ipcAPI";
 
 // FIXME:
-// - Add scrollbar to TabBar
-// - Start page opens in new tab instead of same tab
 // - Searching on an app tab does nothing
 // - Add logging renderer errors and sending logs to cloudflare
 
@@ -31,7 +30,7 @@ function TabRoutes(): JSX.Element {
 
   useEffect(() => {
     window.API.tabBar.requestTabBarState().then((update) => setTabs(update));
-    window.API.tabBar.update((update) => {
+    window.API.tabBar.onUpdate((update) => {
       setTabs(update);
       navigate(update.selected);
     });
@@ -46,6 +45,8 @@ function TabRoutes(): JSX.Element {
             return <Route key={tab.meta.ID} path={`/${tab.meta.ID}`} element={<App ID={tab.meta.ID} />} />;
           } else if (tab.TabType == "START") {
             return <Route key={tab.meta.ID} path={`/${tab.meta.ID}`} element={<Start />} />;
+          } else if (tab.TabType == "SETTINGS") {
+            return <Route key={tab.meta.ID} path={`/${tab.meta.ID}`} element={<Settings ID={tab.meta.ID} />} />;
           }
         })}
       </Route>

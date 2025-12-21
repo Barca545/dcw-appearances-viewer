@@ -62,20 +62,48 @@ export const DEFAULT_FILTER_OPTIONS: DisplayOptions = {
   dir: DisplayDirection.Ascending,
 };
 
-// Keep this flat so it can be iterated over
+export enum SettingsTheme {
+  System = "system",
+  Light = "light",
+  Dark = "dark",
+}
+
+export namespace SettingsTheme {
+  export function from(value: string): Option<SettingsTheme> {
+    switch (value) {
+      case SettingsTheme.System: {
+        return new Some(SettingsTheme.System);
+      }
+      case SettingsTheme.Light: {
+        return new Some(SettingsTheme.Light);
+      }
+      case SettingsTheme.Dark: {
+        return new Some(SettingsTheme.Dark);
+      }
+      default: {
+        return new None();
+      }
+    }
+  }
+}
+
+export type SettingsUpdateFrequency = "NIGHTLY" | "MAJOR" | "PROMPT";
+
+interface SaveSettings {
+  saveOnBlur: boolean;
+  autosave: boolean;
+  /**How often the applications should autosave in milliseconds. */
+  autosaveFrequency: string;
+}
+
 export interface Settings {
-  theme: "system" | "light" | "dark";
-  // FIXME: I don't want to have this,
-  // just do the same with names and have it autofill
-  // with the default value being prime earth
-  // earthDropdownType: "user" | "external";
+  theme: SettingsTheme;
   width: string;
   height: string;
   fontSize: string;
-  updateFrequency: "nightly" | "major" | "prompt";
+  saveSettings: SaveSettings;
+  updateFrequency: SettingsUpdateFrequency;
 }
-
-// TODO: List entry should be in shared?
 
 export interface AppMessages {
   unsavedChanges: string;

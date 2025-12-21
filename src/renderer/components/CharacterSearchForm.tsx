@@ -3,6 +3,7 @@ import { SearchRequest } from "../../common/TypesAPI";
 import { TabID } from "../../common/ipcAPI";
 
 // TODO: The earths can be generated programatically by mapping a list. Either my handwritten one or the one pulled from the server
+// TODO: Use optinistic can be used to set the loading state
 const EARTHS = ["Prime Earth", "New Earth", "Earth-One", "Earth-Two"];
 
 interface CharacterSearchFormProps {

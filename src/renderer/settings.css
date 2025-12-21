@@ -3,3 +3,18 @@
 /* #fontSizeChooseWrapper:disabled {
   display: none;
 } */
+
+#settings {
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-subsection {
+  display: flex;
+  align-items: baseline;
+  flex-direction: column;
+}
+
+#save-buttons {
+  display: inline-block;
+}

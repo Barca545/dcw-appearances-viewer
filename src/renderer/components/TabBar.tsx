@@ -96,7 +96,7 @@ export default function TabBar(): JSX.Element {
     window.API.tabBar.requestTabBarState().then((state) => setTabBarState(state));
 
     // Register a listener
-    window.API.tabBar.update((state) => setTabBarState(state));
+    window.API.tabBar.onUpdate((state) => setTabBarState(state));
   }, []);
 
   function tabToIdx(node: Element): number {

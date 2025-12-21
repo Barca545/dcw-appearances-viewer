@@ -29,7 +29,7 @@
 
 - [x] Retool pages in React
 - [ ] Download the React [DevTools](https://react.dev/link/react-devtools)
-- [ ] Delete now extraneous `.ts` and `.html` pages
+- [x] Delete now extraneous `.ts` and `.html` pages
 - [ ] Allegedly no need to await `"dom-content-loaded"`
 
 ## Logging
@@ -37,10 +37,11 @@
 - [ ] Create user info file that gets submitted with log reports
 - [ ] Add a send logs option to the menu
 - [ ] Add ability to send crash reports alongside logs
+- [ ] Add renderer logging
 
 ## Saving
 
-- [x] Exiting with unsaved changes prompts user to "Save", "Don't Save", or "Cancel".
+- [ ] Exiting with unsaved changes prompts user to "Save", "Don't Save", or "Cancel".
 
 ## Error Fixes
 

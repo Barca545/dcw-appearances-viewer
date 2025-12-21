@@ -1,3 +1,8 @@
+:root {
+  --base-font-size: 16px;
+  font-size: var(--base-font-size);
+}
+
 @media (prefers-color-scheme: dark) {
   body {
     background: black;

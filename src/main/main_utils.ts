@@ -22,9 +22,11 @@ export const UNIMPLEMENTED_FEATURE = () => {
 };
 
 /** Path to the Application's resource folder. */
-export const RESOURCE_PATH = IS_DEV ? `${process.cwd()}/resources` : `${process.resourcesPath}`;
+export const RESOURCE_PATH = IS_DEV ? path.join(process.cwd(), "resources") : `${process.resourcesPath}`;
 /**The path to the program's "Update.exe". */
 export const UPDATE_PATH = path.join(app.getPath("exe"), "..", "..", "Update.exe");
+/**This is the path to the user's settings file, "settings.json" */
+export const SETTINGS_PATH = path.join(app.getPath("userData"), "settings.json");
 
 export const MESSAGES: AppMessages = JSON.parse(fs.readFileSync(`${RESOURCE_PATH}/appMessages.json`, { encoding: "utf-8" }));
 export const APP_NAME = "dcdb_appearances_viewer";

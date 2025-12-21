@@ -1,17 +1,16 @@
 import { loadList, Path, ProjectData, ProjectDataFromJSON } from "../../core/load";
 import { None, Option, Some } from "../../core/option";
-import { app, BrowserWindow, dialog, ipcMain, Menu, shell } from "electron";
+import Electron, { app, BrowserWindow, dialog, ipcMain, Menu, shell } from "electron";
 import path from "node:path";
-import { DEFAULT_FILTER_OPTIONS, DisplayOptions, DisplayOrder } from "../common/apiTypes";
-import { RESOURCE_PATH, IS_DEV, __userdata, MESSAGES, UNIMPLEMENTED_FEATURE, IS_MAC, APPID, ROOT_DIRECTORY } from "./main_utils";
+import { DEFAULT_FILTER_OPTIONS, DisplayOptions, DisplayOrder, Settings } from "../common/apiTypes";
+import { RESOURCE_PATH, SETTINGS_PATH, IS_DEV, __userdata, MESSAGES, IS_MAC, APPID, ROOT_DIRECTORY } from "./main_utils";
 import fs from "node:fs";
 import type {
   DataTab,
   SearchRequest,
   SerializedAppTab,
   SerializedSettingsTab,
-  Settings,
-  SettingsUpdate,
+  SettingsTabUpdate,
   Tab,
   TabDataUpdate,
   TabStaticInterface,
@@ -37,6 +36,7 @@ interface APIEventMap {
   [APIEvent.TabGo]: TabID;
   [APIEvent.TabClose]: TabID;
   [APIEvent.TabBarUpdate]: SerializedTabBarState;
+  [APIEvent.SettingsUpdate]: SerializedSettingsTab;
 }
 
 // TODO: I think it is fine for tab go
@@ -61,7 +61,7 @@ export class SettingsTab implements DataTab {
     this.meta = { ID: TabID.create(), tabName: "Settings" };
     this.data = SettingsTab.getSettings();
     this.isClean = true;
-    this.savePath = new Some(new Path(app.getPath("userData"), "settings.json"));
+    this.savePath = new Some(new Path(SETTINGS_PATH));
   }
 
   serialize(): SerializedSettingsTab {
@@ -238,6 +238,11 @@ export class Session {
   tabs: Map<TabID, Tab>;
   tabEventStack: TabEvent[];
   currentTab: Option<TabID>;
+  // TODO: This needs to refresh whenever a save happens
+  // TODO: This should probably also be per tab but I am lazy
+  // TODO: One way to do this might be a map of IDs and timers for each tab or including it in the original Map. I don't want to make it part of the session classes themselves but otoh...
+  /**The timeout which controls the autosave process. */
+  autosave?: NodeJS.Timeout;
 
   constructor() {
     const settings = Session.getSettings();
@@ -247,14 +252,13 @@ export class Session {
     this.win = Session.makeWindow(settings);
     this.currentTab = new None();
 
-    console.log(process.env.NODE_ENV);
-
     // Load Contents
     // The Renderer is basically running an SPA so we only need to load the index
     if (IS_DEV) {
+      // This is a literal because it is not a string but a url
       this.win.loadURL(`${ROOT_DIRECTORY}/src/renderer/index.html`);
     } else {
-      this.win.loadFile(path.join(__dirname, "..", "renderer", MAIN_WINDOW_VITE_NAME, "src", "renderer", `index.html`));
+      this.win.loadFile(path.join(ROOT_DIRECTORY, "..", "renderer", MAIN_WINDOW_VITE_NAME, "src", "renderer", `index.html`));
     }
 
     this.win.setMenu(Menu.buildFromTemplate(MENU_TEMPLATE(this)));
@@ -264,6 +268,9 @@ export class Session {
       // Because this assigns the current tab internally it means the current tab is definitely initialized
       this.newStartTab();
     });
+
+    // Set settings
+    this.applySettings(this.settings);
   }
 
   /**Creates a new empty `AppTab`.
@@ -330,20 +337,34 @@ export class Session {
   /**Create a new Start Tab.
    * Insert the new tab into the `Session`'s tabs list.
    * Send the data to the renderer.
-   * Return a ref to the tab.
    */
   newStartTab() {
     const tab = StartTab.default();
+    this.tabs.set(tab.meta.ID, tab);
     this.tabEventStack.push({ ID: tab.meta.ID, type: TabEventType.Open });
     this.currentTab = new Some(tab.meta.ID);
     this.tabEventStack.push({ ID: tab.meta.ID, type: TabEventType.Navigate });
-    this.tabs.set(tab.meta.ID, tab);
     this.sendIPC(APIEvent.TabUpdate, tab.serialize());
     this.sendIPC(APIEvent.TabBarUpdate, this.serializeTabBarState());
     this.sendIPC(APIEvent.TabGo, tab.meta.ID);
   }
 
-  /**Save a tab's `ProjectData` and mark the tab as clean. If no id is provided, defaults to the current tab.*/
+  /**Create a new Settings Tab.
+   * Insert the new tab into the `Session`'s tabs list.
+   * Send the data to the renderer.
+   */
+  newSettingsTab() {
+    const tab = SettingsTab.default();
+    this.tabs.set(tab.meta.ID, tab);
+    this.tabEventStack.push({ ID: tab.meta.ID, type: TabEventType.Open });
+    this.currentTab = new Some(tab.meta.ID);
+    this.tabEventStack.push({ ID: tab.meta.ID, type: TabEventType.Navigate });
+    this.sendIPC(APIEvent.TabUpdate, tab.serialize());
+    this.sendIPC(APIEvent.TabBarUpdate, this.serializeTabBarState());
+    this.sendIPC(APIEvent.TabGo, tab.meta.ID);
+  }
+
+  /**Save a tab's `ProjectData` and mark the tab as clean. If no ID is provided, defaults to the current tab.*/
   saveFile(mustSaveAs: boolean, id?: TabID) {
     // Confirm tab is not a start tab
     const tab = this.getTab(id ? id : this.currentTab.unwrap());
@@ -379,22 +400,18 @@ export class Session {
       tab.data.saveAsJSON(tab.savePath.unwrap());
       tab.isClean = true;
     } else if (tab instanceof SettingsTab) {
-      UNIMPLEMENTED_FEATURE();
-      throw new Error("Saving Settings is not implemented yet");
+      fs.writeFileSync(SETTINGS_PATH, JSON.stringify(tab.data), { encoding: "utf-8" });
     }
   }
 
-  /**Try to save a tab. Will fail if it does not have a save path. */
+  /**Try to save a tab. Will fail if it does not have a save path. Defaults to saving the `currentTab`.*/
   trysave(id?: TabID) {
     const tab = this.getTab(id ? id : this.currentTab.unwrap());
-    if (tab instanceof StartTab) {
+    if (tab instanceof StartTab || tab instanceof SettingsTab) {
       return;
     } else if (tab instanceof AppTab && tab.savePath.isSome()) {
       tab.data.saveAsJSON(tab.savePath.unwrap());
       tab.isClean = true;
-    } else if (tab instanceof SettingsTab) {
-      UNIMPLEMENTED_FEATURE();
-      throw new Error("Saving Settings is not implemented yet");
     }
   }
 
@@ -450,14 +467,6 @@ export class Session {
     }
   }
 
-  // /**Tell the renderer to change to the current tab. */
-  // // TODO: Why does this function exist? It feels redundant
-  // changeTab() {
-  //   this.sendIPC(APIEvent.TabGo, this.currentTab.unwrap());
-  //   // Update the tab stack
-  //   this.tabEventStack.push({ ID: this.currentTab.unwrap(), type: TabEventType.Navigate });
-  // }
-
   /**Close all open tabs then close the window.*/
   close() {
     // Keys to remove
@@ -507,6 +516,10 @@ export class Session {
         }
       }
     }
+    // Reopen the settings and set the settings to that
+    // TODO: Lazy probably better way than doing an fs call
+    this.applySettings(Session.getSettings());
+
     // If it is a start tab or is not dirty close the tab
     this.tabs.delete(ID);
     // If there are no more tabs open, close the actual application
@@ -561,20 +574,59 @@ export class Session {
     this.sendIPC(APIEvent.TabUpdate, tab.serialize());
   }
 
-  /**Apply the update to the current session without saving it to userdata.
-   *
-   * Send the changes to the renderer.*/
-  applySettings(update: SettingsUpdate) {
-    const tab = this.getTab(update.id) as SettingsTab;
-    throw new Error("Session::applySettings is unimplemented");
+  /**Set or reset the session's autosave timer */
+  setAutoSave(len: string) {
+    // Clear any preexisting timer
+    if (this.autosave) {
+      this.autosave.close();
+    }
+    // Set the timer
+    this.autosave = setInterval(() => this.tabs.keys().forEach((id) => this.trysave(id)), Number.parseInt(len));
   }
 
-  /**Apply the update to the current session and save it to userdata.
+  /**Restart the autosave timer. */
+  resetAutoSave() {
+    if (this.autosave) this.autosave.refresh();
+  }
+
+  /**Update the current session's settings without saving them to userdata.
    *
-   * Send the changes to the renderer. */
-  saveSettings(update: SettingsUpdate) {
-    this.applySettings(update);
-    throw new Error("Session::saveSettings is unimplemented");
+   * Send the changes to the renderer.*/
+  applySettingsFromRenderer(update: SettingsTabUpdate) {
+    const tab = this.getTab(update.ID) as SettingsTab;
+    // Update the current tab
+    tab.data = update.settings;
+    tab.isClean = false;
+    this.applySettings(update.settings);
+    // Send back to the renderer, inefficient but preserves state
+    this.sendIPC(APIEvent.SettingsUpdate, tab.serialize());
+  }
+
+  applySettings(settings: Settings) {
+    // Update the actual session settings data
+    this.settings = settings;
+    // Apply the theme settings
+    Electron.nativeTheme.themeSource = settings.theme;
+    // TODO: apply window size changes
+    this.win.setSize(Number.parseInt(settings.width), Number.parseInt(settings.height));
+    // TODO: Apply fontsize
+    this.win.webContents.executeJavaScript(
+      `document.documentElement.style.setProperty("--base-font-size","${settings.fontSize}px");`,
+    );
+    // TODO: Apply update frequency
+    // TODO: Apply autosave frequency if there is a difference between the two
+    this.setAutoSave(settings.saveSettings.autosaveFrequency);
+  }
+
+  resetSettings(ID: TabID) {
+    const settings = JSON.parse(fs.readFileSync(path.join(RESOURCE_PATH, "settings.json"), { encoding: "utf-8" })) as Settings;
+    let tab = this.tabs.get(ID) as SettingsTab;
+    tab.data = settings;
+    tab.isClean = false;
+    this.settings = settings;
+    this.saveFile(false, ID);
+    this.applySettings(settings);
+    this.sendIPC(APIEvent.SettingsUpdate, tab.serialize());
   }
 
   sendIPC<K extends keyof APIEventMap>(type: K, payload: APIEventMap[K]) {
@@ -665,8 +717,12 @@ export class Session {
 
     // SETTINGS LISTENERS
     ipcMain.handle(APIEvent.SettingsRequest, () => this.settings);
-    ipcMain.on(APIEvent.SettingsApply, (_e, settings: SettingsUpdate) => this.applySettings(settings));
-    ipcMain.on(APIEvent.SettingsSave, (_e, settings: SettingsUpdate) => this.saveSettings(settings));
+    ipcMain.on(APIEvent.SettingsApply, (_e, settings: SettingsTabUpdate) => this.applySettingsFromRenderer(settings));
+    ipcMain.on(APIEvent.SettingsSave, (_e, settings: SettingsTabUpdate) => {
+      this.applySettingsFromRenderer(settings);
+      this.saveFile(false);
+    });
+    ipcMain.on(APIEvent.SettingsReset, (_e, ID) => this.resetSettings(ID));
 
     // DISPLAY STYLE LISTENERS
     ipcMain.on(APIEvent.DisplayOptionsRequestUpdate, (_e, opts: DisplayOptions) => this.updateDisplayOptions(opts));

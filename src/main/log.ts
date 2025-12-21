@@ -153,3 +153,10 @@ async function makeUserInfoUserInfo(): Promise<UserInfo> {
     processInfo: app.getAppMetrics(),
   };
 }
+
+interface ErrorReport {
+  ip: string;
+  title: string;
+  message: string;
+  logs: LogFile;
+}

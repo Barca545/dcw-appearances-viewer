@@ -1,20 +1,7 @@
 import { Path } from "../../core/load";
-import type { DisplayDensity, DisplayDirection, DisplayOptions, DisplayOrder } from "./apiTypes";
+import type { DisplayDensity, DisplayDirection, DisplayOptions, DisplayOrder, Settings } from "./apiTypes";
 import { Option } from "../../core/option";
 import { TabID } from "./ipcAPI";
-
-// TODO: This mostly seems to control serialized stuff so reorganize into just those
-
-export interface Settings {
-  theme: "system" | "light" | "dark";
-  earthDropdownType: "user" | "external";
-  width: string;
-  height: string;
-  fontSizeUseDefault: "true" | "false";
-  fontSizeChoose: string;
-  updateFrequency: "auto" | "prompt";
-  // Also want to add default settings to this
-}
 
 /**Interface containing the data used to construct a list entry. The return result of window.api.form.submit */
 export interface SerializedListEntry {
@@ -106,7 +93,8 @@ export interface DisplayDirectionUpdate {
   dir: DisplayDirection;
 }
 
-export interface SettingsUpdate {
-  readonly id: TabID;
+// TODO: Honestly, this could probably be used interchangeably with the serializedsettingstab
+export interface SettingsTabUpdate {
+  readonly ID: TabID;
   settings: Settings;
 }
