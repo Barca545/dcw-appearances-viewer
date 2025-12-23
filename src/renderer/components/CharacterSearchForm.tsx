@@ -1,4 +1,4 @@
-import { Fragment, useState, JSX } from "react";
+import { useState, JSX } from "react";
 import { SearchRequest } from "../../common/TypesAPI";
 import { TabID } from "../../common/ipcAPI";
 
@@ -13,44 +13,45 @@ interface CharacterSearchFormProps {
 
 export default function CharacterSearchForm({ ID, setLoadState }: CharacterSearchFormProps): JSX.Element {
   const [name, setName] = useState("");
+  const [earth, setEarth] = useState(`(${EARTHS[0]})`);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    const msg = new FormData(e.target as HTMLFormElement);
-    const rawData = Object.fromEntries(msg.entries());
-    const data = {
+  const handleAction = (data: FormData) => {
+    const req = {
       id: ID,
-      character: rawData["character-selection"] as unknown as string,
-      universe: rawData["universe-select"] as unknown as string,
+      character: data.get("character-name") as string,
+      universe: data.get("character-universe") as string,
     } satisfies SearchRequest;
 
+    // TODO: I still dislike that loadstate is being set here
     // Tell user a load is happening
     setLoadState(true);
-    window.API.tab.search(data);
+    window.API.tab.search(req);
   };
 
   return (
-    <Fragment>
-      <label htmlFor="character-selection">
-        Get Appearances
-        <form id="character-search-form" onSubmit={handleSubmit}>
-          <input
-            type="search"
-            id="character-selection"
-            name="character-selection"
-            placeholder="Character Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            autoFocus
-          />
-          <input list="earths-list" id="earth" name="universe-select" placeholder={`(${EARTHS[0]})`} />
-          <EarthsList />
-          <button type="submit">Submit</button>
-        </form>
-      </label>
-    </Fragment>
+    <form id="character-search-form" action={handleAction}>
+      <label htmlFor="character-selection">Get Appearances</label>
+      <input
+        type="search"
+        id="character-name"
+        name="character-name"
+        placeholder="Character Name"
+        value={name}
+        onChange={(e) => setName(e.currentTarget.value)}
+        required
+        autoFocus
+      />
+      <input
+        list="earths-list"
+        id="earth"
+        name="character-universe"
+        defaultValue={earth}
+        placeholder={earth}
+        onChange={(e) => setEarth(e.currentTarget.value)}
+      />
+      <EarthsList />
+      <button type="submit">Submit</button>
+    </form>
   );
 }
 

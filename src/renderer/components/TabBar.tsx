@@ -1,9 +1,10 @@
 import { useRef, MouseEventHandler, JSX, useState, useEffect, DragEventHandler } from "react";
 import "./TabBar.css";
-import { NavLink, To } from "react-router";
+import { To } from "react-router";
 import { SerializedTabBarState, TabID } from "src/common/ipcAPI";
 import HorizontalScrollBar from "./ScrollBar";
 import { ButtonMouseEvent } from "./types";
+import { isSerializedDataTab } from "../../common/TypesAPI";
 
 // https://stackoverflow.com/questions/42495731/should-i-use-react-router-for-a-tabs-component
 
@@ -16,10 +17,10 @@ import { ButtonMouseEvent } from "./types";
 
 interface TabProps {
   selected: boolean;
+  isClean: boolean;
   ID: TabID;
   tabName: string;
   to: To;
-  onClick?: MouseEventHandler;
   onClose?: MouseEventHandler;
   onDragStart?: DragEventHandler;
   onDragEnter?: DragEventHandler;
@@ -28,13 +29,11 @@ interface TabProps {
   onDragEnd?: DragEventHandler;
 }
 
-// TODO: I think there is another way to do the selecting
-
 function Tab({
   selected,
+  isClean,
   tabName,
   to,
-  onClick,
   onClose,
   onDragStart,
   onDragEnter,
@@ -42,9 +41,7 @@ function Tab({
   onDragEnd,
   onDrop,
 }: TabProps): JSX.Element {
-  // TODO: onClick needs to go down to the navlink but also not disrupt it
-  // TODO: NavLink style change needs to bubble up to the Tab
-  // TODO: Dragable does not seem to get inherited
+  const handleNavigate = () => window.API.tab.setCurrent(to as TabID);
 
   const handleClose = (e: ButtonMouseEvent) => {
     e.preventDefault();
@@ -56,9 +53,8 @@ function Tab({
 
   return (
     <li
-      // style={{ all: "unset" }}
       className={["Tab", selected && "selected"].filter(Boolean).join(" ")}
-      onClick={onClick}
+      onClick={handleNavigate}
       draggable={true}
       onDragStart={onDragStart}
       onDragOver={onDragEnter}
@@ -66,11 +62,10 @@ function Tab({
       onDrop={onDrop}
       onDragEnd={onDragEnd}
     >
-      <NavLink className={"tab-content"} to={to} onClick={onClick}>
-        {tabName}
-      </NavLink>
+      <span className={"tab-content"}>{tabName}</span>
+      <span className="unsaved-indicator" style={{ visibility: isClean ? "hidden" : "visible" }} />
       <button className={"tab-close-button"} onClick={handleClose}>
-        X
+        <b>✕</b>
       </button>
     </li>
   );
@@ -97,6 +92,8 @@ export default function TabBar(): JSX.Element {
 
     // Register a listener
     window.API.tabBar.onUpdate((state) => setTabBarState(state));
+
+    return window.API.tabBar.removeUpdateListener;
   }, []);
 
   function tabToIdx(node: Element): number {
@@ -174,29 +171,29 @@ export default function TabBar(): JSX.Element {
     setDraggedTabIdx(null);
   };
 
-  const handleNavigate = (ID: TabID) => window.API.tab.setCurrent(ID);
-
   return (
     <div className={"TabBar"}>
       <nav>
         {/* TODO: I think I want the LI to be a part of the list not built into the tabs */}
         <ol className="tab-bar-contents">
-          {tabBarState?.list.map((tab) => (
-            <Tab
-              key={tab.meta.ID}
-              onDragStart={handleDragStart}
-              onDragEnter={onDragEnter}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              onDragEnd={handleDragEnd}
-              ID={tab.meta.ID}
-              tabName={tab.meta.tabName}
-              selected={tab.meta.ID == tabBarState.selected}
-              to={tab.meta.ID}
-              onClick={() => handleNavigate(tab.meta.ID)}
-              onClose={() => window.API.tab.close(tab.meta.ID)}
-            />
-          ))}
+          {tabBarState?.list.map((tab) => {
+            return (
+              <Tab
+                key={tab.meta.ID}
+                isClean={isSerializedDataTab(tab) ? tab.isClean : true}
+                onDragStart={handleDragStart}
+                onDragEnter={onDragEnter}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onDragEnd={handleDragEnd}
+                ID={tab.meta.ID}
+                tabName={tab.meta.tabName}
+                selected={tab.meta.ID == tabBarState.selected}
+                to={tab.meta.ID}
+                onClose={() => window.API.tab.close(tab.meta.ID)}
+              />
+            );
+          })}
           <li style={{ all: "unset" }}>
             <button className="AddTab" onClick={() => window.API.open.tab()}>
               +

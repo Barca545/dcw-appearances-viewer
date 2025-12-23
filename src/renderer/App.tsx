@@ -19,20 +19,17 @@ export default function App({ ID }: AppTabProps): JSX.Element {
   // Indicates whether a search is pending
   const [isPending, setIsPending] = useState(false);
 
-  // First time it loads, get the data from the main process
-  // FIXME: I think technically this causes a bunch of memory leaks because it never deregisters the listeners
   useEffect(() => {
     window.API.tab.requestTabState().then((state) => setTabData(state as SerializedAppTab));
-  }, []);
 
-  useEffect(
-    () =>
-      window.API.tab.onUpdate((state) => {
+    window.API.tab.onUpdate((state) => {
+      if (state.meta.ID == ID) {
         setTabData(state as SerializedAppTab);
         setIsPending(false);
-      }),
-    [],
-  );
+      }
+    });
+    return window.API.tab.removeUpdateListeners;
+  }, []);
 
   // TODO: This should be centered in the middle of the field
   if (!tabData) {

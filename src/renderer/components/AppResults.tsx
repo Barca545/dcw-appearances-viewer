@@ -33,9 +33,10 @@ export default function ResultsList({ ID, list, density }: ResultsListProps): JS
     }
   };
 
+  // TODO: I think the fragment wrapper is unnecessary
   return (
     <Fragment>
-      <label htmlFor={ID}></label>
+      <label htmlFor={ID} />
       <div id={ID}>
         <Entries />
       </div>
@@ -48,6 +49,7 @@ function ResultTitle({ entry }: { entry: ListEntry | SerializedListEntry }): JSX
     e.preventDefault();
     window.API.open.url(`https://dc.fandom.com/wiki/${entry.title.replaceAll(" ", "_")}`);
   };
+
   return (
     <div className="result-title">
       {/* FIXME: Style the span to look like an anchor */}

@@ -155,8 +155,12 @@ async function makeUserInfoUserInfo(): Promise<UserInfo> {
 }
 
 interface ErrorReport {
-  ip: string;
-  title: string;
-  message: string;
+  userInfo: UserErrorInfo;
   logs: LogFile;
+}
+
+export interface UserErrorInfo {
+  title: string;
+  startTime: string;
+  description: string;
 }

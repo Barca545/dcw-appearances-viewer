@@ -29,7 +29,7 @@ export interface Tab {
 }
 
 /**A Tab which holds data. */
-export interface DataTab {
+export interface DataTab extends Tab {
   isClean: boolean;
   data: any;
 }
@@ -42,8 +42,13 @@ export interface SerializedTab {
   meta: TabMetaData;
 }
 
+export interface SerializedDataTab extends SerializedTab {
+  meta: TabMetaData;
+  isClean: boolean;
+}
+
 /**A serialized snapshot of an app `Tab`'s state.*/
-export interface SerializedAppTab extends SerializedTab {
+export interface SerializedAppTab extends SerializedDataTab {
   meta: { ID: TabID; tabName: string; characterName: string };
   /**Whether the search suceeded. */
   success: boolean;
@@ -61,8 +66,8 @@ export interface SerializedStartTab extends SerializedTab {}
 export type TabDataUpdate = SerializedAppTab | SerializedSettingsTab | SerializedStartTab;
 
 /**[Type guard](https://www.typescriptlang.org/docs/handbook/advanced-types.html#user-defined-type-guards) to check whether a `TabDataUpdate` is a `SerializedAppTab`.*/
-export function isSerializedAppTab(tab: TabDataUpdate): tab is SerializedAppTab {
-  return (tab as SerializedAppTab).list != undefined;
+export function isSerializedDataTab(tab: TabDataUpdate): tab is SerializedAppTab {
+  return (tab as SerializedDataTab).isClean != undefined;
 }
 
 /**Request from the renderer to the server to perform a search for a character's data on the wiki. */

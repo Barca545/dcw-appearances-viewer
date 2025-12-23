@@ -6,6 +6,7 @@ import { Session } from "./session";
 type MenuTemplate = Electron.MenuItemConstructorOptions[];
 type MenuEntry = Electron.MenuItemConstructorOptions;
 
+// TODO: Could this be made so it does not require a session argument's window?
 export function MENU_TEMPLATE(session: Session): MenuTemplate {
   return [
     {
@@ -54,11 +55,7 @@ export function MENU_TEMPLATE(session: Session): MenuTemplate {
           label: "Contact Developer",
           click: (_item, base, _e) => dialog.showMessageBoxSync(base as BaseWindow, { message: MESSAGES.DevContact }),
         },
-        // TODO: This should open a dialog and allow them to save the logfile to a place of their choice.
-        { label: "Generate Logfile", click: (_item, _base, _e) => UNIMPLEMENTED_FEATURE() },
-        // FIXME: Send the logs and OS other metadata
-        // TODO: Look up how to send stuff to a google drive folder or some other kind of document dump
-        { label: "Send Logs", click: (_item, _base, _e) => UNIMPLEMENTED_FEATURE() },
+        { label: "Report Error", click: (_item, _base, _e) => session.newErrorWin() },
       ],
     },
   ];

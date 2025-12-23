@@ -4,11 +4,14 @@ import App from "./App";
 import { HashRouter as Router, Routes, Route, useNavigate } from "react-router";
 import Layout from "./Layout";
 import Start from "./Start";
-import Settings from "./Settings";
+import AppSettings from "./AppSettings";
 import { SerializedTabBarState } from "../common/ipcAPI";
 
 // FIXME:
-// - Searching on an app tab does nothing
+// - The components on the app page need to be locked in place
+// - Closing a tab ruins navigation.
+//   - It might be possible it creates a new ID in a weird way
+
 // - Add logging renderer errors and sending logs to cloudflare
 
 // contains origin location
@@ -30,10 +33,8 @@ function TabRoutes(): JSX.Element {
 
   useEffect(() => {
     window.API.tabBar.requestTabBarState().then((update) => setTabs(update));
-    window.API.tabBar.onUpdate((update) => {
-      setTabs(update);
-      navigate(update.selected);
-    });
+    window.API.tabBar.onUpdate((update) => setTabs(update));
+    window.API.tab.go((tab) => navigate(tab));
   }, []);
 
   // Render the tabs in routes
@@ -46,7 +47,7 @@ function TabRoutes(): JSX.Element {
           } else if (tab.TabType == "START") {
             return <Route key={tab.meta.ID} path={`/${tab.meta.ID}`} element={<Start />} />;
           } else if (tab.TabType == "SETTINGS") {
-            return <Route key={tab.meta.ID} path={`/${tab.meta.ID}`} element={<Settings ID={tab.meta.ID} />} />;
+            return <Route key={tab.meta.ID} path={`/${tab.meta.ID}`} element={<AppSettings ID={tab.meta.ID} />} />;
           }
         })}
       </Route>

@@ -1,28 +1,16 @@
-import path from "path";
-import fs from "fs";
 import { defineConfig } from "vite";
-
-// TODO: Once I get rid of the html this should
-
-const RENDERER_DIR = path.join(__dirname, "src", "renderer");
-// This grabs every html file in the render directory
-function exportPages(): string[] {
-  return fs
-    .readdirSync(RENDERER_DIR, { encoding: "utf-8" })
-    .filter((file) => path.extname(file) === ".html")
-    .map((file) => {
-      return path.join(RENDERER_DIR, file);
-    });
-}
+import react from "@vitejs/plugin-react";
+import path from "path";
 
 // https://vitejs.dev/config
 export default defineConfig({
-  // TODO: Add react plugin
-  plugins: [],
+  plugins: [react()],
   build: {
-    emptyOutDir: true,
     rollupOptions: {
-      input: exportPages(),
+      input: {
+        main: path.resolve(__dirname, "src/renderer/index.html"),
+        error: path.resolve(__dirname, "src/renderer/error.html"),
+      },
     },
   },
 });

@@ -1,0 +1,41 @@
+:root {
+  --base-font-size: 16px;
+  font-size: var(--base-font-size);
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background: black;
+    color: white;
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  body {
+    background: #ddd;
+    color: black;
+  }
+}
+
+textarea {
+  resize: none;
+}
+
+.error-report {
+  position: absolute;
+  top: 25%;
+  left: 25%;
+  width: 50%;
+  /* Center in page */
+  display: flex;
+  flex-direction: column;
+}
+
+#description {
+  height: 10rem;
+}
+
+.error-report-field-title {
+  font-size: 2rem;
+  font-weight: bold;
+}

@@ -1,5 +1,6 @@
 // TODO: If this ends up being overly granular merge taking inspiration from
 // https://stackoverflow.com/a/66270356/24660323
+import { UserErrorInfo } from "src/main/log";
 import { DisplayOptions, Settings } from "../common/apiTypes";
 import { APIEvent, SerializedTabBarState, TabID } from "../common/ipcAPI";
 import type { TabDataUpdate, SerializedTab, SearchRequest, SerializedSettingsTab, SettingsTabUpdate } from "../common/TypesAPI";
@@ -12,8 +13,6 @@ contextBridge.exposeInMainWorld("API", {
     request: async (): Promise<Settings> => ipcRenderer.invoke(APIEvent.SettingsRequest),
     /**Save the new settings to the disk. */
     save: (data: SettingsTabUpdate) => ipcRenderer.send(APIEvent.SettingsSave, data),
-    /**Request a preview of the settings but do not save them to disk. */
-    apply: (data: SettingsTabUpdate) => ipcRenderer.send(APIEvent.SettingsApply, data),
     reset: (ID: TabID) => ipcRenderer.send(APIEvent.SettingsReset, ID),
     onUpdate: (fn: (state: SerializedSettingsTab) => void) => ipcRenderer.on(APIEvent.SettingsUpdate, (_e, state) => fn(state)),
     removeUpdateListener: () => ipcRenderer.removeAllListeners(APIEvent.SettingsUpdate),
@@ -26,6 +25,7 @@ contextBridge.exposeInMainWorld("API", {
     /** Registers a handler to process an update in the tab bar's state sent from the main process. */
     onUpdate: (fn: (state: SerializedTabBarState) => void) =>
       ipcRenderer.on(APIEvent.TabBarUpdate, (_e, state: SerializedTabBarState) => fn(state)),
+    removeUpdateListener: () => ipcRenderer.removeAllListeners(APIEvent.TabBarUpdate),
   },
   /**Updata data for a tab. */
   tab: {
@@ -34,11 +34,8 @@ contextBridge.exposeInMainWorld("API", {
     setCurrent: (ID: TabID) => ipcRenderer.send(APIEvent.TabUpdateCurrent, ID),
     /**Submits the form to the main process and returns the result to the renderer. */
     search: (req: SearchRequest) => ipcRenderer.send(APIEvent.TabSearch, req),
-    onUpdate: (fn: (res: TabDataUpdate) => void) => {
-      const ref = (_e: Electron.IpcRendererEvent, res: TabDataUpdate) => fn(res);
-      ipcRenderer.on(APIEvent.TabUpdate, ref);
-      return () => ipcRenderer.off(APIEvent.TabUpdate, ref);
-    },
+    onUpdate: (fn: (res: TabDataUpdate) => void) => ipcRenderer.on(APIEvent.TabUpdate, (_e, update) => fn(update)),
+    removeUpdateListeners: () => ipcRenderer.removeAllListeners(APIEvent.TabUpdate),
     /** Process request from the main process to navigate to a new project tab.
      *
      * **NOTE**: Does not update the tab. Updating must be handled separately.*/
@@ -56,10 +53,13 @@ contextBridge.exposeInMainWorld("API", {
   /**Update the `FilterOptions` stored in the main process. */
   displayOptions: {
     requestOptionsState: (): Promise<DisplayOptions> => ipcRenderer.invoke(APIEvent.DisplayOptionsRequestState),
-    requestOptionsUpdate: (state: DisplayOptions): Promise<DisplayOptions> =>
-      ipcRenderer.invoke(APIEvent.DisplayOptionsRequestUpdate, state),
+    requestOptionsUpdate: (state: DisplayOptions) => ipcRenderer.send(APIEvent.DisplayOptionsRequestUpdate, state),
     onUpdate: (fn: (state: DisplayOptions) => void) => ipcRenderer.on(APIEvent.DisplayOptionsUpdate, (_e, state) => fn(state)),
   },
+});
+
+contextBridge.exposeInMainWorld("ERROR", {
+  submit: (data: UserErrorInfo) => ipcRenderer.send("error:submit", data),
 });
 
 console.log("PRELOAD FINSHED...");

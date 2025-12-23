@@ -137,3 +137,10 @@
   align-items: center; /* Vertically center */
   justify-content: center;
 }
+
+.unsaved-indicator {
+  background: #ff0000;
+  border-radius: 100%;
+  height: 1em;
+  width: 1em;
+}

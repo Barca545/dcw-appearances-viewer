@@ -1,5 +1,4 @@
-import React, { FormEventHandler, JSX, useEffect, useState } from "react";
-import BooleanToggle from "../renderer/components/BooleanToggle";
+import React, { JSX, useEffect, useState } from "react";
 import { Settings, SettingsTheme } from "../common/apiTypes";
 import "../renderer/settings.css";
 import { TabID } from "../common/ipcAPI";
@@ -10,7 +9,7 @@ import SaveSettings from "./components/SaveSettings";
 
 // TODO: Settings do not seem to be updateing
 
-export default function Settings({ ID }: { ID: TabID }) {
+export default function AppSettings({ ID }: { ID: TabID }) {
   const [settings, setSettings] = useState<null | Settings>(null);
 
   useEffect(() => {
@@ -19,14 +18,12 @@ export default function Settings({ ID }: { ID: TabID }) {
     // TODO: Register a listener for updates
     window.API.settings.onUpdate((state) => setSettings(state.settings));
 
-    return window.API.settings.removeUpdateListener;
+    // return window.API.settings.removeUpdateListener;
   }, []);
 
   if (!settings) {
     return <LoadingSpinner />;
   }
-
-  const handleApply = () => window.API.settings.apply({ ID, settings });
 
   const handleSave = () => window.API.settings.save({ ID, settings });
 
@@ -36,6 +33,8 @@ export default function Settings({ ID }: { ID: TabID }) {
     handleSave();
     window.API.tab.close(ID);
   };
+
+  const handleClose = () => window.API.tab.close(ID);
 
   const handleThemeChange = (e: React.FormEvent<HTMLInputElement>) =>
     setSettings({ ...settings, theme: e.currentTarget.value as SettingsTheme });
@@ -65,14 +64,14 @@ export default function Settings({ ID }: { ID: TabID }) {
       />
       <AccessibilitySettings fontSize={settings.fontSize} setFontSize={handleChangeFontSize} />
       <fieldset className="settings-subsection" id="save-buttons">
-        <button type="button" id="apply" className="save-button" name="apply" onClick={handleApply}>
-          Apply
-        </button>
         <button type="button" id="save" className="save-button" name="save-settings" onClick={handleSave}>
           Save
         </button>
         <button type="button" id="save-and-close" className="save-button" name="save-settings" onClick={handleSaveAndClose}>
           Save and Close
+        </button>
+        <button type="button" id="save-and-close" className="save-button" name="save-settings" onClick={handleClose}>
+          Close
         </button>
         <button type="button" id="reset" className="save-button" onClick={handleReset}>
           Reset Settings

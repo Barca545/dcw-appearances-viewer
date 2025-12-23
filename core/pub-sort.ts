@@ -29,7 +29,7 @@ export class ListEntry {
   toAppearanceData(): SerializedListEntry {
     return {
       title: this.title,
-      date: { year: this.date.day, month: this.date.day, day: this.date.day },
+      date: { year: this.date.year, month: this.date.month, day: this.date.day },
       synopsis: this.synopsis,
       link: this.link,
     };

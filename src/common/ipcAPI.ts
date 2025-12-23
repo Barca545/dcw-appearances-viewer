@@ -1,6 +1,7 @@
 import { UUID } from "crypto";
 import { SearchRequest, SerializedSettingsTab, SerializedTab, SettingsTabUpdate, TabDataUpdate, TabMetaData } from "./TypesAPI";
 import { DisplayOptions, Settings } from "./apiTypes";
+import { UserErrorInfo } from "src/main/log";
 
 export type VoidReturnFunction = () => void;
 
@@ -10,7 +11,6 @@ export enum APIEvent {
   TabBarRequestUpdate = "tabar:request:update",
   TabBarUpdate = "tabbar:update",
   SettingsRequest = "settings:request",
-  SettingsApply = "settings:apply",
   SettingsSave = "settings:save",
   SettingsUpdate = "settings:update",
   SettingsReset = "setting:reset",
@@ -35,7 +35,7 @@ export enum APIEvent {
 // TODO: Use this once we switch to single source of truth
 export interface SerializedTabBarState {
   readonly selected: TabID;
-  readonly list: { TabType: "APP" | "START" | "SETTINGS"; meta: TabMetaData }[];
+  readonly list: { TabType: "APP" | "START" | "SETTINGS"; meta: TabMetaData; isClean: boolean }[];
 }
 
 export type TabID = UUID;
@@ -49,13 +49,14 @@ export namespace TabID {
 
 declare global {
   interface Window {
+    ERROR: {
+      submit: (info: UserErrorInfo) => void;
+    };
     API: {
       settings: {
         request: () => Promise<Settings>;
         /**Save the new settings to the disk. */
         save: (data: SettingsTabUpdate) => void;
-        /**Send settings data to the main process without saving it to file. Previews the result of the changes.*/
-        apply: (data: SettingsTabUpdate) => void;
         reset: (ID: TabID) => void;
         close: () => void;
         onUpdate: (fn: (state: SerializedSettingsTab) => void) => void;
@@ -67,6 +68,7 @@ declare global {
         requestUpdate: (state: SerializedTabBarState) => Promise<SerializedTabBarState>;
         /** Registers a handler to process an update in the tab bar's state sent from the main process. */
         onUpdate: (fn: (state: SerializedTabBarState) => void) => void;
+        removeUpdateListener: () => void;
       };
       /**Handle requests which change a tab's state. */
       tab: {
@@ -80,8 +82,9 @@ declare global {
          *
          * **NOTE**: Does not update the tab. Updating must be handled in the passed callback.*/
         go: (fn: (route: string, data?: TabDataUpdate) => void) => void;
-        /**Register a callback for when an incoming update event occurs. Returns a function to unsubscribe. */
+        /**Register a callback for when an incoming update event occurs. */
         onUpdate: (fn: (data: TabDataUpdate) => void) => void;
+        removeUpdateListeners: () => void;
 
         close: (ID: TabID) => void;
       };
@@ -99,7 +102,7 @@ declare global {
         /**Request the main process send the current `Tab`'s `DisplayOptions`.*/
         requestOptionsState: () => Promise<DisplayOptions>;
         /**Request the main process set the current `Tab`'s `DisplayOptions` to match the payload.*/
-        requestOptionsUpdate: (state: DisplayOptions) => Promise<DisplayOptions>;
+        requestOptionsUpdate: (state: DisplayOptions) => void;
         /**An incoming update from the main process of the current `Tab`'s `DisplayOptions`' state.*/
         onUpdate: (fn: (state: DisplayOptions) => void) => void;
       };
