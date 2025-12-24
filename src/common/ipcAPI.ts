@@ -1,5 +1,12 @@
 import { UUID } from "crypto";
-import { SearchRequest, SerializedSettingsTab, SerializedTab, SettingsTabUpdate, TabDataUpdate, TabMetaData } from "./TypesAPI";
+import {
+  SearchRequest,
+  SerializedAppTab,
+  SerializedSettingsTab,
+  SettingsTabUpdate,
+  TabDataUpdate,
+  TabMetaData,
+} from "./TypesAPI";
 import { DisplayOptions, Settings } from "./apiTypes";
 import { UserErrorInfo } from "src/main/log";
 
@@ -8,8 +15,10 @@ export type VoidReturnFunction = () => void;
 export enum APIEvent {
   // TODO: Merge tabs and tabbar here and in preload
   TabBarRequestState = "tabar:request:state",
-  TabBarRequestUpdate = "tabar:request:update",
   TabBarUpdate = "tabbar:update",
+  TabBarOpenAndUpdateCurrent = "tabbar:open",
+  TabBarReorder = "tabbar:reorder",
+  TabBarClose = "tab:close",
   SettingsRequest = "settings:request",
   SettingsSave = "settings:save",
   SettingsUpdate = "settings:update",
@@ -20,7 +29,6 @@ export enum APIEvent {
   TabSearch = "tab:search",
   TabUpdate = "tab:update",
   TabGo = "tab:go",
-  TabClose = "tab:close",
   OpenTab = "open:tab",
   OpenFile = "open:file",
   OpenURL = "open:URL",
@@ -47,6 +55,8 @@ export namespace TabID {
   }
 }
 
+type UnsubscribeFunction = () => void;
+
 declare global {
   interface Window {
     ERROR: {
@@ -62,31 +72,37 @@ declare global {
         onUpdate: (fn: (state: SerializedSettingsTab) => void) => void;
         removeUpdateListener: () => void;
       };
-      tabBar: {
-        requestTabBarState: () => Promise<SerializedTabBarState>;
-        /** Requests the main process update its tab list to match the order of the data set over. Returns the main process' tab list.*/
-        requestUpdate: (state: SerializedTabBarState) => Promise<SerializedTabBarState>;
-        /** Registers a handler to process an update in the tab bar's state sent from the main process. */
-        onUpdate: (fn: (state: SerializedTabBarState) => void) => void;
-        removeUpdateListener: () => void;
-      };
-      /**Handle requests which change a tab's state. */
-      tab: {
-        requestTabState: () => Promise<SerializedTab>;
-        /**Notify the main process the user has switched to a new tab. */
-        setCurrent: (ID: TabID) => void;
+      appTab: {
+        /**Request the AppTab's data. */
+        request: (ID: TabID) => Promise<SerializedAppTab>;
         /**Submits the form to the main process and returns the result to the renderer. */
         search: (data: SearchRequest) => void;
-        // TODO: Confirm whether go is ever handled
-        /** Process request from the main process to navigate to a new project tab.
-         *
-         * **NOTE**: Does not update the tab. Updating must be handled in the passed callback.*/
-        go: (fn: (route: string, data?: TabDataUpdate) => void) => void;
-        /**Register a callback for when an incoming update event occurs. */
-        onUpdate: (fn: (data: TabDataUpdate) => void) => void;
-        removeUpdateListeners: () => void;
-
-        close: (ID: TabID) => void;
+        /**Registers a handler function for the APIEvent.AppTabUpdate event and returns its unsubscribe function. */
+        onUpdate: (fn: (data: TabDataUpdate) => void) => UnsubscribeFunction;
+      };
+      settingsTab: {};
+      startTab: {};
+      /**Handle requests which change a tab's state. */
+      tabBar: {
+        /**Requests the current state of the tab bar from the main process. */
+        request: () => Promise<SerializedTabBarState>;
+        /**Registers a handler function for the APIEvent.TabBarUpdate event and returns its unsubscribe function. */
+        onUpdate: (fn: (state: SerializedTabBarState) => void) => UnsubscribeFunction;
+        /**Notify the main process the user is attempting to switch another tab.
+         * Returns the state of the main process tabs.
+         */
+        navigateToTab: (ID: TabID) => Promise<SerializedTabBarState>;
+        /**Notify the main process the user is attempting to navigate to another tab.
+         * Returns the state of the main process tabs.
+         */
+        openAndNavigateToTab: () => Promise<SerializedTabBarState>;
+        /**Notify the main process the user is attempting to close a tab.
+         * Returns the state of the main process tabs.*/
+        closeTab: (ID: TabID) => Promise<SerializedTabBarState>;
+        /**Notify the main process the user has reordered the tabs.
+         * Returns the state of the main process tabs.
+         */
+        reorderTabs: (state: SerializedTabBarState) => Promise<SerializedTabBarState>;
       };
       open: {
         /**Create a new Application Tab. Returns the tabs `TabData`. */

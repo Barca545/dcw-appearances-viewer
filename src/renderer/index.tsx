@@ -9,10 +9,12 @@ import { SerializedTabBarState } from "../common/ipcAPI";
 
 // FIXME:
 // - The components on the app page need to be locked in place
-// - Closing a tab ruins navigation.
-//   - It might be possible it creates a new ID in a weird way
-
+// - Update the API, each page type needs its own dedicated sub api
+//   - Make sub apis in preload
+//   - Make sub apis in session
+//   - Fill out documentation
 // - Add logging renderer errors and sending logs to cloudflare
+//   - New LogFile should be created each update
 
 // contains origin location
 // error.stack;

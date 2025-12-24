@@ -1,5 +1,5 @@
 import { app } from "electron";
-import { IS_DEV } from "./main_utils";
+import { IS_DEV, ROOT_DIRECTORY } from "./main_utils";
 import path from "node:path";
 import fs from "node:fs";
 import os from "node:os";
@@ -50,8 +50,7 @@ class LoggerClass {
       if (logFile.sessions[logFile.sessions.length - 1].startTime != this.sessionStart) {
       }
     } catch {
-      // Just create a new file
-      logFile = { info: await makeUserInfoUserInfo(), sessions: [LoggerClass.newSessionLog()] };
+      logFile = await this.createNewLogFile();
     }
     // Append to the end of the current session
     logFile.sessions[logFile.sessions.length - 1].logs.push(log);
@@ -61,6 +60,18 @@ class LoggerClass {
 
   private static newSessionLog(): SessionLog {
     return { startTime: LoggerClass.makeCurrentTimestamp(), logs: [] };
+  }
+
+  async createNewLogFile(): Promise<LogFile> {
+    // Create a new LogFile
+    const logfile: LogFile = { info: await makeUserInfoUserInfo(), pathsExist: [], sessions: [LoggerClass.newSessionLog()] };
+
+    // Log whether required paths exist
+    [ROOT_DIRECTORY]
+      .filter((path) => !fs.existsSync(path))
+      .forEach((path) => logfile.pathsExist.push(`Path ${path} does not exist.`));
+
+    return logfile;
   }
 
   /** Returns the formatted current Date and Time. */
@@ -109,6 +120,8 @@ export default LOGGER;
 
 interface LogFile {
   info: UserInfo;
+  /// Field indicating if any files or folders the app requires are missing.
+  pathsExist: string[];
   sessions: SessionLog[];
 }
 

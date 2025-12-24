@@ -41,7 +41,7 @@ function Tab({
   onDragEnd,
   onDrop,
 }: TabProps): JSX.Element {
-  const handleNavigate = () => window.API.tab.setCurrent(to as TabID);
+  const handleNavigate = () => window.API.tabBar.navigateToTab(to as TabID);
 
   const handleClose = (e: ButtonMouseEvent) => {
     e.preventDefault();
@@ -87,13 +87,12 @@ export default function TabBar(): JSX.Element {
   const [draggedTabIdx, setDraggedTabIdx] = useState<number | null>(null);
 
   useEffect(() => {
+    const updateHandler = (state: SerializedTabBarState) => setTabBarState(state);
     // Fetch the data
-    window.API.tabBar.requestTabBarState().then((state) => setTabBarState(state));
+    window.API.tabBar.request().then(updateHandler);
 
     // Register a listener
-    window.API.tabBar.onUpdate((state) => setTabBarState(state));
-
-    return window.API.tabBar.removeUpdateListener;
+    return window.API.tabBar.onUpdate(updateHandler);
   }, []);
 
   function tabToIdx(node: Element): number {
@@ -160,7 +159,7 @@ export default function TabBar(): JSX.Element {
         list: newList,
       };
 
-      setTabBarState(await window.API.tabBar.requestUpdate(req));
+      setTabBarState(await window.API.tabBar.reorderTabs(req));
     }
   };
 
@@ -190,12 +189,12 @@ export default function TabBar(): JSX.Element {
                 tabName={tab.meta.tabName}
                 selected={tab.meta.ID == tabBarState.selected}
                 to={tab.meta.ID}
-                onClose={() => window.API.tab.close(tab.meta.ID)}
+                onClose={() => window.API.tabBar.closeTab(tab.meta.ID)}
               />
             );
           })}
           <li style={{ all: "unset" }}>
-            <button className="AddTab" onClick={() => window.API.open.tab()}>
+            <button className="AddTab" onClick={async () => setTabBarState(await window.API.tabBar.openAndNavigateToTab())}>
               +
             </button>
           </li>

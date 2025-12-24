@@ -32,7 +32,7 @@ interface APIEventMap {
   [APIEvent.TabUpdate]: TabDataUpdate;
   [APIEvent.SettingsRequest]: Settings;
   [APIEvent.TabGo]: TabID;
-  [APIEvent.TabClose]: TabID;
+  [APIEvent.TabBarClose]: TabID;
   [APIEvent.TabBarUpdate]: SerializedTabBarState;
   [APIEvent.SettingsUpdate]: SerializedSettingsTab;
 }
@@ -155,8 +155,12 @@ export class Session {
       return;
     }
 
-    console.log(this.tabs.get(ID));
-    console.log(this.tabs);
+    if (IS_DEV) {
+      if (!this.tabs.has(ID)) {
+        throw new Error(`ID ${ID} does not exist. Cannot Navigate. Valid IDs are:${[...this.tabs.keys()]}`);
+      }
+    }
+
     this.currentTab = new Some(ID);
     this.tabEventStack.push({ ID: ID, type: TabEventType.Navigate });
     // TODO: A little inefficient
@@ -559,11 +563,15 @@ export class Session {
     this.win.on("blur", () => this.trysave());
 
     // TABBAR LISTENERS
+    // TODO: See ipcAPI documentation for what these are supposed to do
     ipcMain.handle(APIEvent.TabBarRequestState, () => this.serializeTabBarState());
-    ipcMain.handle(APIEvent.TabBarRequestUpdate, (_e, newState: SerializedTabBarState) => this.setTabBarState(newState));
+    ipcMain.handle(APIEvent.TabBarOpenAndUpdateCurrent);
+    ipcMain.handle(APIEvent.TabBarUpdate);
+    ipcMain.handle(APIEvent.TabBarClose);
+    ipcMain.handle(APIEvent.TabBarReorder);
 
     // NAVIGATION LISTENERS
-    ipcMain.on(APIEvent.OpenTab, () => this.newAppTab());
+    // ipcMain.on(APIEvent.OpenTab, () => this.newAppTab());
     ipcMain.handle(APIEvent.OpenFile, () => this.newAppTabFromFile());
     ipcMain.on(APIEvent.OpenURL, (_e, url: string) => shell.openExternal(url));
 
@@ -571,7 +579,7 @@ export class Session {
     ipcMain.handle(APIEvent.TabRequestState, () => this.tabs.get(this.currentTab.unwrap())?.serialize());
     ipcMain.on(APIEvent.TabUpdateCurrent, (_e, ID) => this.navigateToTab(ID));
     ipcMain.on(APIEvent.TabSearch, (_e, req: SearchRequest) => this.updateTabCharacter(req));
-    ipcMain.on(APIEvent.TabClose, (_e, id: TabID) => this.closeTab(id));
+    ipcMain.on(APIEvent.TabBarClose, (_e, id: TabID) => this.closeTab(id));
 
     // SETTINGS LISTENERS
     ipcMain.handle(APIEvent.SettingsRequest, () => this.settings);
