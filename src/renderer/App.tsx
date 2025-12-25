@@ -5,8 +5,14 @@ import "./styles.css";
 import { TabID } from "../common/ipcAPI";
 import LoadingSpinner from "./components/LoadingSpinner";
 import { SerializedAppTab } from "src/common/TypesAPI";
+import { useParams } from "react-router";
 
-export default function App({ ID }: { ID: TabID }): JSX.Element {
+export default function App(): JSX.Element {
+  const { ID } = useParams<Record<"ID", TabID>>();
+  if (ID == undefined) {
+    throw new Error("Tab must have an ID.");
+  }
+
   const [tabData, setTabData] = useState<null | SerializedAppTab>(null);
   // Indicates whether a search is pending
   const [isPending, setIsPending] = useState(false);

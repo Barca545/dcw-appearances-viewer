@@ -6,10 +6,16 @@ import LoadingSpinner from "./components/LoadingSpinner";
 import AccessibilitySettings from "./components/AccessibilitySettings";
 import ThemeSettings from "./components/ThemeSettings";
 import SaveSettings from "./components/SaveSettings";
+import { useParams } from "react-router";
 
 // TODO: Settings do not seem to be updateing
 
-export default function AppSettings({ ID }: { ID: TabID }) {
+export default function AppSettings() {
+  const { ID } = useParams<Record<"ID", TabID>>();
+  if (ID == undefined) {
+    throw new Error("Tab must have an ID.");
+  }
+
   const [settings, setSettings] = useState<null | Settings>(null);
 
   useEffect(() => {

@@ -48,8 +48,8 @@ contextBridge.exposeInMainWorld("API", {
       ipcRenderer.on(IPCEvent.TabUpdate, handler);
       return () => ipcRenderer.removeListener(IPCEvent.TabUpdate, handler);
     },
-    navigateToTab: (ID: TabID) => ipcRenderer.invoke(IPCEvent.TabUpdate, ID),
-    openAndNavigateToTab: (ID: TabID) => ipcRenderer.invoke(IPCEvent.TabOpen, ID),
+    navigateToTab: (ID: TabID) => ipcRenderer.invoke(IPCEvent.TabGo, ID),
+    openAndNavigateToTab: () => ipcRenderer.invoke(IPCEvent.TabOpen),
     reorderTabs: (state: SerializedTabBarState) => ipcRenderer.invoke(IPCEvent.TabReorder, state),
     closeTab: (ID: TabID) => ipcRenderer.invoke(IPCEvent.TabClose, ID),
   },

@@ -1,6 +1,6 @@
 import { useRef, MouseEventHandler, JSX, useState, useEffect, DragEventHandler } from "react";
 import "./TabBar.css";
-import { To } from "react-router";
+import { useNavigate } from "react-router";
 import { SerializedTabBarState, TabID } from "src/common/ipcAPI";
 import HorizontalScrollBar from "./ScrollBar";
 import { ButtonMouseEvent } from "./types";
@@ -12,15 +12,13 @@ import { isSerializedDataTab } from "../../common/TypesAPI";
 // - https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/tablist_role
 // - https://www.w3.org/WAI/ARIA/apg/patterns/tabs/
 
-// FIXME: Causes an error before it navigates to the correct page
-// Maybe I should merge that command into one instead of using two separate ones
-
 interface TabProps {
   selected: boolean;
   isClean: boolean;
   ID: TabID;
   tabName: string;
-  to: To;
+  // to: To;
+  onClick: MouseEventHandler;
   onClose?: MouseEventHandler;
   onDragStart?: DragEventHandler;
   onDragEnter?: DragEventHandler;
@@ -33,7 +31,7 @@ function Tab({
   selected,
   isClean,
   tabName,
-  to,
+  onClick,
   onClose,
   onDragStart,
   onDragEnter,
@@ -41,8 +39,6 @@ function Tab({
   onDragEnd,
   onDrop,
 }: TabProps): JSX.Element {
-  const handleNavigate = () => window.API.tabBar.navigateToTab(to as TabID);
-
   const handleClose = (e: ButtonMouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -54,7 +50,7 @@ function Tab({
   return (
     <li
       className={["Tab", selected && "selected"].filter(Boolean).join(" ")}
-      onClick={handleNavigate}
+      onClick={onClick}
       draggable={true}
       onDragStart={onDragStart}
       onDragOver={onDragEnter}
@@ -85,9 +81,14 @@ export default function TabBar(): JSX.Element {
   const contentRef = useRef<HTMLDivElement>(null);
   const [tabBarState, setTabBarState] = useState<SerializedTabBarState | null>(null);
   const [draggedTabIdx, setDraggedTabIdx] = useState<number | null>(null);
+  const navigate = useNavigate();
+
+  const updateHandler = (state: SerializedTabBarState) => {
+    setTabBarState(state);
+    navigate(state.selected.URL);
+  };
 
   useEffect(() => {
-    const updateHandler = (state: SerializedTabBarState) => setTabBarState(state);
     // Fetch the data
     window.API.tabBar.request().then(updateHandler);
 
@@ -170,6 +171,13 @@ export default function TabBar(): JSX.Element {
     setDraggedTabIdx(null);
   };
 
+  // TODO: Possibly move inside tab component
+  const handleChangeTab = (ID: TabID) => window.API.tabBar.navigateToTab(ID).then(updateHandler);
+
+  const handleAddTab = () => window.API.tabBar.openAndNavigateToTab().then(updateHandler);
+
+  const handleClose = (ID: TabID) => window.API.tabBar.closeTab(ID).then(updateHandler);
+
   return (
     <div className={"TabBar"}>
       <nav>
@@ -187,14 +195,14 @@ export default function TabBar(): JSX.Element {
                 onDragEnd={handleDragEnd}
                 ID={tab.meta.ID}
                 tabName={tab.meta.tabName}
-                selected={tab.meta.ID == tabBarState.selected}
-                to={tab.meta.ID}
-                onClose={() => window.API.tabBar.closeTab(tab.meta.ID)}
+                selected={tab.meta.ID == tabBarState.selected.ID}
+                onClick={() => handleChangeTab(tab.meta.ID)}
+                onClose={() => handleClose(tab.meta.ID)}
               />
             );
           })}
           <li style={{ all: "unset" }}>
-            <button className="AddTab" onClick={async () => setTabBarState(await window.API.tabBar.openAndNavigateToTab())}>
+            <button className="AddTab" onClick={handleAddTab}>
               +
             </button>
           </li>

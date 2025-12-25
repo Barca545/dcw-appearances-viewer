@@ -15,12 +15,10 @@ import {
 } from "./main_utils";
 import fs from "node:fs";
 import type {
-  DataTab,
   SearchRequest,
   SerializedAppTab,
   SerializedSettingsTab,
   SettingsTabUpdate,
-  Tab,
   TabDataUpdate,
 } from "../common/TypesAPI";
 import { openFileDialog } from "./menu";
@@ -28,7 +26,7 @@ import { createCharacterName } from "../common/utils";
 import { fetchList } from "../../core/fetch";
 import { IPCEvent, SerializedTabBarState, TabID } from "../../src/common/ipcAPI";
 import { MENU_TEMPLATE } from "./menu";
-import { AppTab, isDataTab, SettingsTab, StartTab } from "./tab";
+import { AppTab, DataTab, isDataTab, SettingsTab, StartTab, Tab } from "./tab";
 
 // FIXME: This not being a variable vite exposes is an issue with vite
 const MAIN_WINDOW_PRELOAD_VITE_ENTRY = path.join(__dirname, `preload.js`);
@@ -281,6 +279,7 @@ export class Session {
    */
   newSettingsTab() {
     this.openAndNavigateToTab(SettingsTab.default());
+    this.sendIPC(IPCEvent.TabUpdate, this.serializeTabBarState());
   }
 
   // TODO: Instead of setting is clean directly, update everywhere it is used to this
@@ -340,6 +339,9 @@ export class Session {
     for (const id of this.tabs.keys()) {
       let tab = this.getTab(id) as Tab;
 
+      // TODO: A better way to do this is to cycle and grab all the ids that should should close
+      // Then the closeTab doesn't need to return a boolean
+
       // If the user cancels closing a tab abort the close process
       if (!this.closeTab(tab.meta.ID)) {
         return;
@@ -398,15 +400,23 @@ export class Session {
    * @returns `false` if the process was aborted. */
   closeTab(ID: TabID): boolean {
     const tab = this.getTab(ID);
-    if (tab != undefined && tab instanceof AppTab && !tab.isClean) {
+    if (tab && tab instanceof AppTab) {
+      if (tab.isClean) {
+        this.perfromTabClose(ID);
+        return true;
+      }
       const res = this.promptUsavedClose();
 
       if (res === CloseType.Cancel) {
         return false;
       } else if (res === CloseType.Save) {
         this.saveAppTab(false, ID);
-        // this.closeTab(ID);
         this.perfromTabClose(ID);
+        return true;
+      } else {
+        // This is don't save
+        this.perfromTabClose(ID);
+        return true;
       }
     }
 
@@ -521,7 +531,7 @@ export class Session {
   }
 
   getTab(ID: TabID): Tab | undefined {
-    return this.getTab(ID);
+    return this.tabs.get(ID);
   }
 
   /**Reorders the Session's `Tab`'s in place to match the requested order. Returns the new state. */
@@ -535,8 +545,9 @@ export class Session {
   }
 
   serializeTabBarState(): SerializedTabBarState {
+    const selectedTab = this.getTab(this.currentTab.unwrap()) as Tab;
     return {
-      selected: this.currentTab.unwrap(),
+      selected: selectedTab.meta,
       list: [...this.tabs.values()].map((tab) => ({
         TabType: tab.type(),
         meta: tab.meta,
@@ -603,9 +614,9 @@ export class Session {
 
     this.win.on("blur", () => this.trySaveAppTabb());
 
-    // TABBAR LISTENERS
-    // TODO: See ipcAPI documentation for what these are supposed to do
+    // TAB BAR LISTENERS
     ipcMain.handle(IPCEvent.TabRequest, () => this.serializeTabBarState());
+    ipcMain.handle(IPCEvent.TabGo, (_e, ID: TabID) => (this.navigateToTab(ID), this.serializeTabBarState()));
     ipcMain.handle(IPCEvent.TabOpen, () => (this.newAppTab(), this.serializeTabBarState()));
     ipcMain.handle(IPCEvent.TabReorder, (_e, state: SerializedTabBarState) => this.setTabBarState(state));
     ipcMain.handle(IPCEvent.TabClose, (_e, ID) => (this.closeTab(ID), this.serializeTabBarState()));
@@ -632,15 +643,6 @@ export class Session {
 
     // NAVIGATION LISTENERS
     ipcMain.on(IPCEvent.OpenURL, (_e, url: string) => shell.openExternal(url));
-
-    // SEARCHING FOR CHARACTERS AND REFLOW LISTENERS
-    // ipcMain.handle(APIEvent.TabRequestState, () => this.getTab(this.currentTab.unwrap())?.serialize());
-    // ipcMain.on(APIEvent.TabUpdateCurrent, (_e, ID) => this.navigateToTab(ID));
-    // ipcMain.on(APIEvent.TabSearch, (_e, req: SearchRequest) => this.updateTabCharacter(req));
-    // ipcMain.on(APIEvent.TabBarClose, (_e, id: TabID) => this.closeTab(id));
-
-    // DISPLAY STYLE LISTENERS
-    // ipcMain.on(APIEvent.DisplayOptionsRequestUpdate, (_e, opts: DisplayOptions) => this.updateDisplayOptions(opts));
 
     // Error Listeners
     // TODO: I think this needs to get fed to the logger

@@ -1,7 +1,6 @@
-import { Path } from "../../core/load";
 import type { DisplayDensity, DisplayDirection, DisplayOptions, DisplayOrder, Settings } from "./apiTypes";
-import { Option } from "../../core/option";
-import { TabID } from "./ipcAPI";
+import { TabID, TabURL } from "./ipcAPI";
+import { TabMetaData } from "src/main/tab";
 
 /**Interface containing the data used to construct a list entry. The return result of window.api.form.submit */
 export interface SerializedListEntry {
@@ -9,33 +8,6 @@ export interface SerializedListEntry {
   synopsis: string;
   date: { year: number; month: number; day: number };
   link: string;
-}
-
-/**The basic metadata all `Tab`s contain regardless of type. */
-export interface TabMetaData {
-  readonly ID: TabID;
-  tabName: string;
-}
-
-export interface Tab {
-  meta: TabMetaData;
-  savePath: Option<Path>;
-
-  /**serializes the `Tab`'s data.*/
-  serialize(): SerializedTab;
-
-  /**Returns the type of the `Tab`. */
-  type(): "APP" | "START" | "SETTINGS";
-}
-
-/**A Tab which holds data. */
-export interface DataTab extends Tab {
-  isClean: boolean;
-  data: any;
-}
-
-export interface TabStaticInterface {
-  default(...args: any[]): Tab;
 }
 
 export interface SerializedTab {
@@ -49,7 +21,7 @@ export interface SerializedDataTab extends SerializedTab {
 
 /**A serialized snapshot of an app `Tab`'s state.*/
 export interface SerializedAppTab extends SerializedDataTab {
-  meta: { ID: TabID; tabName: string; characterName: string };
+  meta: { ID: TabID; URL: TabURL; tabName: string; characterName: string };
   /**Whether the search suceeded. */
   success: boolean;
   opts: DisplayOptions;

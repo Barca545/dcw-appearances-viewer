@@ -1,8 +1,13 @@
 import { JSX } from "react";
 import "./start.css";
 import { TabID } from "src/common/ipcAPI";
+import { useParams } from "react-router";
 
-export default function Start({ ID }: { ID: TabID }): JSX.Element {
+export default function Start(): JSX.Element {
+  const { ID } = useParams<Record<"ID", TabID>>();
+  if (ID == undefined) {
+    throw new Error("Tab must have an ID.");
+  }
   return (
     <div className="landing-content">
       <button className="ButtonLike" onClick={() => window.API.startTab.openNew(ID)}>

@@ -30,7 +30,7 @@ export default function CharacterSearchForm({ ID, setLoadState }: CharacterSearc
 
   return (
     <form id="character-search-form" action={handleAction}>
-      <label htmlFor="character-selection">Get Appearances</label>
+      <label htmlFor="character-selection">Search</label>
       <input
         type="search"
         id="character-name"

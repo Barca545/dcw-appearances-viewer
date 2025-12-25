@@ -16,53 +16,25 @@ import { SerializedTabBarState } from "../common/ipcAPI";
 // - Add logging renderer errors and sending logs to cloudflare
 //   - New LogFile should be created each update
 // - Tab bar should be scrollable with mouse
-// - Settings should be marked as dirty on change
+// - Settings should be marked as dirty on change not on save
 // - Might be possible to get rid of the datatab stuff since a lot of that logic is no longer shared otoh might eventually use it
-
-// TODO:
-// - I wish there was a way to tie the route creation to the tabbar creation
-
-// contains origin location
-// error.stack;
+// - Some changes to tab on the main side do not cause render-side tab logic to change
+//   - Creating a settings tab does not cause a tabbar rerender or navigation until after the new tab button is pressed
+//   - Start tab buttons do not immediately load a new tab
+// - App tab is not showing the results
 
 const root = createRoot(document.getElementById("root") as HTMLElement);
 // Be cool if I could use a local context for the tab bar not a full store just something more straightforward
 root.render(
   <React.StrictMode>
     <Router>
-      <TabRoutes />
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route path="app/:ID" element={<App />} />
+          <Route path="settings/:ID" element={<AppSettings />} />
+          <Route path="start/:ID" element={<Start />} />
+        </Route>
+      </Routes>
     </Router>
   </React.StrictMode>,
 );
-
-function TabRoutes(): JSX.Element {
-  const [tabs, setTabs] = useState<SerializedTabBarState | null>(null);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const handleChange = (state: SerializedTabBarState) => {
-      setTabs(state);
-      navigate(state.selected);
-    };
-
-    window.API.tabBar.request().then(handleChange);
-    return window.API.tabBar.onUpdate(handleChange);
-  }, []);
-
-  // Render the tabs in routes
-  return (
-    <Routes>
-      <Route path="/" element={<Layout />}>
-        {tabs?.list.map((tab) => {
-          if (tab.TabType == "APP") {
-            return <Route key={tab.meta.ID} path={`/${tab.meta.ID}`} element={<App ID={tab.meta.ID} />} />;
-          } else if (tab.TabType == "START") {
-            return <Route key={tab.meta.ID} path={`/${tab.meta.ID}`} element={<Start ID={tab.meta.ID} />} />;
-          } else if (tab.TabType == "SETTINGS") {
-            return <Route key={tab.meta.ID} path={`/${tab.meta.ID}`} element={<AppSettings ID={tab.meta.ID} />} />;
-          }
-        })}
-      </Route>
-    </Routes>
-  );
-}

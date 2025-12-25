@@ -1,14 +1,8 @@
 import { UUID } from "crypto";
-import {
-  SearchRequest,
-  SerializedAppTab,
-  SerializedSettingsTab,
-  SettingsTabUpdate,
-  TabDataUpdate,
-  TabMetaData,
-} from "./TypesAPI";
+import { SearchRequest, SerializedAppTab, SerializedSettingsTab, SettingsTabUpdate } from "./TypesAPI";
 import { DisplayOptions, Settings } from "./apiTypes";
 import { UserErrorInfo } from "src/main/log";
+import { TabMetaData } from "src/main/tab";
 
 // TODO: This could maybe be a .d.ts since it has no functions and really is fufilling that purpose
 
@@ -32,7 +26,11 @@ export enum IPCEvent {
   StartOpenFile = "start:open:file",
   // Tab bar Events
   TabRequest = "tab:request",
+  /**Incoming update from the main process. */
   TabUpdate = "tab:update",
+  /**Navigate to a new tab. */
+  TabGo = "tab:go",
+  /**Open a new tab and navigate to it. */
   TabOpen = "tab:open",
   TabReorder = "tab:reorder",
   TabClose = "tab:close",
@@ -42,11 +40,13 @@ export enum IPCEvent {
 
 // TODO: Use this once we switch to single source of truth
 export interface SerializedTabBarState {
-  readonly selected: TabID;
+  readonly selected: TabMetaData;
   readonly list: { TabType: "APP" | "START" | "SETTINGS"; meta: TabMetaData; isClean: boolean }[];
 }
 
+// TODO: These should probably be in the tab file not here
 export type TabID = UUID;
+export type TabURL = `/${"app" | "settings" | "start"}/${TabID}`;
 
 export namespace TabID {
   /** Creates a new `TabID`. */
@@ -104,10 +104,6 @@ declare global {
          * Returns the state of the main process tabs.
          */
         openAndNavigateToTab: () => Promise<SerializedTabBarState>;
-        /**Notify the main process the user is attempting to navigate to open a tab at the provided ID.
-         * Returns the state of the main process tabs.
-         */
-        openTabIn: (ID: TabID) => Promise<SerializedTabBarState>;
         /**Notify the main process the user is attempting to close a tab.
          * Returns the state of the main process tabs.*/
         closeTab: (ID: TabID) => Promise<SerializedTabBarState>;

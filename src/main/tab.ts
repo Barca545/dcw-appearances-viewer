@@ -1,5 +1,5 @@
 import { loadList, Path, ProjectData, ProjectDataFromJSON } from "../../core/load";
-import { TabID } from "../../src/common/ipcAPI";
+import { TabID, TabURL } from "../../src/common/ipcAPI";
 import { None, Option, Some } from "../../core/option";
 import { SerializedAppTab, SerializedSettingsTab, SerializedStartTab, SerializedTab } from "../../src/common/TypesAPI";
 import { DEFAULT_FILTER_OPTIONS, DisplayOptions, DisplayOrder, Settings } from "../../src/common/apiTypes";
@@ -20,7 +20,7 @@ function staticImplements<T>() {
 
 @staticImplements<TabStaticInterface>()
 export class SettingsTab implements DataTab {
-  meta: { ID: TabID; tabName: "Settings" };
+  meta: { ID: TabID; tabName: "Settings"; URL: `/settings/${TabID}` };
   // FIXME: Since the session also stores settings, I don't like having settings in two places
   // TODO: Needs to store old settings so saving without saving reapplies old settings
   data: Settings;
@@ -28,7 +28,8 @@ export class SettingsTab implements DataTab {
   savePath: Option<Path>;
 
   private constructor() {
-    this.meta = { ID: TabID.create(), tabName: "Settings" };
+    const ID = TabID.create();
+    this.meta = { ID, tabName: "Settings", URL: `/settings/${ID}` };
     this.data = SettingsTab.getSettings();
     this.isClean = true;
     this.savePath = new Some(new Path(SETTINGS_PATH));
@@ -36,7 +37,7 @@ export class SettingsTab implements DataTab {
 
   serialize(): SerializedSettingsTab {
     return {
-      meta: { ...this.meta, ID: this.meta.ID },
+      meta: this.meta,
       settings: this.data,
     };
   }
@@ -60,11 +61,11 @@ export class SettingsTab implements DataTab {
 
 @staticImplements<TabStaticInterface>()
 export class StartTab implements Tab {
-  meta: { ID: TabID; tabName: "Start" };
+  meta: { ID: TabID; tabName: "Start"; URL: `/start/${TabID}` };
   savePath: None<Path>;
 
   constructor(ID: TabID) {
-    this.meta = { ID, tabName: "Start" };
+    this.meta = { ID, tabName: "Start", URL: `/start/${ID}` };
     this.savePath = new None();
   }
 
@@ -75,7 +76,7 @@ export class StartTab implements Tab {
 
   serialize(): SerializedStartTab {
     return {
-      meta: { ...this.meta, ID: this.meta.ID },
+      meta: this.meta,
     };
   }
 
@@ -91,14 +92,14 @@ export class StartTab implements Tab {
  */
 export class AppTab implements DataTab {
   // TODO: maybe "meta" should be made an interface since I reuse it like 3 places
-  meta: { ID: TabID; tabName: string; characterName: string };
+  meta: { ID: TabID; URL: `/app/${TabID}`; tabName: string; characterName: string };
   savePath: Option<Path>;
   /**Indicates whether the tab has unsaved changes. */
   isClean: boolean;
   data: ProjectData;
 
   private constructor(args: { meta: { ID: TabID; tabName: string }; savePath: Option<Path>; projectData: ProjectData }) {
-    this.meta = { ID: args.meta.ID, tabName: args.meta.tabName, characterName: "" };
+    this.meta = { ID: args.meta.ID, URL: `/app/${args.meta.ID}`, tabName: args.meta.tabName, characterName: "" };
     this.isClean = true;
     this.savePath = args.savePath;
     this.data = args.projectData;
@@ -208,6 +209,7 @@ export class AppTab implements DataTab {
 /**The basic metadata all `Tab`s contain regardless of type. */
 export interface TabMetaData {
   readonly ID: TabID;
+  readonly URL: TabURL;
   tabName: string;
 }
 
