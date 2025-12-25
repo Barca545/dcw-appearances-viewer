@@ -28,12 +28,12 @@ export function MENU_TEMPLATE(session: Session): MenuTemplate {
         {
           label: "Save",
           accelerator: "CommandOrControl+S",
-          click: (_item, _base, _e) => session.saveFile(false),
+          click: (_item, _base, _e) => session.saveAppTab(false),
         },
         {
           label: "Save As",
           accelerator: "CommandOrControl+Shift+S",
-          click: (_item, _base, _e) => session.saveFile(true),
+          click: (_item, _base, _e) => session.saveAppTab(true),
         },
         { type: "separator" },
         {

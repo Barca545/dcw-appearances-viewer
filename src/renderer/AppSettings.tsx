@@ -13,28 +13,25 @@ export default function AppSettings({ ID }: { ID: TabID }) {
   const [settings, setSettings] = useState<null | Settings>(null);
 
   useEffect(() => {
-    window.API.settings.request().then((state) => setSettings(state));
+    window.API.settingsTab.request().then((state) => setSettings(state));
 
-    // TODO: Register a listener for updates
-    window.API.settings.onUpdate((state) => setSettings(state.settings));
-
-    // return window.API.settings.removeUpdateListener;
+    return window.API.settingsTab.onUpdate((state) => setSettings(state.settings));
   }, []);
 
   if (!settings) {
     return <LoadingSpinner />;
   }
 
-  const handleSave = () => window.API.settings.save({ ID, settings });
+  const handleSave = async () => setSettings(await window.API.settingsTab.save({ ID, settings }));
 
-  const handleReset = () => window.API.settings.reset(ID);
+  const handleReset = async () => setSettings(await window.API.settingsTab.reset());
 
   const handleSaveAndClose = () => {
     handleSave();
-    window.API.tab.close(ID);
+    window.API.tabBar.closeTab(ID);
   };
 
-  const handleClose = () => window.API.tab.close(ID);
+  const handleClose = () => window.API.tabBar.closeTab(ID);
 
   const handleThemeChange = (e: React.FormEvent<HTMLInputElement>) =>
     setSettings({ ...settings, theme: e.currentTarget.value as SettingsTheme });

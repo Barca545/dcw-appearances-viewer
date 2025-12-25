@@ -15,6 +15,12 @@ import { SerializedTabBarState } from "../common/ipcAPI";
 //   - Fill out documentation
 // - Add logging renderer errors and sending logs to cloudflare
 //   - New LogFile should be created each update
+// - Tab bar should be scrollable with mouse
+// - Settings should be marked as dirty on change
+// - Might be possible to get rid of the datatab stuff since a lot of that logic is no longer shared otoh might eventually use it
+
+// TODO:
+// - I wish there was a way to tie the route creation to the tabbar creation
 
 // contains origin location
 // error.stack;
@@ -34,9 +40,13 @@ function TabRoutes(): JSX.Element {
   const navigate = useNavigate();
 
   useEffect(() => {
-    window.API.tabBar.requestTabBarState().then((update) => setTabs(update));
-    window.API.tabBar.onUpdate((update) => setTabs(update));
-    window.API.tab.go((tab) => navigate(tab));
+    const handleChange = (state: SerializedTabBarState) => {
+      setTabs(state);
+      navigate(state.selected);
+    };
+
+    window.API.tabBar.request().then(handleChange);
+    return window.API.tabBar.onUpdate(handleChange);
   }, []);
 
   // Render the tabs in routes
@@ -47,7 +57,7 @@ function TabRoutes(): JSX.Element {
           if (tab.TabType == "APP") {
             return <Route key={tab.meta.ID} path={`/${tab.meta.ID}`} element={<App ID={tab.meta.ID} />} />;
           } else if (tab.TabType == "START") {
-            return <Route key={tab.meta.ID} path={`/${tab.meta.ID}`} element={<Start />} />;
+            return <Route key={tab.meta.ID} path={`/${tab.meta.ID}`} element={<Start ID={tab.meta.ID} />} />;
           } else if (tab.TabType == "SETTINGS") {
             return <Route key={tab.meta.ID} path={`/${tab.meta.ID}`} element={<AppSettings ID={tab.meta.ID} />} />;
           }

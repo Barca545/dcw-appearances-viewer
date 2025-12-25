@@ -14,11 +14,19 @@ import {
   UNIMPLEMENTED_FEATURE,
 } from "./main_utils";
 import fs from "node:fs";
-import type { DataTab, SearchRequest, SerializedSettingsTab, SettingsTabUpdate, Tab, TabDataUpdate } from "../common/TypesAPI";
+import type {
+  DataTab,
+  SearchRequest,
+  SerializedAppTab,
+  SerializedSettingsTab,
+  SettingsTabUpdate,
+  Tab,
+  TabDataUpdate,
+} from "../common/TypesAPI";
 import { openFileDialog } from "./menu";
 import { createCharacterName } from "../common/utils";
 import { fetchList } from "../../core/fetch";
-import { APIEvent, SerializedTabBarState, TabID } from "../../src/common/ipcAPI";
+import { IPCEvent, SerializedTabBarState, TabID } from "../../src/common/ipcAPI";
 import { MENU_TEMPLATE } from "./menu";
 import { AppTab, isDataTab, SettingsTab, StartTab } from "./tab";
 
@@ -29,12 +37,8 @@ declare const ERROR_WINDOW_VITE_DEV_SERVER_URL: string;
 
 // TODO: This should probably go wherever controls the API serialization and stuff
 interface APIEventMap {
-  [APIEvent.TabUpdate]: TabDataUpdate;
-  [APIEvent.SettingsRequest]: Settings;
-  [APIEvent.TabGo]: TabID;
-  [APIEvent.TabBarClose]: TabID;
-  [APIEvent.TabBarUpdate]: SerializedTabBarState;
-  [APIEvent.SettingsUpdate]: SerializedSettingsTab;
+  [IPCEvent.TabUpdate]: SerializedTabBarState;
+  [IPCEvent.AppUpdate]: SerializedAppTab;
 }
 
 export class Session {
@@ -145,9 +149,7 @@ export class Session {
     }
   }
 
-  /** - Set the `current` field to the specified TabID.
-   * - Update the `TabEventStack`
-   * - Send `APIEvent.TabBarUpdate` and `APIEvent.TabGo`
+  /** - Set the `current` field to the specified TabID and update the `TabEventStack`
    */
   private navigateToTab(ID: TabID) {
     // Don't navigate to the current tab
@@ -163,28 +165,23 @@ export class Session {
 
     this.currentTab = new Some(ID);
     this.tabEventStack.push({ ID: ID, type: TabEventType.Navigate });
-    // TODO: A little inefficient
-    this.sendIPC(APIEvent.TabBarUpdate, this.serializeTabBarState());
-    this.sendIPC(APIEvent.TabGo, this.currentTab.unwrap());
   }
 
+  /**Place a tab in the tablist and set it as the current tab. */
   private openAndNavigateToTab(tab: Tab) {
     this.tabs.set(tab.meta.ID, tab);
     this.tabEventStack.push({ ID: tab.meta.ID, type: TabEventType.Open });
     this.currentTab = new Some(tab.meta.ID);
     this.tabEventStack.push({ ID: tab.meta.ID, type: TabEventType.Navigate });
-    this.sendIPC(APIEvent.TabUpdate, tab.serialize());
-    this.sendIPC(APIEvent.TabBarUpdate, this.serializeTabBarState());
-    this.sendIPC(APIEvent.TabGo, tab.meta.ID);
   }
 
   /**Creates a new empty `AppTab`.
    * Insert the new tab into the `Session`'s tabs list.
-   * Send the data to the renderer.
+   * Set the new tab as the current tab.
    */
   newAppTab() {
     // Try to save the current tab
-    this.trysave();
+    this.trySaveAppTabb();
     const tab = AppTab.default({
       meta: {
         ID: TabID.create(),
@@ -205,7 +202,7 @@ export class Session {
    */
   newAppTabFromFile() {
     // Try to save the current tab
-    this.trysave();
+    this.trySaveAppTabb();
     const res = openFileDialog();
 
     // If the action was canceled, abort and return early
@@ -228,6 +225,48 @@ export class Session {
     this.openAndNavigateToTab(tab);
   }
 
+  /**If the ID identifies a StartTab, open a new AppTab inside it.*/
+  newAppTabInStartTab(ID: TabID) {
+    let tab = this.getTab(ID);
+    if (tab instanceof StartTab) {
+      tab = AppTab.default({
+        meta: {
+          ID: TabID.create(),
+          // This function will return a tab with the name "Untitled + <Number of Untitled Tabs>"
+          tabName: `Untitled ${this.tabs.values().reduce((acc, tab) => {
+            return tab.meta.tabName.includes("Untitled") ? acc + 1 : acc;
+          }, 1)}`,
+        },
+        savePath: new None(),
+      });
+    }
+  }
+
+  /**If the ID identifies a StartTab, load saved ProjectData into it.*/
+  openAppFileInStartTab(ID: TabID) {
+    let tab = this.getTab(ID);
+    if (tab instanceof StartTab) {
+      const res = openFileDialog();
+
+      // If the action was canceled, abort and return early
+      if (res.isNone()) {
+        return new None();
+      }
+
+      const data = AppTab.LoadProjectData(new Path(res.unwrap()));
+
+      tab = AppTab.new({
+        meta: {
+          ID: TabID.create(),
+          tabName: data.meta.title,
+        },
+        // We know it is valid by the time we reach here because we checked it with res.isNone() above
+        savePath: new Some(new Path(res.unwrap())),
+        projectData: data,
+      });
+    }
+  }
+
   /**Create a new Start Tab.
    * Insert the new tab into the `Session`'s tabs list.
    * Send the data to the renderer.
@@ -246,72 +285,50 @@ export class Session {
 
   // TODO: Instead of setting is clean directly, update everywhere it is used to this
   updateTabIsClean(ID: TabID, state: boolean) {
-    let tab = this.tabs.get(ID) as unknown as DataTab;
+    let tab = this.getTab(ID) as unknown as DataTab;
     tab.isClean = state;
-    this.sendIPC(APIEvent.TabBarUpdate, this.serializeTabBarState());
+    this.sendIPC(IPCEvent.TabUpdate, this.serializeTabBarState());
   }
 
   /**Save a tab's `ProjectData` and mark the tab as clean. If no ID is provided, defaults to the current tab.*/
-  saveFile(mustSaveAs: boolean, id?: TabID) {
-    // Confirm tab is not a start tab
+  saveAppTab(mustSaveAs: boolean, id?: TabID) {
     const tab = this.getTab(id ? id : this.currentTab.unwrap());
-    if (tab instanceof StartTab) {
-      return;
-    } else if (!tab) {
+    if (tab instanceof AppTab) {
+      // If there is no save_path or if this is explicitly a save as command update the save path.
+      if (mustSaveAs || tab.savePath.isNone()) {
+        const res = dialog.showSaveDialogSync(this.win, {
+          defaultPath: app.getPath("documents"),
+          // FIXME: Can't be this and openFile figure out the difference
+          properties: ["createDirectory", "showOverwriteConfirmation"],
+          filters: [
+            // I don't really think there is a reason to add txt saving since JSONs are plaintext but maybe
+            { name: ".json", extensions: ["json"] },
+          ],
+        });
+
+        // Early return if the user cancels
+        if (!res) return;
+
+        // Update the save path
+        tab.savePath = new Some(new Path(res));
+      }
+
+      tab.data.saveAsJSON(tab.savePath.unwrap());
+      this.updateTabIsClean(tab.meta.ID, true);
+    } else if (tab == undefined) {
       // TODO: This probalby needs to be stuck in messages although I am not sure when this case would happen
       // TODO: This probably also should be logged as an error
       alert(`Tab with ID ${this.currentTab} does not exist!`);
       return;
     }
-
-    // If there is no save_path or if this is explicitly a save as command update the save path.
-    if (mustSaveAs || tab.savePath.isNone()) {
-      const res = dialog.showSaveDialogSync(this.win, {
-        defaultPath: app.getPath("documents"),
-        // FIXME: Can't be this and openFile figure out the difference
-        properties: ["createDirectory", "showOverwriteConfirmation"],
-        filters: [
-          // I don't really think there is a reason to add txt saving since JSONs are plaintext but maybe
-          { name: ".json", extensions: ["json"] },
-        ],
-      });
-
-      // Early return if the user cancels
-      if (!res) return;
-
-      // Update the save path
-      tab.savePath = new Some(new Path(res));
-    }
-
-    if (tab instanceof AppTab) {
-      tab.data.saveAsJSON(tab.savePath.unwrap());
-      this.updateTabIsClean(tab.meta.ID, true);
-    } else if (tab instanceof SettingsTab) {
-      fs.writeFileSync(SETTINGS_PATH, JSON.stringify(tab.data), { encoding: "utf-8" });
-    }
   }
 
   /**Try to save a tab. Will fail if it does not have a save path. Defaults to saving the `currentTab`.*/
-  trysave(id?: TabID) {
+  trySaveAppTabb(id?: TabID) {
     const tab = this.getTab(id ? id : this.currentTab.unwrap());
-    if (tab instanceof StartTab || tab instanceof SettingsTab) {
-      return;
-    } else if (tab instanceof AppTab && tab.savePath.isSome()) {
+    if (tab instanceof AppTab && tab.savePath.isSome()) {
       tab.data.saveAsJSON(tab.savePath.unwrap());
       this.updateTabIsClean(tab.meta.ID, true);
-    }
-  }
-
-  private static getSettings(): Settings {
-    const settingsSrc = path.join(RESOURCE_PATH, "settings.json");
-    // Skip the production stuff below if we're in dev
-    if (IS_DEV) {
-      return JSON.parse(fs.readFileSync(settingsSrc, { encoding: "utf-8" })) as Settings;
-    } else {
-      // Load settings
-      const settings = fs.readFileSync(path.join(__userdata, "settings.json"), { encoding: "utf-8" });
-
-      return JSON.parse(settings) as Settings;
     }
   }
 
@@ -374,35 +391,33 @@ export class Session {
     }
   }
 
-  /**Attempt to close a tab.
+  /**Attempt to close an AppTab.
    * Removes the tab from the `Session` and Renderer's tab lists.
    * Prompt the user for how to handle an unsaved tab.
    * @returns `true` if the tab closed.
    * @returns `false` if the process was aborted. */
   closeTab(ID: TabID): boolean {
     const tab = this.getTab(ID);
-    if (tab instanceof StartTab) {
-      this.tabs.delete(ID);
-    } else if ((tab instanceof AppTab || tab instanceof SettingsTab) && !tab.isClean) {
+    if (tab != undefined && tab instanceof AppTab && !tab.isClean) {
       const res = this.promptUsavedClose();
 
       if (res === CloseType.Cancel) {
         return false;
       } else if (res === CloseType.Save) {
-        this.saveFile(false, ID);
-        this.closeTab(ID);
+        this.saveAppTab(false, ID);
+        // this.closeTab(ID);
+        this.perfromTabClose(ID);
       }
     }
-
-    this.perfromTabClose(ID);
 
     return true;
   }
 
   /**Update the character of a tab.
    * Errors if the tab does not exist or is not an AppTab.
-   * Sends the new data back to the tab.*/
-  async updateTabCharacter(req: SearchRequest) {
+   * Returns the tab's serialized data.
+   * */
+  updateTabCharacter(req: SearchRequest): SerializedAppTab {
     const tab = this.getTab(req.id);
     // TODO: These errors need to log properly
     if (!tab) {
@@ -413,12 +428,13 @@ export class Session {
       throw new Error(`Cannot update tab ${req.id} as it is a ${tabType} tab not an AppTab`);
     }
     tab.meta.characterName = createCharacterName(req);
-    const res = await fetchList(tab.meta.characterName);
-    tab.data.list = res.unwrap_or([]);
+
+    fetchList(tab.meta.characterName).then((res) => (tab.data.list = res.unwrap_or([])));
+
     this.updateTabIsClean(tab.meta.ID, false);
 
-    // Send the tab back
-    this.sendIPC(APIEvent.TabUpdate, tab.serialize());
+    // Return the tab
+    return tab.serialize();
   }
 
   /**Update the current `AppTab`'s `DisplayOptions`.*/
@@ -429,7 +445,7 @@ export class Session {
 
     console.log(tab.serialize());
 
-    this.sendIPC(APIEvent.TabUpdate, tab.serialize());
+    this.sendIPC(IPCEvent.AppUpdate, tab.serialize());
   }
 
   /**Set or reset the session's autosave timer */
@@ -439,7 +455,7 @@ export class Session {
       this.autosave.close();
     }
     // Set the timer
-    this.autosave = setInterval(() => this.tabs.keys().forEach((id) => this.trysave(id)), Number.parseInt(len));
+    this.autosave = setInterval(() => this.tabs.keys().forEach((id) => this.trySaveAppTabb(id)), Number.parseInt(len));
   }
 
   /**Restart the autosave timer. */
@@ -447,17 +463,28 @@ export class Session {
     if (this.autosave) this.autosave.refresh();
   }
 
-  /**Update the current session's settings without saving them to userdata.
-   *
-   * Send the changes to the renderer.*/
-  saveSettingsFromRenderer(update: SettingsTabUpdate) {
-    const tab = this.getTab(update.ID) as SettingsTab;
-    // Update the current tab
-    tab.data = update.settings;
-    this.updateTabIsClean(tab.meta.ID, false);
-    this.applySettings(update.settings);
-    // Send back to the renderer, inefficient but preserves state
-    this.sendIPC(APIEvent.SettingsUpdate, tab.serialize());
+  private static getSettings(): Settings {
+    const settingsSrc = path.join(RESOURCE_PATH, "settings.json");
+    // Skip the production stuff below if we're in dev
+    if (IS_DEV) {
+      return JSON.parse(fs.readFileSync(settingsSrc, { encoding: "utf-8" })) as Settings;
+    } else {
+      // Load settings
+      const settings = fs.readFileSync(path.join(__userdata, "settings.json"), { encoding: "utf-8" });
+
+      return JSON.parse(settings) as Settings;
+    }
+  }
+
+  /**Save the new state to the Settings file.*/
+  saveSettings(state: Settings) {
+    // Update the data so all settings tabs are in sync
+    this.tabs.forEach((tab) => {
+      if (tab instanceof SettingsTab) tab.data = state;
+    });
+    this.applySettings(state);
+    // Actually save the settings
+    fs.writeFileSync(SETTINGS_PATH, JSON.stringify(state), { encoding: "utf-8" });
   }
 
   applySettings(settings: Settings) {
@@ -476,15 +503,17 @@ export class Session {
     this.setAutoSave(settings.saveSettings.autosaveFrequency);
   }
 
-  resetSettings(ID: TabID) {
-    const settings = JSON.parse(fs.readFileSync(path.join(RESOURCE_PATH, "settings.json"), { encoding: "utf-8" })) as Settings;
-    let tab = this.tabs.get(ID) as SettingsTab;
-    tab.data = settings;
-    this.updateTabIsClean(tab.meta.ID, false);
-    this.settings = settings;
-    this.saveFile(false, ID);
-    this.applySettings(settings);
-    this.sendIPC(APIEvent.SettingsUpdate, tab.serialize());
+  resetSettings() {
+    const defaults = JSON.parse(fs.readFileSync(path.join(RESOURCE_PATH, "settings.json"), { encoding: "utf-8" })) as Settings;
+    // Update the data for each settings tab
+    // TODO: It occurs to me settings tabs don't need to store the data and can just load it ad hoc then send it
+    this.tabs.forEach((tab) => {
+      if (tab instanceof SettingsTab) tab.data = defaults;
+    });
+
+    this.settings = defaults;
+    this.saveSettings(defaults);
+    this.applySettings(defaults);
   }
 
   sendIPC<K extends keyof APIEventMap>(type: K, payload: APIEventMap[K]) {
@@ -492,14 +521,14 @@ export class Session {
   }
 
   getTab(ID: TabID): Tab | undefined {
-    return this.tabs.get(ID);
+    return this.getTab(ID);
   }
 
   /**Reorders the Session's `Tab`'s in place to match the requested order. Returns the new state. */
   // FIXME: This should be called whenever the tabs change
   setTabBarState(state: SerializedTabBarState): SerializedTabBarState {
     let newTabs: Map<TabID, Tab> = new Map();
-    state.list.forEach(({ meta }) => newTabs.set(meta.ID, this.tabs.get(meta.ID) as Tab));
+    state.list.forEach(({ meta }) => newTabs.set(meta.ID, this.getTab(meta.ID) as Tab));
     this.tabs = newTabs;
 
     return this.serializeTabBarState();
@@ -518,7 +547,7 @@ export class Session {
 
   /** Serializes the `Session` tabs' `TabMetaData` and sends it to the main process.*/
   updateTabBar() {
-    this.sendIPC(APIEvent.TabBarUpdate, this.serializeTabBarState());
+    this.sendIPC(IPCEvent.TabUpdate, this.serializeTabBarState());
   }
 
   isReadyToClose(): boolean {
@@ -530,8 +559,23 @@ export class Session {
     return true;
   }
 
+  // TODO: Event handlers, I hate these names
+
+  handleAppTabDataRequest(ID: TabID): SerializedAppTab {
+    const tab = this.getTab(ID);
+    if (tab == undefined) {
+      throw new Error(`Tab ${ID} does not exist.`);
+    } else if (!(tab instanceof AppTab)) {
+      throw new Error(`Tab ${ID} aka ${tab.meta.tabName} is not an application tab.`);
+    } else {
+      return tab.serialize();
+    }
+  }
+
   /**Register `IPC` event handlers for communication between the renderer and main process*/
   async initListeners() {
+    // FOR SPACE, THESE MAY USE THE COMMA OPERATOR
+
     // FIXME: Fix MAC behavior, really I want to just make it so that closing the window closes the app
     // damn expected MAC behavior
 
@@ -548,9 +592,7 @@ export class Session {
 
     // MAC BEHAVIOR
     // Quit the application when all windows are closed
-    ipcMain.on("window-all-closed", () => {
-      if (!IS_MAC) app.quit();
-    });
+    ipcMain.on("window-all-closed", () => !IS_MAC && app.quit());
 
     this.win.on("close", (e) => {
       if (this.tabs.size > 0 || !this.isReadyToClose()) {
@@ -558,39 +600,47 @@ export class Session {
         this.close();
       }
     });
-    // TODO: I do want to try and save stuff on blur or on changing tabs
-    // but I don't want to to be hit with a savea
-    this.win.on("blur", () => this.trysave());
+
+    this.win.on("blur", () => this.trySaveAppTabb());
 
     // TABBAR LISTENERS
     // TODO: See ipcAPI documentation for what these are supposed to do
-    ipcMain.handle(APIEvent.TabBarRequestState, () => this.serializeTabBarState());
-    ipcMain.handle(APIEvent.TabBarOpenAndUpdateCurrent);
-    ipcMain.handle(APIEvent.TabBarUpdate);
-    ipcMain.handle(APIEvent.TabBarClose);
-    ipcMain.handle(APIEvent.TabBarReorder);
+    ipcMain.handle(IPCEvent.TabRequest, () => this.serializeTabBarState());
+    ipcMain.handle(IPCEvent.TabOpen, () => (this.newAppTab(), this.serializeTabBarState()));
+    ipcMain.handle(IPCEvent.TabReorder, (_e, state: SerializedTabBarState) => this.setTabBarState(state));
+    ipcMain.handle(IPCEvent.TabClose, (_e, ID) => (this.closeTab(ID), this.serializeTabBarState()));
+
+    // APPLICATION TAB LISTENERS
+    ipcMain.handle(IPCEvent.AppRequest, (_e, ID: TabID) => this.handleAppTabDataRequest(ID));
+    ipcMain.handle(IPCEvent.AppSearch, (_e, req: SearchRequest) => this.updateTabCharacter(req));
+
+    // SETTINGS TAB LISTENERS
+    ipcMain.handle(IPCEvent.SettingsRequest, () => this.settings);
+    ipcMain.handle(IPCEvent.SettingsSave, (_e, state: SettingsTabUpdate) => (this.saveSettings(state.settings), this.settings));
+    ipcMain.handle(IPCEvent.SettingsReset, () => (this.resetSettings(), this.settings));
+
+    // START TAB LISTENERS
+    // FIXME: I am pretty sure this is actually a start tab function
+    ipcMain.on(IPCEvent.StartOpenNew, (_e, ID: TabID) => {
+      this.newAppTabInStartTab(ID);
+      this.sendIPC(IPCEvent.TabUpdate, this.serializeTabBarState());
+    });
+    ipcMain.on(IPCEvent.StartOpenFile, (_e, ID: TabID) => {
+      this.openAppFileInStartTab(ID);
+      this.sendIPC(IPCEvent.TabUpdate, this.serializeTabBarState());
+    });
 
     // NAVIGATION LISTENERS
-    // ipcMain.on(APIEvent.OpenTab, () => this.newAppTab());
-    ipcMain.handle(APIEvent.OpenFile, () => this.newAppTabFromFile());
-    ipcMain.on(APIEvent.OpenURL, (_e, url: string) => shell.openExternal(url));
+    ipcMain.on(IPCEvent.OpenURL, (_e, url: string) => shell.openExternal(url));
 
     // SEARCHING FOR CHARACTERS AND REFLOW LISTENERS
-    ipcMain.handle(APIEvent.TabRequestState, () => this.tabs.get(this.currentTab.unwrap())?.serialize());
-    ipcMain.on(APIEvent.TabUpdateCurrent, (_e, ID) => this.navigateToTab(ID));
-    ipcMain.on(APIEvent.TabSearch, (_e, req: SearchRequest) => this.updateTabCharacter(req));
-    ipcMain.on(APIEvent.TabBarClose, (_e, id: TabID) => this.closeTab(id));
-
-    // SETTINGS LISTENERS
-    ipcMain.handle(APIEvent.SettingsRequest, () => this.settings);
-    ipcMain.on(APIEvent.SettingsSave, (_e, settings: SettingsTabUpdate) => {
-      this.saveSettingsFromRenderer(settings);
-      this.saveFile(false);
-    });
-    ipcMain.on(APIEvent.SettingsReset, (_e, ID) => this.resetSettings(ID));
+    // ipcMain.handle(APIEvent.TabRequestState, () => this.getTab(this.currentTab.unwrap())?.serialize());
+    // ipcMain.on(APIEvent.TabUpdateCurrent, (_e, ID) => this.navigateToTab(ID));
+    // ipcMain.on(APIEvent.TabSearch, (_e, req: SearchRequest) => this.updateTabCharacter(req));
+    // ipcMain.on(APIEvent.TabBarClose, (_e, id: TabID) => this.closeTab(id));
 
     // DISPLAY STYLE LISTENERS
-    ipcMain.on(APIEvent.DisplayOptionsRequestUpdate, (_e, opts: DisplayOptions) => this.updateDisplayOptions(opts));
+    // ipcMain.on(APIEvent.DisplayOptionsRequestUpdate, (_e, opts: DisplayOptions) => this.updateDisplayOptions(opts));
 
     // Error Listeners
     // TODO: I think this needs to get fed to the logger

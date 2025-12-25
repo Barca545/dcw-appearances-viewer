@@ -10,34 +10,34 @@ import {
 import { DisplayOptions, Settings } from "./apiTypes";
 import { UserErrorInfo } from "src/main/log";
 
+// TODO: This could maybe be a .d.ts since it has no functions and really is fufilling that purpose
+
 export type VoidReturnFunction = () => void;
 
-export enum APIEvent {
-  // TODO: Merge tabs and tabbar here and in preload
-  TabBarRequestState = "tabar:request:state",
-  TabBarUpdate = "tabbar:update",
-  TabBarOpenAndUpdateCurrent = "tabbar:open",
-  TabBarReorder = "tabbar:reorder",
-  TabBarClose = "tab:close",
+export enum IPCEvent {
+  // Settings Events
   SettingsRequest = "settings:request",
-  SettingsSave = "settings:save",
   SettingsUpdate = "settings:update",
-  SettingsReset = "setting:reset",
-  /**Returns the state of the current tab */
-  TabRequestState = "tab:request:state",
-  TabUpdateCurrent = "tab:setCurrent",
-  TabSearch = "tab:search",
+  SettingsSave = "settings:save",
+  SettingsReset = "settings:reset",
+  // App Events
+  AppRequest = "app:request",
+  AppUpdate = "app:update",
+  AppSearch = "app:search",
+  AppDisplayRequest = "app:display:request",
+  AppDisplayApply = "app:display:apply",
+  AppDisplayUpdate = "app:display:update",
+  // Start Events
+  StartOpenNew = "start:open:new",
+  StartOpenFile = "start:open:file",
+  // Tab bar Events
+  TabRequest = "tab:request",
   TabUpdate = "tab:update",
-  TabGo = "tab:go",
-  OpenTab = "open:tab",
-  OpenFile = "open:file",
-  OpenURL = "open:URL",
-  DisplayOptionsRequestState = "displayopts:request:state",
-  DisplayOptionsRequestUpdate = "displayopts:request:update",
-  /**A request from the renderer for the main process to set the display options equal to the payload. */
-  DisplayOptionsUpdate = "displayopts:update",
-  Error = "ERROR",
-  VisualUpdateFontSize = "visualupdate:fontsize",
+  TabOpen = "tab:open",
+  TabReorder = "tab:reorder",
+  TabClose = "tab:close",
+  // Misc.
+  OpenURL = "open:url",
 }
 
 // TODO: Use this once we switch to single source of truth
@@ -63,25 +63,33 @@ declare global {
       submit: (info: UserErrorInfo) => void;
     };
     API: {
-      settings: {
-        request: () => Promise<Settings>;
-        /**Save the new settings to the disk. */
-        save: (data: SettingsTabUpdate) => void;
-        reset: (ID: TabID) => void;
-        close: () => void;
-        onUpdate: (fn: (state: SerializedSettingsTab) => void) => void;
-        removeUpdateListener: () => void;
-      };
       appTab: {
-        /**Request the AppTab's data. */
+        /**Request the AppTab's data from the main process. */
         request: (ID: TabID) => Promise<SerializedAppTab>;
+        /**Registers a handler function for the `IPCAppTabEvent.Update` event and returns its unsubscribe function. */
+        onUpdate: (fn: (data: SerializedAppTab) => void) => UnsubscribeFunction;
         /**Submits the form to the main process and returns the result to the renderer. */
-        search: (data: SearchRequest) => void;
-        /**Registers a handler function for the APIEvent.AppTabUpdate event and returns its unsubscribe function. */
-        onUpdate: (fn: (data: TabDataUpdate) => void) => UnsubscribeFunction;
+        search: (data: SearchRequest) => Promise<SerializedAppTab>;
+        setDisplayOptions: (opts: DisplayOptions) => void;
       };
-      settingsTab: {};
-      startTab: {};
+      settingsTab: {
+        /**Request the Settings data from the main process. */
+        request: () => Promise<Settings>;
+        /**Registers a handler function for the `IPCSettingsTabEvent.Update` event and returns its unsubscribe function. */
+        onUpdate: (fn: (data: SerializedSettingsTab) => void) => UnsubscribeFunction;
+        /**Send new Settings data to the main process and save it to the disk.
+         * Returns the main process' current Settings' state.*/
+        save: (data: SettingsTabUpdate) => Promise<Settings>;
+        /**Reset Settings to its default configuration.
+         * Returns the main process' current Settings' state.*/
+        reset: () => Promise<Settings>;
+      };
+      startTab: {
+        /**Tell the main process to convert the specified [start] tab into a new App tab. */
+        openNew: (ID: TabID) => void;
+        /**Tell the main process to load a project file into the specified [start] tab. */
+        openFile: (ID: TabID) => void;
+      };
       /**Handle requests which change a tab's state. */
       tabBar: {
         /**Requests the current state of the tab bar from the main process. */
@@ -96,6 +104,10 @@ declare global {
          * Returns the state of the main process tabs.
          */
         openAndNavigateToTab: () => Promise<SerializedTabBarState>;
+        /**Notify the main process the user is attempting to navigate to open a tab at the provided ID.
+         * Returns the state of the main process tabs.
+         */
+        openTabIn: (ID: TabID) => Promise<SerializedTabBarState>;
         /**Notify the main process the user is attempting to close a tab.
          * Returns the state of the main process tabs.*/
         closeTab: (ID: TabID) => Promise<SerializedTabBarState>;
@@ -104,24 +116,8 @@ declare global {
          */
         reorderTabs: (state: SerializedTabBarState) => Promise<SerializedTabBarState>;
       };
-      open: {
-        /**Create a new Application Tab. Returns the tabs `TabData`. */
-        tab: () => void;
-        /**Open a Web URL in the default browser. */
-        url: (addr: string) => void;
-        // TODO: Eventually should open in a new tab
-        /**Open a project file in the current tab. */
-        file: () => void;
-      };
-      /**Update the `FilterOptions` stored in the main process. */
-      displayOptions: {
-        /**Request the main process send the current `Tab`'s `DisplayOptions`.*/
-        requestOptionsState: () => Promise<DisplayOptions>;
-        /**Request the main process set the current `Tab`'s `DisplayOptions` to match the payload.*/
-        requestOptionsUpdate: (state: DisplayOptions) => void;
-        /**An incoming update from the main process of the current `Tab`'s `DisplayOptions`' state.*/
-        onUpdate: (fn: (state: DisplayOptions) => void) => void;
-      };
+      /**Open a Web URL in the default browser. */
+      openURL: (addr: string) => void;
     };
   }
 }

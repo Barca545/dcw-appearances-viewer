@@ -25,7 +25,7 @@ export default function CharacterSearchForm({ ID, setLoadState }: CharacterSearc
     // TODO: I still dislike that loadstate is being set here
     // Tell user a load is happening
     setLoadState(true);
-    window.API.tab.search(req);
+    window.API.appTab.search(req);
   };
 
   return (
