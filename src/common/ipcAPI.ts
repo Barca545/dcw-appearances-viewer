@@ -69,7 +69,7 @@ declare global {
         /**Registers a handler function for the `IPCAppTabEvent.Update` event and returns its unsubscribe function. */
         onUpdate: (fn: (data: SerializedAppTab) => void) => UnsubscribeFunction;
         /**Submits the form to the main process and returns the result to the renderer. */
-        search: (data: SearchRequest) => Promise<SerializedAppTab>;
+        search: (data: SearchRequest) => void;
         setDisplayOptions: (opts: DisplayOptions) => void;
       };
       settingsTab: {

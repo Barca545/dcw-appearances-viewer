@@ -225,24 +225,27 @@ export class Session {
 
   /**If the ID identifies a StartTab, open a new AppTab inside it.*/
   newAppTabInStartTab(ID: TabID) {
-    let tab = this.getTab(ID);
+    const tab = this.getTab(ID);
     if (tab instanceof StartTab) {
-      tab = AppTab.default({
-        meta: {
-          ID: TabID.create(),
-          // This function will return a tab with the name "Untitled + <Number of Untitled Tabs>"
-          tabName: `Untitled ${this.tabs.values().reduce((acc, tab) => {
-            return tab.meta.tabName.includes("Untitled") ? acc + 1 : acc;
-          }, 1)}`,
-        },
-        savePath: new None(),
-      });
+      this.tabs.set(
+        ID,
+        AppTab.default({
+          meta: {
+            ID: ID,
+            // This function will return a tab with the name "Untitled + <Number of Untitled Tabs>"
+            tabName: `Untitled ${this.tabs.values().reduce((acc, tab) => {
+              return tab.meta.tabName.includes("Untitled") ? acc + 1 : acc;
+            }, 1)}`,
+          },
+          savePath: new None(),
+        }),
+      );
     }
   }
 
   /**If the ID identifies a StartTab, load saved ProjectData into it.*/
   openAppFileInStartTab(ID: TabID) {
-    let tab = this.getTab(ID);
+    const tab = this.getTab(ID);
     if (tab instanceof StartTab) {
       const res = openFileDialog();
 
@@ -253,15 +256,18 @@ export class Session {
 
       const data = AppTab.LoadProjectData(new Path(res.unwrap()));
 
-      tab = AppTab.new({
-        meta: {
-          ID: TabID.create(),
-          tabName: data.meta.title,
-        },
-        // We know it is valid by the time we reach here because we checked it with res.isNone() above
-        savePath: new Some(new Path(res.unwrap())),
-        projectData: data,
-      });
+      this.tabs.set(
+        ID,
+        AppTab.new({
+          meta: {
+            ID: ID,
+            tabName: data.meta.title,
+          },
+          // We know it is valid by the time we reach here because we checked it with res.isNone() above
+          savePath: new Some(new Path(res.unwrap())),
+          projectData: data,
+        }),
+      );
     }
   }
 
@@ -427,7 +433,7 @@ export class Session {
    * Errors if the tab does not exist or is not an AppTab.
    * Returns the tab's serialized data.
    * */
-  updateTabCharacter(req: SearchRequest): SerializedAppTab {
+  async updateTabCharacter(req: SearchRequest): Promise<SerializedAppTab> {
     const tab = this.getTab(req.id);
     // TODO: These errors need to log properly
     if (!tab) {
@@ -439,7 +445,7 @@ export class Session {
     }
     tab.meta.characterName = createCharacterName(req);
 
-    fetchList(tab.meta.characterName).then((res) => (tab.data.list = res.unwrap_or([])));
+    tab.data.list = (await fetchList(tab.meta.characterName)).unwrap_or([]);
 
     this.updateTabIsClean(tab.meta.ID, false);
 
@@ -452,8 +458,6 @@ export class Session {
     let tab = this.getTab(this.currentTab.unwrap()) as AppTab;
 
     tab.updateDisplayOptions(update);
-
-    console.log(tab.serialize());
 
     this.sendIPC(IPCEvent.AppUpdate, tab.serialize());
   }
@@ -531,6 +535,11 @@ export class Session {
   }
 
   getTab(ID: TabID): Tab | undefined {
+    if (IS_DEV) {
+      if (ID !== this.tabs.get(ID)?.meta.ID) {
+        throw new Error(`Tab's key is ${ID}, but Tab's ID is ${this.tabs.get(ID)?.meta.ID}`);
+      }
+    }
     return this.tabs.get(ID);
   }
 
@@ -574,7 +583,7 @@ export class Session {
 
   handleAppTabDataRequest(ID: TabID): SerializedAppTab {
     const tab = this.getTab(ID);
-    if (tab == undefined) {
+    if (tab === undefined) {
       throw new Error(`Tab ${ID} does not exist.`);
     } else if (!(tab instanceof AppTab)) {
       throw new Error(`Tab ${ID} aka ${tab.meta.tabName} is not an application tab.`);
@@ -623,7 +632,9 @@ export class Session {
 
     // APPLICATION TAB LISTENERS
     ipcMain.handle(IPCEvent.AppRequest, (_e, ID: TabID) => this.handleAppTabDataRequest(ID));
-    ipcMain.handle(IPCEvent.AppSearch, (_e, req: SearchRequest) => this.updateTabCharacter(req));
+    ipcMain.on(IPCEvent.AppSearch, async (_e, req: SearchRequest) =>
+      this.sendIPC(IPCEvent.AppUpdate, await this.updateTabCharacter(req)),
+    );
 
     // SETTINGS TAB LISTENERS
     ipcMain.handle(IPCEvent.SettingsRequest, () => this.settings);

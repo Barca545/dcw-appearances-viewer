@@ -1,14 +1,14 @@
 import { ListEntry } from "../../../core/pub-sort";
-import { Fragment, JSX } from "react";
-import { SerializedListEntry } from "../../common/TypesAPI";
+import { Fragment, JSX, useEffect } from "react";
+import { SerializedAppTab, SerializedListEntry } from "../../common/TypesAPI";
 import { TabID } from "../../common/ipcAPI";
-import { DisplayDensity, DisplayDirection, DisplayOptions, DisplayOrder } from "../../common/apiTypes";
-import BooleanToggle from "./BooleanToggle";
+import { DisplayDensity } from "../../common/apiTypes";
+import LoadingSpinner from "./LoadingSpinner";
 
 interface ResultsListProps {
   ID: TabID;
-  opts: DisplayOptions;
-  list: SerializedListEntry[];
+  data: SerializedAppTab;
+  isLoading: boolean;
 }
 
 // TODO: Move the display options selector into this component.
@@ -18,51 +18,43 @@ interface ResultsListProps {
 
 // TODO: Add debounce and memoization for updating the filters
 
-export default function ResultsList({ ID, list, opts }: ResultsListProps): JSX.Element {
-  const handleOrderChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    window.API.appTab.setDisplayOptions({ ...opts, order: DisplayOrder.from(e.target.value).unwrap() });
-  };
-  const handleAscChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    window.API.appTab.setDisplayOptions({ ...opts, dir: DisplayDirection.from(e.target.checked) });
-  };
-  const handleDensityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    window.API.appTab.setDisplayOptions({ ...opts, density: DisplayDensity.from(e.target.value).unwrap() });
-  };
+export default function ResultsList({ ID, data, isLoading }: ResultsListProps): JSX.Element {
+  useEffect(() => {}, []);
 
-  return (
-    <Fragment>
-      <form id="filter-options">
-        <select name="sort-type" defaultValue={opts.order} id="sort-type" onChange={handleOrderChange}>
-          <option value={DisplayOrder.PubDate}>Publication Date</option>
-          <option value={DisplayOrder.AlphaNumeric}>A-Z</option>
-        </select>
-        <label htmlFor="input">Ascending</label>
-        <BooleanToggle onChange={handleAscChange} checked={opts.dir == DisplayDirection.Ascending ? true : false} />
-        <label>Density</label>
-        <select name="density" onChange={handleDensityChange} defaultValue={opts.density}>
-          <option value={DisplayDensity.Normal} label="Normal" />
-          <option value={DisplayDensity.Dense}>Names Only</option>
-        </select>
-      </form>
-      <label htmlFor={ID} />
-      <div id={ID}>{opts.density == DisplayDensity.Normal ? <SparseEntries list={list} /> : <DenseEntries list={list} />}</div>
-    </Fragment>
-  );
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+
+  if (data.opts.density == DisplayDensity.Normal) {
+    return (
+      <Fragment>
+        <label htmlFor={`${ID}-result-list`} />
+        <SparseEntries list={data.list} id={`${ID}-result-list`} />
+      </Fragment>
+    );
+  } else {
+    return (
+      <Fragment>
+        <label htmlFor={`${ID}-result-list`} />
+        <DenseEntries list={data.list} id={`${ID}-result-list`} />
+      </Fragment>
+    );
+  }
 }
 
-function DenseEntries({ list }: { list: SerializedListEntry[] }): JSX.Element {
+function DenseEntries({ list, id }: { list: SerializedListEntry[]; id?: string }): JSX.Element {
   return (
-    <Fragment>
+    <div id={id}>
       {list.map((entry) => {
         return <ResultTitle key={entry.title} entry={entry} />;
       })}
-    </Fragment>
+    </div>
   );
 }
 
-function SparseEntries({ list }: { list: SerializedListEntry[] }): JSX.Element {
+function SparseEntries({ list, id }: { list: SerializedListEntry[]; id?: string }): JSX.Element {
   return (
-    <Fragment>
+    <div id={id}>
       {list.map((entry) => {
         return (
           <details key={entry.title} className="result-details">
@@ -73,7 +65,7 @@ function SparseEntries({ list }: { list: SerializedListEntry[] }): JSX.Element {
           </details>
         );
       })}
-    </Fragment>
+    </div>
   );
 }
 

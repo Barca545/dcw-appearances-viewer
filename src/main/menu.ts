@@ -2,6 +2,7 @@ import { UNIMPLEMENTED_FEATURE, IS_MAC, IS_DEV, MESSAGES } from "./main_utils";
 import { BaseWindow, dialog } from "electron";
 import { None, Option, Some } from "../../core/option";
 import { Session } from "./session";
+import { IPCEvent } from "../common/ipcAPI";
 
 type MenuTemplate = Electron.MenuItemConstructorOptions[];
 type MenuEntry = Electron.MenuItemConstructorOptions;
@@ -15,12 +16,18 @@ export function MENU_TEMPLATE(session: Session): MenuTemplate {
         {
           label: "New",
           accelerator: "CommandOrControl+N",
-          click: (_item, _base, _e) => session.newAppTab(),
+          click: (_item, _base, _e) => {
+            session.newAppTab();
+            session.sendIPC(IPCEvent.TabUpdate, session.serializeTabBarState());
+          },
         },
         {
           label: "Open File",
           accelerator: "CommandOrControl+O",
-          click: (_item, _base, _e) => session.newAppTabFromFile(),
+          click: (_item, _base, _e) => {
+            session.newAppTabFromFile();
+            session.sendIPC(IPCEvent.TabUpdate, session.serializeTabBarState());
+          },
         },
         { type: "separator" },
         { role: "recentDocuments", click: (_item, _base, _e) => UNIMPLEMENTED_FEATURE() },

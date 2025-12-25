@@ -96,6 +96,13 @@ export default function TabBar(): JSX.Element {
     return window.API.tabBar.onUpdate(updateHandler);
   }, []);
 
+  useEffect(() => {
+    if (tabBarState) {
+      console.log(tabBarState.selected.URL);
+      navigate(tabBarState.selected.URL);
+    }
+  }, [tabBarState?.selected.ID]);
+
   function tabToIdx(node: Element): number {
     const parent = document.querySelector(`[class="tab-bar-contents"]`) as Element;
     return Array.from(parent.children).indexOf(node);
@@ -172,11 +179,11 @@ export default function TabBar(): JSX.Element {
   };
 
   // TODO: Possibly move inside tab component
-  const handleChangeTab = (ID: TabID) => window.API.tabBar.navigateToTab(ID).then(updateHandler);
+  const handleChangeTab = (ID: TabID) => window.API.tabBar.navigateToTab(ID).then((state) => setTabBarState(state));
 
-  const handleAddTab = () => window.API.tabBar.openAndNavigateToTab().then(updateHandler);
+  const handleAddTab = () => window.API.tabBar.openAndNavigateToTab().then((state) => setTabBarState(state));
 
-  const handleClose = (ID: TabID) => window.API.tabBar.closeTab(ID).then(updateHandler);
+  const handleClose = (ID: TabID) => window.API.tabBar.closeTab(ID).then((state) => setTabBarState(state));
 
   return (
     <div className={"TabBar"}>

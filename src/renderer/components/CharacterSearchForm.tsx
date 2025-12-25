@@ -6,6 +6,8 @@ import { TabID } from "../../common/ipcAPI";
 // TODO: Use optinistic can be used to set the loading state
 const EARTHS = ["Prime Earth", "New Earth", "Earth-One", "Earth-Two"];
 
+// TODO: The submit button can be a magnifying icon or gone entirely. ppl know what a search bar is
+
 interface CharacterSearchFormProps {
   ID: TabID;
   setLoadState: (state: boolean) => void;
@@ -29,8 +31,8 @@ export default function CharacterSearchForm({ ID, setLoadState }: CharacterSearc
   };
 
   return (
-    <form id="character-search-form" action={handleAction}>
-      <label htmlFor="character-selection">Search</label>
+    <form className="CharacterSearchForm" action={handleAction}>
+      <label htmlFor="character-selection">Name</label>
       <input
         type="search"
         id="character-name"
@@ -41,6 +43,7 @@ export default function CharacterSearchForm({ ID, setLoadState }: CharacterSearc
         required
         autoFocus
       />
+      <label htmlFor="earth">Earth</label>
       <input
         list="earths-list"
         id="earth"

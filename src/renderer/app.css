@@ -4,3 +4,15 @@
   font-weight: bold;
   place-content: center;
 }
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.search-bar {
+  flex-shrink: never;
+  /* TODO: I want to bind this so it stays stuck near the top */
+  /* TODO: I want to give this a bit of distance from other components*/
+}

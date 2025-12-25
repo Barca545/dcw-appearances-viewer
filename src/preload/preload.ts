@@ -23,7 +23,7 @@ contextBridge.exposeInMainWorld("API", {
       ipcRenderer.on(IPCEvent.AppUpdate, handler);
       return () => ipcRenderer.removeListener(IPCEvent.AppUpdate, handler);
     },
-    search: (req: SearchRequest) => ipcRenderer.invoke(IPCEvent.AppSearch, req),
+    search: (req: SearchRequest) => ipcRenderer.send(IPCEvent.AppSearch, req),
   },
   settingsTab: {
     request: (ID: TabID) => ipcRenderer.invoke(IPCEvent.SettingsRequest, ID),
