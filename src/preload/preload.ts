@@ -24,6 +24,11 @@ contextBridge.exposeInMainWorld("API", {
       return () => ipcRenderer.removeListener(IPCEvent.AppUpdate, handler);
     },
     search: (req: SearchRequest) => ipcRenderer.send(IPCEvent.AppSearch, req),
+    setDisplayOptions: (ID: TabID, opts: DisplayOptions) => {
+      ipcRenderer.send(IPCEvent.AppSetDisplayOptions, ID, opts);
+      // Then it needs a listener that applies this the calls an update
+      throw new Error("set display options API is unimplemented");
+    },
   },
   settingsTab: {
     request: (ID: TabID) => ipcRenderer.invoke(IPCEvent.SettingsRequest, ID),

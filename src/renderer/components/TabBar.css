@@ -16,8 +16,6 @@
 .TabBar {
   --TabBar-height: 6vh;
   --border-thickness: 1vw;
-  /* Positioning in the window */
-  position: absolute;
   width: 100vw;
   height: var(--TabBar-height);
   /* Override other styles */
@@ -33,7 +31,6 @@
   /* Remove inherited styles */
   list-style: none;
   overflow-x: auto;
-
   height: 100%;
   /* align-items: stretch; */
 }

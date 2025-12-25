@@ -70,7 +70,7 @@ declare global {
         onUpdate: (fn: (data: SerializedAppTab) => void) => UnsubscribeFunction;
         /**Submits the form to the main process and returns the result to the renderer. */
         search: (data: SearchRequest) => void;
-        setDisplayOptions: (opts: DisplayOptions) => void;
+        setDisplayOptions: (ID: TabID, opts: DisplayOptions) => void;
       };
       settingsTab: {
         /**Request the Settings data from the main process. */

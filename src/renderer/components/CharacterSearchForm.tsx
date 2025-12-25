@@ -32,40 +32,46 @@ export default function CharacterSearchForm({ ID, setLoadState }: CharacterSearc
 
   return (
     <form className="CharacterSearchForm" action={handleAction}>
-      <label htmlFor="character-selection">Name</label>
-      <input
-        type="search"
-        id="character-name"
-        name="character-name"
-        placeholder="Character Name"
-        value={name}
-        onChange={(e) => setName(e.currentTarget.value)}
-        required
-        autoFocus
-      />
-      <label htmlFor="earth">Earth</label>
-      <input
-        list="earths-list"
-        id="earth"
-        name="character-universe"
-        defaultValue={earth}
-        placeholder={earth}
-        onChange={(e) => setEarth(e.currentTarget.value)}
-      />
-      <EarthsList />
+      <div className="search-field-wrapper">
+        <label htmlFor="character-selection">Name</label>
+        <input
+          type="search"
+          id="character-name"
+          name="character-name"
+          placeholder="Character Name"
+          value={name}
+          onChange={(e) => setName(e.currentTarget.value)}
+          required
+          autoFocus
+        />
+      </div>
+      <div className="search-field-wrapper">
+        <EarthsList />
+        <label htmlFor="earth">Earth</label>
+        <input
+          list="earths-list"
+          id="earth"
+          name="character-universe"
+          defaultValue={earth}
+          placeholder={earth}
+          onChange={(e) => setEarth(e.currentTarget.value)}
+        />
+      </div>
       <button type="submit">Submit</button>
     </form>
   );
 }
 
 function EarthsList(): JSX.Element {
-  const earths = EARTHS.map((earth) => {
-    return (
-      <option key={earth} value={`(${earth})`}>
-        {earth}
-      </option>
-    );
-  });
-
-  return <datalist id="earths-list">{earths}</datalist>;
+  return (
+    <datalist id="earths-list">
+      {EARTHS.map((earth) => {
+        return (
+          <option key={earth} value={`(${earth})`}>
+            {earth}
+          </option>
+        );
+      })}
+    </datalist>
+  );
 }

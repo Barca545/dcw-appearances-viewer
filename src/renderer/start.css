@@ -2,11 +2,3 @@
   display: grid;
   place-content: center;
 }
-
-html,
-body {
-  height: 100%;
-  text-align: center;
-  display: grid;
-  place-content: center;
-}
