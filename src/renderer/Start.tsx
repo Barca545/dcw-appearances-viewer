@@ -9,7 +9,7 @@ export default function Start(): JSX.Element {
     throw new Error("Tab must have an ID.");
   }
   return (
-    <div className="landing-content">
+    <div className="start-tab">
       <button className="ButtonLike" onClick={() => window.API.startTab.openNew(ID)}>
         New
       </button>

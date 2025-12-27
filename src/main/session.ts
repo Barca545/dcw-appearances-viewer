@@ -24,9 +24,10 @@ import type {
 import { openFileDialog } from "./menu";
 import { createCharacterName } from "../common/utils";
 import { fetchList } from "../../core/fetch";
-import { IPCEvent, SerializedTabBarState, TabID } from "../../src/common/ipcAPI";
+import { IPCError, IPCEvent, SerializedTabBarState, TabID } from "../../src/common/ipcAPI";
 import { MENU_TEMPLATE } from "./menu";
 import { AppTab, DataTab, isDataTab, SettingsTab, StartTab, Tab } from "./tab";
+import LOGGER, { RendererLog } from "./log";
 
 // FIXME: This not being a variable vite exposes is an issue with vite
 const MAIN_WINDOW_PRELOAD_VITE_ENTRY = path.join(__dirname, `preload.js`);
@@ -635,6 +636,10 @@ export class Session {
     ipcMain.on(IPCEvent.AppSearch, async (_e, req: SearchRequest) =>
       this.sendIPC(IPCEvent.AppUpdate, await this.updateTabCharacter(req)),
     );
+    ipcMain.on(IPCEvent.AppSetDisplayOptions, (_e, ID: TabID, opts: DisplayOptions) => {
+      (this.getTab(ID) as AppTab).updateDisplayOptions(opts);
+      this.sendIPC(IPCEvent.AppUpdate, (this.getTab(ID) as AppTab).serialize());
+    });
 
     // SETTINGS TAB LISTENERS
     ipcMain.handle(IPCEvent.SettingsRequest, () => this.settings);
@@ -657,7 +662,8 @@ export class Session {
 
     // Error Listeners
     // TODO: I think this needs to get fed to the logger
-    ipcMain.on("error:submit", () => UNIMPLEMENTED_FEATURE());
+    ipcMain.on(IPCError.Submit, () => UNIMPLEMENTED_FEATURE());
+    ipcMain.on(IPCError.Log, (_e, log: RendererLog) => LOGGER.writeRenderLog(log));
   }
 }
 

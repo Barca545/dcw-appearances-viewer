@@ -1,4 +1,6 @@
-#landing-content {
-  display: grid;
-  place-content: center;
+.start-tab {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
 }

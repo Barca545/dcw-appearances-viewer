@@ -1,7 +1,7 @@
 import { UUID } from "crypto";
 import { SearchRequest, SerializedAppTab, SerializedSettingsTab, SettingsTabUpdate } from "./TypesAPI";
 import { DisplayOptions, Settings } from "./apiTypes";
-import { UserErrorInfo } from "src/main/log";
+import { UserErrorInfo as ErrorReport, RendererLog } from "src/main/log";
 import { TabMetaData } from "src/main/tab";
 
 // TODO: This could maybe be a .d.ts since it has no functions and really is fufilling that purpose
@@ -21,6 +21,7 @@ export enum IPCEvent {
   AppDisplayRequest = "app:display:request",
   AppDisplayApply = "app:display:apply",
   AppDisplayUpdate = "app:display:update",
+  AppSetDisplayOptions = "app:display:set",
   // Start Events
   StartOpenNew = "start:open:new",
   StartOpenFile = "start:open:file",
@@ -36,6 +37,11 @@ export enum IPCEvent {
   TabClose = "tab:close",
   // Misc.
   OpenURL = "open:url",
+}
+
+export enum IPCError {
+  Submit = "error:submit",
+  Log = "error:log",
 }
 
 // TODO: Use this once we switch to single source of truth
@@ -60,7 +66,9 @@ type UnsubscribeFunction = () => void;
 declare global {
   interface Window {
     ERROR: {
-      submit: (info: UserErrorInfo) => void;
+      log: (error: RendererLog) => void;
+      /**Submit an error report.*/
+      submit: (info: ErrorReport) => void;
     };
     API: {
       appTab: {

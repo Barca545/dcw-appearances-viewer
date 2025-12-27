@@ -31,8 +31,8 @@ export enum LogLevel {
 
 /**Each new version of the application will generate its own `LogFile`. */
 class LoggerClass {
-  LOG_PATH = path.join(app.getPath("logs"), `LOG_v${app.getVersion()}.json`);
-  sessionStart: string;
+  private LOG_PATH = path.join(app.getPath("logs"), `LOG_v${app.getVersion()}.json`);
+  private sessionStart: string;
 
   constructor() {
     this.sessionStart = LoggerClass.makeCurrentTimestamp();
@@ -87,8 +87,8 @@ class LoggerClass {
     }).format(new Date());
   }
 
-  private _log(name: string, err: string, level = LogLevel.Info) {
-    const log = { time: LoggerClass.makeCurrentTimestamp(), level, name, message: err };
+  private _log(name: string, err: Error, level = LogLevel.Info) {
+    const log = { time: LoggerClass.makeCurrentTimestamp(), level, name, stack: err.stack, message: err.message };
 
     if (IS_DEV) {
       console.log(log);
@@ -98,20 +98,28 @@ class LoggerClass {
   }
 
   /**Create a new `INFO` log. `INFO` logs indicate significant events.*/
-  info(name: string, err: string) {
+  info(name: string, err: Error) {
     this._log(name, err, LogLevel.Info);
   }
   /**Create a new `WARN` log. `WARN` logs indicate abnormal situations that may indicate future problems.*/
-  warn(name: string, err: string) {
+  warn(name: string, err: Error) {
     this._log(name, err, LogLevel.Warn);
   }
   /**Create a new `ERROR` log. `ERROR` logs indicate unrecoverable errors that affect a specific operation.*/
-  error(name: string, err: string) {
+  error(name: string, err: Error) {
     this._log(name, err, LogLevel.Error);
   }
   /**Create a new `FATAL` log. `FATAL` logs indicate unrecoverable errors that affect the entire program.*/
-  fatal(name: string, err: string) {
+  fatal(name: string, err: Error) {
     this._log(name, err, LogLevel.Fatal);
+  }
+
+  writeRenderLog(log: RendererLog) {
+    if (IS_DEV) {
+      console.log(log);
+    } else {
+      this.writeLogToFile(log);
+    }
   }
 }
 
@@ -128,15 +136,29 @@ interface LogFile {
 /** The Logs for a single `Session`.*/
 interface SessionLog {
   startTime: string;
-  logs: Log[];
+  logs: MainProcessLog[];
 }
 
-export interface Log {
+export interface MainProcessLog {
+  time: string;
+  level: LogLevel;
+  name: string;
+  stack?: string;
+  message: string;
+}
+
+export interface RendererLog {
   time: string;
   level: LogLevel;
   name: string;
   message: string;
+  stack?: string;
+  /**[`componentStack`](https://react.dev/reference/react/captureOwnerStack) is only available during development. */
+  componentStack: string | undefined | null;
+  ownerStack: string | null;
 }
+
+type Log = MainProcessLog | RendererLog;
 
 interface UserInfo {
   /**The operating system name as returned by [`uname(3)`](https://linux.die.net/man/3/uname). */

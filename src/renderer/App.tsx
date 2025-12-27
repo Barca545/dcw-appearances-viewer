@@ -25,6 +25,7 @@ export default function App(): JSX.Element {
 
     return window.API.appTab.onUpdate((state) => {
       if (state.meta.ID == ID) {
+        console.log(state.opts);
         setTabData(state as SerializedAppTab);
         setIsPending(false);
       }
@@ -42,7 +43,7 @@ export default function App(): JSX.Element {
         <CharacterSearchForm ID={ID} setLoadState={setIsPending} />
       </div>
       <div>
-        <DisplayOptions data={tabData} disabled={tabData.list.length <= 0} />
+        <DisplayOptions ID={ID} data={tabData} disabled={tabData.list.length <= 0} />
       </div>
       <AppResults ID={ID} data={tabData} isLoading={isPending} />
     </div>

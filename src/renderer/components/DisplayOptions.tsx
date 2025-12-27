@@ -1,23 +1,28 @@
-import { JSX } from "react";
+import { JSX, useEffect } from "react";
 import { DisplayOrder, DisplayDirection, DisplayDensity } from "../../common/apiTypes";
 import { SerializedAppTab } from "../../common/TypesAPI";
 import BooleanToggle from "./BooleanToggle";
+import { TabID } from "src/common/ipcAPI";
 
 interface DisplayOptionsProps {
   data: SerializedAppTab;
+  ID: TabID;
   disabled?: boolean;
 }
 
-export default function DisplayOptions({ data, disabled }: DisplayOptionsProps): JSX.Element {
+export default function DisplayOptions({ ID, data, disabled }: DisplayOptionsProps): JSX.Element {
+  useEffect(() => console.log(data.opts), []);
+
   const handleOrderChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    window.API.appTab.setDisplayOptions({ ...data.opts, order: DisplayOrder.from(e.currentTarget.value).unwrap() });
+    window.API.appTab.setDisplayOptions(ID, { ...data.opts, order: DisplayOrder.from(e.currentTarget.value).unwrap() });
   };
   const handleAscChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     console.log(e.currentTarget.checked);
-    window.API.appTab.setDisplayOptions({ ...data.opts, dir: DisplayDirection.from(e.currentTarget.checked) });
+    console.log(data.opts.dir == DisplayDirection.Ascending ? true : false);
+    window.API.appTab.setDisplayOptions(ID, { ...data.opts, dir: DisplayDirection.from(e.currentTarget.checked) });
   };
   const handleDensityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    window.API.appTab.setDisplayOptions({ ...data.opts, density: DisplayDensity.from(e.currentTarget.value).unwrap() });
+    window.API.appTab.setDisplayOptions(ID, { ...data.opts, density: DisplayDensity.from(e.currentTarget.value).unwrap() });
   };
 
   let stylesheet: React.CSSProperties | undefined = undefined;

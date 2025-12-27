@@ -1,8 +1,8 @@
 // TODO: If this ends up being overly granular merge taking inspiration from
 // https://stackoverflow.com/a/66270356/24660323
-import { UserErrorInfo } from "src/main/log";
+import { RendererLog, UserErrorInfo } from "src/main/log";
 import { DisplayOptions, Settings } from "../common/apiTypes";
-import { IPCEvent, SerializedTabBarState, TabID } from "../common/ipcAPI";
+import { IPCError, IPCEvent, SerializedTabBarState, TabID } from "../common/ipcAPI";
 import type {
   TabDataUpdate,
   SerializedTab,
@@ -24,11 +24,7 @@ contextBridge.exposeInMainWorld("API", {
       return () => ipcRenderer.removeListener(IPCEvent.AppUpdate, handler);
     },
     search: (req: SearchRequest) => ipcRenderer.send(IPCEvent.AppSearch, req),
-    setDisplayOptions: (ID: TabID, opts: DisplayOptions) => {
-      ipcRenderer.send(IPCEvent.AppSetDisplayOptions, ID, opts);
-      // Then it needs a listener that applies this the calls an update
-      throw new Error("set display options API is unimplemented");
-    },
+    setDisplayOptions: (ID: TabID, opts: DisplayOptions) => ipcRenderer.send(IPCEvent.AppSetDisplayOptions, ID, opts),
   },
   settingsTab: {
     request: (ID: TabID) => ipcRenderer.invoke(IPCEvent.SettingsRequest, ID),
@@ -77,7 +73,8 @@ contextBridge.exposeInMainWorld("API", {
 });
 
 contextBridge.exposeInMainWorld("ERROR", {
-  submit: (data: UserErrorInfo) => ipcRenderer.send("error:submit", data),
+  log: (log: RendererLog) => ipcRenderer.send(IPCError.Log, log),
+  submit: (data: UserErrorInfo) => ipcRenderer.send(IPCError.Submit, data),
 });
 
 console.log("PRELOAD FINSHED...");
