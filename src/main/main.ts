@@ -5,6 +5,7 @@ import path from "path";
 import LOGGER from "./log";
 import Child from "child_process";
 import fs from "fs";
+import { appUpdater } from "./autoupdate";
 
 // TODO:
 // - URGENT: merge to main
@@ -44,7 +45,7 @@ function handleStartupEvent(): boolean {
     } catch (e) {
       const err = e as Error;
       // This is fatal because if for some reason any of these fail to execute the application will experience problems
-      LOGGER.fatal(err.name, err.stack || err.message);
+      LOGGER.fatal(err);
       throw new Error(err.message);
     }
 
@@ -53,14 +54,19 @@ function handleStartupEvent(): boolean {
 
   function spawnUpdate(...args: string[]) {
     const proc = spawn(UPDATE_DOT_EXE, ...args);
-    LOGGER.info("proc.spawnargs", proc.spawnargs.toString());
-    proc.on("error", (err) => LOGGER.fatal("Squirrel Spawn Error", err.stack || err.message));
+    // TODO: I want to log this but perhaps unnecessary
+    // const log_message = `proc.spawnargs: ${proc.spawnargs.toString()}`;
+    // LOGGER.info(new Error(log_message));
+    proc.on("error", (err) => {
+      err.message = `Squirrel Spawn Error: ${err.message}`;
+      LOGGER.fatal(err);
+    });
     proc.on("exit", (code, signal) => {
       // 0 is success
       if (code !== null && code !== 0) {
-        LOGGER.error("Update.exe exited with code", code.toString());
+        LOGGER.error(new Error(`Update.exe exited with code: ${code}`));
       } else {
-        LOGGER.error("Update.exe killed with signal", signal as NodeJS.Signals);
+        LOGGER.error(new Error(`Update.exe exited with code: ${signal as NodeJS.Signals}`));
       }
     });
   }
@@ -83,7 +89,8 @@ function handleStartupEvent(): boolean {
       } catch (e) {
         const err = e as Error;
         // Info cuz expected behavior but under some circumstances may indicate failure
-        LOGGER.info("Update copy fail", `${err.message}`);
+        err.message = `Update copy fail: ${err.message}`;
+        LOGGER.info(err);
       }
       return true;
     }
@@ -104,7 +111,8 @@ function handleStartupEvent(): boolean {
         spawn(UNINSTALL_SCRIPT);
       } catch (e) {
         const err = e as Error;
-        LOGGER.fatal(err.name, `Uninstall removal fail.\n${err.stack || err.message}`);
+        err.message = `Uninstall removal fail: ${err.message}`;
+        LOGGER.fatal(err);
         dialog.showErrorBox(`uninstall ${err.name} removal fail.`, `${err.stack || err.message}`);
       }
       return true;
@@ -119,20 +127,24 @@ function handleStartupEvent(): boolean {
 }
 
 process.on("uncaughtException", (err) => {
-  // TODO: I am not sure this should always be fatal
-  LOGGER.fatal(err.name, err.stack || err.message);
+  LOGGER.fatal(err);
 });
 
 // Prevent multiple startups during installation
 if (handleStartupEvent()) app.quit();
 
-// TODO: I am not actually sure if holding the session here at the top level after init is needed
-// It would be in rust but it's possible that is not the case in JS/TS
-const _session = app.whenReady().then(() => {
+app.whenReady().then(() => {
+  appUpdater.initListeners();
+  appUpdater.checkForUpdate();
+  if (appUpdater.settings.autoCheckForUpdates) {
+    appUpdater.startPeriodicUpdateChecks();
+  }
+
   let session = new Session();
   // TODO: Move this stuff out of the whenReady?
   const LOG_DIR = IS_DEV ? path.join(process.cwd(), "logs") : path.join(app.getPath("userData"), "Logs");
   app.setAppLogsPath(LOG_DIR);
   session.initListeners();
-  return session;
 });
+
+app.on("quit", () => appUpdater.stopPeriodicUpdates());

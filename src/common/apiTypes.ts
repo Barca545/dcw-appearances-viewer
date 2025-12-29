@@ -87,12 +87,12 @@ export namespace SettingsTheme {
   }
 }
 
-export type SettingsUpdateFrequency = "NIGHTLY" | "MAJOR" | "PROMPT";
+export type UpdateChannel = "NIGHTLY" | "MAJOR" | "STABLE";
 
 interface SaveSettings {
   saveOnBlur: boolean;
   autosave: boolean;
-  /**How often the applications should autosave in milliseconds. */
+  /**How often the application should autosave in milliseconds. */
   autosaveFrequency: string;
 }
 
@@ -102,7 +102,12 @@ export interface Settings {
   height: string;
   fontSize: string;
   saveSettings: SaveSettings;
-  updateFrequency: SettingsUpdateFrequency;
+  updateChannel: UpdateChannel;
+  updatePromptBefore: boolean;
+  /**Whether the app should check for updates while the app is running after startup. */
+  autoCheckForUpdates: boolean;
+  /**How often the application should check for updates in milliseconds. */
+  updateCheckInterval: string;
 }
 
 export interface AppMessages {

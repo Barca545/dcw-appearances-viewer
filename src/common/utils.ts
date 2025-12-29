@@ -26,3 +26,11 @@ export function createCharacterName(data: SearchRequest): string {
 
   return result;
 }
+
+export function msToMinutes(): number {
+  throw new Error("'msToMinutes' is not yet implemented.");
+}
+
+export function minutesToMs(): number {
+  throw new Error("'minutesToMs' is not yet implemented.");
+}

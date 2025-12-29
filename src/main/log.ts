@@ -87,8 +87,8 @@ class LoggerClass {
     }).format(new Date());
   }
 
-  private _log(name: string, err: Error, level = LogLevel.Info) {
-    const log = { time: LoggerClass.makeCurrentTimestamp(), level, name, stack: err.stack, message: err.message };
+  private _log(err: Error, level = LogLevel.Info) {
+    const log = { time: LoggerClass.makeCurrentTimestamp(), level, name: err.name, stack: err.stack, message: err.message };
 
     if (IS_DEV) {
       console.log(log);
@@ -97,21 +97,23 @@ class LoggerClass {
     }
   }
 
+  // FIXME: This all needing to be an error is suboptimal. Possibly overloading is the move
+
   /**Create a new `INFO` log. `INFO` logs indicate significant events.*/
-  info(name: string, err: Error) {
-    this._log(name, err, LogLevel.Info);
+  info(err: Error) {
+    this._log(err, LogLevel.Info);
   }
   /**Create a new `WARN` log. `WARN` logs indicate abnormal situations that may indicate future problems.*/
-  warn(name: string, err: Error) {
-    this._log(name, err, LogLevel.Warn);
+  warn(err: Error) {
+    this._log(err, LogLevel.Warn);
   }
   /**Create a new `ERROR` log. `ERROR` logs indicate unrecoverable errors that affect a specific operation.*/
-  error(name: string, err: Error) {
-    this._log(name, err, LogLevel.Error);
+  error(err: Error) {
+    this._log(err, LogLevel.Error);
   }
   /**Create a new `FATAL` log. `FATAL` logs indicate unrecoverable errors that affect the entire program.*/
-  fatal(name: string, err: Error) {
-    this._log(name, err, LogLevel.Fatal);
+  fatal(err: Error) {
+    this._log(err, LogLevel.Fatal);
   }
 
   writeRenderLog(log: RendererLog) {

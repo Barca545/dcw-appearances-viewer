@@ -14,13 +14,7 @@ import {
   UNIMPLEMENTED_FEATURE,
 } from "./main_utils";
 import fs from "node:fs";
-import type {
-  SearchRequest,
-  SerializedAppTab,
-  SerializedSettingsTab,
-  SettingsTabUpdate,
-  TabDataUpdate,
-} from "../common/TypesAPI";
+import type { SearchRequest, SerializedAppTab, SettingsTabUpdate } from "../common/TypesAPI";
 import { openFileDialog } from "./menu";
 import { createCharacterName } from "../common/utils";
 import { fetchList } from "../../core/fetch";
@@ -478,7 +472,7 @@ export class Session {
     if (this.autosave) this.autosave.refresh();
   }
 
-  private static getSettings(): Settings {
+  static getSettings(): Settings {
     const settingsSrc = path.join(RESOURCE_PATH, "settings.json");
     // Skip the production stuff below if we're in dev
     if (IS_DEV) {
