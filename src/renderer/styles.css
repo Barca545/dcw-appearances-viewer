@@ -126,3 +126,14 @@ details {
   width: 0;
   height: 0;
 }
+
+.pseudo-link {
+  color: #2196f3;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.pseudo-link.visited {
+  color: #9c21f3;
+  text-decoration: underline;
+}

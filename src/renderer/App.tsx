@@ -25,7 +25,6 @@ export default function App(): JSX.Element {
 
     return window.API.appTab.onUpdate((state) => {
       if (state.meta.ID == ID) {
-        console.log(state.opts);
         setTabData(state as SerializedAppTab);
         setIsPending(false);
       }

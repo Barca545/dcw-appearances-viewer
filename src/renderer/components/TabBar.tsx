@@ -25,9 +25,12 @@ interface TabProps {
   onDragLeave?: DragEventHandler;
   onDrop?: DragEventHandler;
   onDragEnd?: DragEventHandler;
+  onMouseEnter?: MouseEventHandler;
+  onMouseLeave?: MouseEventHandler;
 }
 
 function Tab({
+  ID,
   selected,
   isClean,
   tabName,
@@ -38,6 +41,8 @@ function Tab({
   onDragLeave,
   onDragEnd,
   onDrop,
+  onMouseEnter,
+  onMouseLeave,
 }: TabProps): JSX.Element {
   const handleClose = (e: ButtonMouseEvent) => {
     e.preventDefault();
@@ -52,15 +57,18 @@ function Tab({
       className={["Tab", selected && "selected"].filter(Boolean).join(" ")}
       onClick={onClick}
       draggable={true}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
       onDragStart={onDragStart}
       onDragOver={onDragEnter}
       onDragLeave={onDragLeave}
       onDrop={onDrop}
       onDragEnd={onDragEnd}
+      id={ID}
     >
       <span className={"tab-content"}>{tabName}</span>
       <span className="unsaved-indicator" style={{ visibility: isClean ? "hidden" : "visible" }} />
-      <button className={"tab-close-button"} onClick={handleClose}>
+      <button className={"tab-button close"} onClick={handleClose}>
         <b>✕</b>
       </button>
     </li>
@@ -98,13 +106,21 @@ export default function TabBar(): JSX.Element {
 
   useEffect(() => {
     if (tabBarState) {
-      console.log(tabBarState.selected.URL);
       navigate(tabBarState.selected.URL);
+
+      const selectedTab = document.getElementById(tabBarState.selected.ID);
+      if (selectedTab) {
+        selectedTab.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+          inline: "center",
+        });
+      }
     }
   }, [tabBarState?.selected.ID]);
 
   function tabToIdx(node: Element): number {
-    const parent = document.querySelector(`[class="tab-bar-contents"]`) as Element;
+    const parent = document.querySelector(`[class="tab-list"]`) as Element;
     return Array.from(parent.children).indexOf(node);
   }
 
@@ -173,9 +189,17 @@ export default function TabBar(): JSX.Element {
 
   const handleDragEnd = () => {
     // Gotta clean up any lingering "over" classes
-    const parent = document.querySelector(`[class="tab-bar-contents"]`) as Element;
+    const parent = document.querySelector(`[class="tab-list"]`) as Element;
     [...parent.children].forEach((child) => child.classList.remove("over"));
     setDraggedTabIdx(null);
+  };
+
+  // These are for controlling hover behavior
+  const handleMouseEnter = (e: React.MouseEvent) => {
+    e.currentTarget.classList.add("hovered");
+  };
+  const handleMouseLeave = (e: React.MouseEvent) => {
+    e.currentTarget.classList.remove("hovered");
   };
 
   // TODO: Possibly move inside tab component
@@ -189,32 +213,46 @@ export default function TabBar(): JSX.Element {
     <div className={"TabBar"}>
       <nav>
         {/* TODO: I think I want the LI to be a part of the list not built into the tabs */}
-        <ol className="tab-bar-contents">
+        <ol className="tab-list">
           {tabBarState?.list.map((tab) => {
             return (
               <Tab
                 key={tab.meta.ID}
+                ID={tab.meta.ID}
                 isClean={isSerializedDataTab(tab) ? tab.isClean : true}
                 onDragStart={handleDragStart}
                 onDragEnter={onDragEnter}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 onDragEnd={handleDragEnd}
-                ID={tab.meta.ID}
                 tabName={tab.meta.tabName}
                 selected={tab.meta.ID == tabBarState.selected.ID}
-                onClick={() => handleChangeTab(tab.meta.ID)}
+                onClick={(e) => {
+                  // Not great but for now just doing this, it handles dragging and deselecting a hovered
+                  e.currentTarget.classList.remove("hovered");
+                  handleChangeTab(tab.meta.ID);
+                }}
                 onClose={() => handleClose(tab.meta.ID)}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
               />
             );
           })}
-          <li style={{ all: "unset" }}>
-            <button className="AddTab" onClick={handleAddTab}>
-              +
-            </button>
-          </li>
         </ol>
       </nav>
+      <span className="AddTab Tab">
+        <button onClick={handleAddTab} className="tab-button">
+          <span
+            style={{
+              fontSize: " 1.8rem",
+              fontWeight: "300",
+              lineHeight: 1,
+            }}
+          >
+            +
+          </span>
+        </button>
+      </span>
       <HorizontalScrollBar contentRef={contentRef} />
     </div>
   );

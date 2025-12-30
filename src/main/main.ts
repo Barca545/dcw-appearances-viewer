@@ -13,7 +13,6 @@ import { appUpdater } from "./autoupdate";
 // - URGENT: Add github release - https://www.electronforge.io/config/publishers/github
 // - URGENT: Add autoupdater - https://www.electronforge.io/config/publishers/github && https://www.electronjs.org/docs/latest/tutorial/updates
 // - URGENT: Add check for all files installed correctly on first startup and log errors if stuff is missing
-// - Add Cloudflare log reporting
 
 // Read more on getPath: https://www.electronjs.org/docs/latest/api/app#appgetpathname
 

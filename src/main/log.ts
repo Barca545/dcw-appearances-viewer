@@ -64,12 +64,19 @@ class LoggerClass {
 
   async createNewLogFile(): Promise<LogFile> {
     // Create a new LogFile
-    const logfile: LogFile = { info: await makeUserInfoUserInfo(), pathsExist: [], sessions: [LoggerClass.newSessionLog()] };
+    const logfile: LogFile = { info: await makeUserInfoUserInfo(), requiredPathsDoNotExist: [], sessions: [LoggerClass.newSessionLog()] };
 
     // Log whether required paths exist
+    // If no paths are missing it will not exist
     [ROOT_DIRECTORY]
       .filter((path) => !fs.existsSync(path))
-      .forEach((path) => logfile.pathsExist.push(`Path ${path} does not exist.`));
+      .forEach((path) => {
+        if (logfile.requiredPathsDoNotExist) {
+          logfile.requiredPathsDoNotExist.push(`Path ${path} does not exist.`);
+        } else {
+          logfile.requiredPathsDoNotExist = [`Path ${path} does not exist.`];
+        }
+      });
 
     return logfile;
   }
@@ -131,14 +138,14 @@ export default LOGGER;
 interface LogFile {
   info: UserInfo;
   /// Field indicating if any files or folders the app requires are missing.
-  pathsExist: string[];
+  requiredPathsDoNotExist?: string[];
   sessions: SessionLog[];
 }
 
 /** The Logs for a single `Session`.*/
 interface SessionLog {
   startTime: string;
-  logs: MainProcessLog[];
+  logs: Log[];
 }
 
 export interface MainProcessLog {
@@ -185,7 +192,7 @@ async function makeUserInfoUserInfo(): Promise<UserInfo> {
     platform: `${os.platform()} ${process.getSystemVersion()}`,
     arch: os.arch(),
     cpuInfo: os.cpus(),
-    app_path: app.getAppPath(),
+    app_path: app.getPath("exe"),
     memUse: await process.getProcessMemoryInfo(),
     processInfo: app.getAppMetrics(),
   };

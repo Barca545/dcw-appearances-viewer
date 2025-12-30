@@ -2,11 +2,5 @@
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.detectIndentation": true,
   "editor.insertSpaces": true,
-  "editor.tabSize": 2,
-  "editor.indentSize": "tabSize",
-  "editor.formatOnSave": true,
-  "rust-analyzer.checkOnSave": true,
-  "[rust]": {
-    "editor.defaultFormatter": "rust-lang.rust-analyzer"
-  }
+  "editor.formatOnSave": true
 }

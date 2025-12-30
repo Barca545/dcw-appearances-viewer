@@ -1,7 +1,7 @@
 import { templateStringToListEntry } from "./utils";
 import { ListEntry } from "./pub-sort";
 import { TitleAndTemplate, AppearancesResposeJSONStructure } from "./coreTypes";
-import { Err, Ok, ResultInterface } from "./result";
+import { Err, Ok, ResultInterface } from "./Result";
 
 export const WIKI_URL = new URL(`https://dc.fandom.com/api.php`);
 

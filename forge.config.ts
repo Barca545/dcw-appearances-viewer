@@ -6,6 +6,24 @@ import { MakerRpm } from "@electron-forge/maker-rpm";
 import { VitePlugin } from "@electron-forge/plugin-vite";
 import { FusesPlugin } from "@electron-forge/plugin-fuses";
 import { FuseV1Options, FuseVersion } from "@electron/fuses";
+import { PublisherGitHubConfig } from "@electron-forge/publisher-github";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+const githubPublisherConfig: PublisherGitHubConfig = {
+  repository: {
+    name: "publication_date_sort",
+    owner: "Barca545",
+  },
+  authToken: process.env.GITHUB_TOKEN,
+  draft: true,
+  force: false,
+  generateReleaseNotes: true,
+  prerelease: false,
+  octokitOptions: {},
+  tagPrefix: "v",
+};
 
 const config: ForgeConfig = {
   packagerConfig: {
@@ -21,18 +39,7 @@ const config: ForgeConfig = {
   publishers: [
     {
       name: "@electron-forge/publisher-github",
-      config: {
-        // FIXME: Do I need to set the githubenv
-        authToken: process.env.GITHUB_TOKEN,
-        draft: true,
-        force: false,
-        generateReleaseNotes: true,
-        prerelease: false,
-        repository: {
-          name: "publication_date_sort",
-          owner: "Barca545",
-        },
-      },
+      config: githubPublisherConfig,
     },
   ],
   makers: [

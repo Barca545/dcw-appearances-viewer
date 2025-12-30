@@ -3,16 +3,7 @@ import { None, Option, Some } from "../../core/option";
 import Electron, { app, BrowserWindow, dialog, ipcMain, Menu, shell } from "electron";
 import path from "node:path";
 import { DisplayOptions, Settings } from "../common/apiTypes";
-import {
-  RESOURCE_PATH,
-  SETTINGS_PATH,
-  IS_DEV,
-  __userdata,
-  MESSAGES,
-  IS_MAC,
-  ROOT_DIRECTORY,
-  UNIMPLEMENTED_FEATURE,
-} from "./main_utils";
+import { RESOURCE_PATH, SETTINGS_PATH, IS_DEV, __userdata, MESSAGES, IS_MAC, ROOT_DIRECTORY, UNIMPLEMENTED_FEATURE } from "./main_utils";
 import fs from "node:fs";
 import type { SearchRequest, SerializedAppTab, SettingsTabUpdate } from "../common/TypesAPI";
 import { openFileDialog } from "./menu";
@@ -22,6 +13,7 @@ import { IPCError, IPCEvent, SerializedTabBarState, TabID } from "../../src/comm
 import { MENU_TEMPLATE } from "./menu";
 import { AppTab, DataTab, isDataTab, SettingsTab, StartTab, Tab } from "./tab";
 import LOGGER, { RendererLog } from "./log";
+import JSON from "json5";
 
 // FIXME: This not being a variable vite exposes is an issue with vite
 const MAIN_WINDOW_PRELOAD_VITE_ENTRY = path.join(__dirname, `preload.js`);
@@ -504,9 +496,7 @@ export class Session {
     // TODO: apply window size changes
     this.win.setSize(Number.parseInt(settings.width), Number.parseInt(settings.height));
     // TODO: Apply fontsize
-    this.win.webContents.executeJavaScript(
-      `document.documentElement.style.setProperty("--base-font-size","${settings.fontSize}px");`,
-    );
+    this.win.webContents.executeJavaScript(`document.documentElement.style.setProperty("--base-font-size","${settings.fontSize}px");`);
     // TODO: Apply update frequency
     // TODO: Apply autosave frequency if there is a difference between the two
     this.setAutoSave(settings.saveSettings.autosaveFrequency);
@@ -627,9 +617,7 @@ export class Session {
 
     // APPLICATION TAB LISTENERS
     ipcMain.handle(IPCEvent.AppRequest, (_e, ID: TabID) => this.handleAppTabDataRequest(ID));
-    ipcMain.on(IPCEvent.AppSearch, async (_e, req: SearchRequest) =>
-      this.sendIPC(IPCEvent.AppUpdate, await this.updateTabCharacter(req)),
-    );
+    ipcMain.on(IPCEvent.AppSearch, async (_e, req: SearchRequest) => this.sendIPC(IPCEvent.AppUpdate, await this.updateTabCharacter(req)));
     ipcMain.on(IPCEvent.AppSetDisplayOptions, (_e, ID: TabID, opts: DisplayOptions) => {
       (this.getTab(ID) as AppTab).updateDisplayOptions(opts);
       this.sendIPC(IPCEvent.AppUpdate, (this.getTab(ID) as AppTab).serialize());

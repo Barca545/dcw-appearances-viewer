@@ -1,0 +1,43 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowJs": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": true,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "rootDir": ".",
+    "outDir": "dist",
+    "resolveJsonModule": true,
+    "strict": true,
+    "jsx": "react-jsx"
+    // "allowImportingTsExtensions": true
+  },
+  "exclude": ["node_modules", "dist"]
+}
+
+// Original working version
+// {
+//   "compilerOptions": {
+//     "target": "ESNext",
+//     "module": "commonjs",
+//     "allowJs": true,
+//     "skipLibCheck": true,
+//     "esModuleInterop": true,
+//     "noImplicitAny": true,
+//     "noImplicitThis": true,
+//     "noUnusedLocals": true,
+//     "sourceMap": true,
+//     "baseUrl": ".",
+//     "rootDir": ".",
+//     "outDir": "dist",
+//     "moduleResolution": "node",
+//     "resolveJsonModule": true
+//   },
+//   "exclude": ["node_modules", "dist"]
+// }

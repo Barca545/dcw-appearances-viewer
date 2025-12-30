@@ -3,6 +3,7 @@ import { app } from "electron";
 import fs from "node:fs";
 import { AppMessages } from "../common/apiTypes";
 import path from "node:path";
+import JSON from "json5";
 
 // Constant declarations
 export const APPID = "DCDB-Appearance-Viewer";

@@ -19,7 +19,9 @@ export class Updater {
     autoUpdater.autoDownload = false;
     autoUpdater.autoInstallOnAppQuit = false;
     // FIXME: Need to also explicitly set feed url
+    // autoUpdater.setFeedURL({ provider: "github", channel: this.settings.updateChannel, vPrefixedTagName: true });
     autoUpdater.channel = this.settings.updateChannel;
+    LOGGER.info(new Error(autoUpdater.getFeedURL()?.toString()));
     autoUpdater.allowDowngrade = false;
     autoUpdater.logger;
   }

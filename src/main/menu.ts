@@ -60,7 +60,7 @@ export function MENU_TEMPLATE(session: Session): MenuTemplate {
       submenu: [
         {
           label: "Contact Developer",
-          click: (_item, base, _e) => dialog.showMessageBoxSync(base as BaseWindow, { message: MESSAGES.DevContact }),
+          click: (_item, base, _e) => dialog.showMessageBoxSync(base as BaseWindow, { message: MESSAGES.devContact }),
         },
         { label: "Report Error", click: (_item, _base, _e) => session.newErrorWin() },
       ],

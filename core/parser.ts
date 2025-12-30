@@ -1,7 +1,7 @@
 import XML from "xml-js";
 import { Peekable } from "./iter";
 import { AppearancesDataResponse } from "./coreTypes";
-import { Template } from "./template";
+import { Template } from "./Template";
 
 // TODO: If this ends up not being robust enough doing something with tokenizing and then a real parser would be the next step
 

@@ -1,5 +1,9 @@
+/* TODO: New plan like on mozilla and vsc only the selected tab has an outline
+everything else has the same background. The add tab button is not at the end but has a fixed place
+*/
+
 .TabBar,
-.tab-bar-contents,
+.tab-list,
 .Tab,
 .tab-bar-nav-wrapper,
 .tab-bar-ol-wrapper {
@@ -16,14 +20,17 @@
 .TabBar {
   --TabBar-height: 6vh;
   --border-thickness: 1vw;
-  width: 100vw;
+  width: 100%;
   height: var(--TabBar-height);
   /* Override other styles */
   list-style: none;
   cursor: pointer;
+  /* Display */
+  display: grid;
+  grid-template-columns: 90% 10%;
 }
 
-.tab-bar-contents {
+.tab-list {
   /* Sizing and Display */
   display: flex;
   flex-direction: row;
@@ -32,21 +39,13 @@
   list-style: none;
   overflow-x: auto;
   height: 100%;
-  /* align-items: stretch; */
 }
 
 /* TODO: Both have */
-.tab-bar-contents::-webkit-scrollbar {
+.tab-list::-webkit-scrollbar {
   display: none;
 }
 
-/* TODO: 
- - Currently `Tab`s do not shrink 
- - Text should be centered vertically
- - A hovered tab should also change color
- - Need to make sure selected is in the screen on change
- - `Tab`s need to grow to fit the container
- */
 .Tab {
   /* Sizing & Display */
   flex: 0 0 20%; /* Tab will shrink to min width but not grow because grow */
@@ -59,7 +58,20 @@
   border-left: 1px solid #ff0000;
 }
 
-/* Without this the tabs don't take up the full container */
+/* FIXME: Does not seem to fill tab contents */
+.AddTab {
+  display: flex;
+  border: none;
+  align-items: center;
+  justify-content: center;
+  height: var(--TabBar-height);
+  background-color: #46d508;
+}
+
+.Tab.hovered {
+  background-color: rgba(39, 119, 5, 0.3);
+}
+
 .TabBar nav {
   height: 100%;
 }
@@ -88,44 +100,35 @@
   text-decoration: none;
 }
 
-.tab-close-button {
-  /* all: unset; */
+/* This can just be a button on the tab */
+.tab-button {
   display: flex;
   align-items: center; /* Vertically center */
   justify-content: center;
   height: 5vmin;
   width: 5vmin;
   flex: 0 0 auto;
-  color: #4000ff;
   background-color: transparent;
   border: solid transparent;
   border-radius: 0.5rem;
   cursor: pointer;
 }
 
-/* TODO: The highlight background should be a square */
-.tab-close-button:hover {
-  color: #ff0000;
+.tab-button:hover {
   background-color: rgba(173, 216, 230, 0.5);
 }
 
-/* FIXME: Does not seem to fill tab contents */
-.AddTab {
-  all: unset;
-  height: var(--TabBar-height);
-  width: var(--TabBar-height);
-  /* Colors */
-  background-color: #277705;
+.close {
+  color: #4000ff;
 }
 
-.AddTab:hover {
-  background-color: azure;
+.tab-button:hover.close {
+  color: #ff0000;
 }
 
-/* FIXME: Why does this color take precedent even when not focused */
-/* .AddTab:focus {
-  background-color: #051001;
-} */
+.add-tab-button:hover {
+  background-color: rgba(173, 216, 230, 0.5);
+}
 
 .tab-content {
   height: 100%;

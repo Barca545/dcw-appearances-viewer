@@ -7,14 +7,7 @@ export class ListEntry {
   readonly synopsis: string;
 
   // FIXME: Ideally this would only take numbers and entrydate would only be numbers
-  constructor(
-    title: string,
-    synopsis: string,
-    year: string | number,
-    month: string | number,
-    day: string | number,
-    link?: string,
-  ) {
+  constructor(title: string, synopsis: string, year: string | number, month: string | number, day: string | number, link?: string) {
     this.title = title;
     this.date = new EntryDate(year.toString(), month.toString(), day.toString());
     this.link = link ?? "";

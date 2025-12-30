@@ -13,12 +13,17 @@
   },
   "keywords": [],
   "author": "Yami545",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Barca545/publication_date_sort"
+  },
   "license": "ISC",
   "description": "An app for viewing a list of a character's appearances in DC comics. App uses data from the DC Database Wiki.",
   "dependencies": {
     "@reduxjs/toolkit": "^2.11.0",
     "@types/electron-squirrel-startup": "^1.0.2",
     "@vitejs/plugin-react": "^5.1.2",
+    "dotenv": "^17.2.3",
     "electron-squirrel-startup": "^1.0.1",
     "electron-updater": "^6.6.2",
     "npm": "^11.6.0",
@@ -37,6 +42,7 @@
     "@electron-forge/plugin-auto-unpack-natives": "^7.10.2",
     "@electron-forge/plugin-fuses": "^7.10.2",
     "@electron-forge/plugin-vite": "^7.10.2",
+    "@electron-forge/publisher-github": "^7.10.2",
     "@electron/fuses": "^1.8.0",
     "@react-router/dev": "^7.9.2",
     "@types/lodash-es": "^4.17.12",
@@ -53,7 +59,8 @@
     "terser-webpack-plugin": "^5.3.14",
     "tsx": "^4.20.5",
     "typescript": "^5.9.3",
-    "vite": "^7.2.2"
+    "vite": "^7.2.2",
+    "wrangler": "^4.54.0"
   },
   "directories": {
     "test": "test",
