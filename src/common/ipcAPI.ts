@@ -1,10 +1,9 @@
 import { UUID } from "crypto";
 import { SearchRequest, SerializedAppTab, SerializedSettingsTab, SettingsTabUpdate } from "./TypesAPI";
-import { DisplayOptions, Settings } from "./apiTypes";
+import { DisplayOptions } from "../main/displayOptions";
+import { Settings } from "../main/settings";
 import { UserErrorInfo as ErrorReport, RendererLog } from "src/main/log";
 import { TabMetaData } from "src/main/tab";
-
-// TODO: This could maybe be a .d.ts since it has no functions and really is fufilling that purpose
 
 export type VoidReturnFunction = () => void;
 
@@ -61,8 +60,6 @@ export namespace TabID {
   }
 }
 
-type UnsubscribeFunction = () => void;
-
 declare global {
   interface Window {
     ERROR: {
@@ -75,7 +72,7 @@ declare global {
         /**Request the AppTab's data from the main process. */
         request: (ID: TabID) => Promise<SerializedAppTab>;
         /**Registers a handler function for the `IPCAppTabEvent.Update` event and returns its unsubscribe function. */
-        onUpdate: (fn: (data: SerializedAppTab) => void) => UnsubscribeFunction;
+        onUpdate: (fn: (data: SerializedAppTab) => void) => VoidReturnFunction;
         /**Submits the form to the main process and returns the result to the renderer. */
         search: (data: SearchRequest) => void;
         setDisplayOptions: (ID: TabID, opts: DisplayOptions) => void;
@@ -84,7 +81,7 @@ declare global {
         /**Request the Settings data from the main process. */
         request: () => Promise<Settings>;
         /**Registers a handler function for the `IPCSettingsTabEvent.Update` event and returns its unsubscribe function. */
-        onUpdate: (fn: (data: SerializedSettingsTab) => void) => UnsubscribeFunction;
+        onUpdate: (fn: (data: SerializedSettingsTab) => void) => VoidReturnFunction;
         /**Send new Settings data to the main process and save it to the disk.
          * Returns the main process' current Settings' state.*/
         save: (data: SettingsTabUpdate) => Promise<Settings>;
@@ -103,7 +100,7 @@ declare global {
         /**Requests the current state of the tab bar from the main process. */
         request: () => Promise<SerializedTabBarState>;
         /**Registers a handler function for the APIEvent.TabBarUpdate event and returns its unsubscribe function. */
-        onUpdate: (fn: (state: SerializedTabBarState) => void) => UnsubscribeFunction;
+        onUpdate: (fn: (state: SerializedTabBarState) => void) => VoidReturnFunction;
         /**Notify the main process the user is attempting to switch another tab.
          * Returns the state of the main process tabs.
          */

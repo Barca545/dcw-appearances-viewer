@@ -1,8 +1,8 @@
 import { JSX } from "react";
-import { DisplayOrder, DisplayDirection, DisplayDensity } from "../../common/apiTypes";
+import { DisplayOrder, DisplayDirection, DisplayDensity } from "../../main/displayOptions";
 import { SerializedAppTab } from "../../common/TypesAPI";
 import BooleanToggle from "./BooleanToggle";
-import { TabID } from "src/common/ipcAPI";
+import type { TabID } from "src/common/ipcAPI";
 
 interface DisplayOptionsProps {
   data: SerializedAppTab;
@@ -20,7 +20,10 @@ export default function DisplayOptions({ ID, data, disabled }: DisplayOptionsPro
   const handleDensityChange = (e: React.ChangeEvent<HTMLSelectElement>) =>
     window.API.appTab.setDisplayOptions(ID, { ...data.opts, density: DisplayDensity.from(e.currentTarget.value).unwrap() });
 
-  let stylesheet: React.CSSProperties | undefined = undefined;
+  const handleShowDatesChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+    window.API.appTab.setDisplayOptions(ID, { ...data.opts, showDates: e.currentTarget.checked });
+
+  let stylesheet: React.CSSProperties = {};
   if (disabled) {
     stylesheet = { pointerEvents: disabled ? "none" : "all", opacity: 0.5 };
   }
@@ -31,13 +34,15 @@ export default function DisplayOptions({ ID, data, disabled }: DisplayOptionsPro
         <option value={DisplayOrder.PubDate}>Publication Date</option>
         <option value={DisplayOrder.AlphaNumeric}>A-Z</option>
       </select>
-      <label htmlFor="input">Ascending</label>
-      <BooleanToggle onChange={handleAscChange} checked={data.opts.dir == DisplayDirection.Ascending ? true : false} />
+      <label htmlFor="direction">Ascending</label>
+      <BooleanToggle id="direction" onChange={handleAscChange} checked={data.opts.dir == DisplayDirection.Ascending ? true : false} />
       <label>Density</label>
       <select name="density" onChange={handleDensityChange} defaultValue={data.opts.density}>
         <option value={DisplayDensity.Normal} label="Normal" />
         <option value={DisplayDensity.Dense}>Names Only</option>
       </select>
+      <label htmlFor="show-dates">Show Dates</label>
+      <BooleanToggle id="show-dates" onChange={handleShowDatesChange} checked={data.opts.showDates} />
     </form>
   );
 }

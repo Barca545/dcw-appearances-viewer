@@ -1,5 +1,5 @@
 {
-  "version": "0.1.1",
+  "version": "0.1.2-PRERELEASE",
   "name": "dcdb-appearance-viewer",
   "main": ".vite/build/main.js",
   "scripts": {
@@ -8,8 +8,7 @@
     "make": "electron-forge make",
     "publish": "electron-forge publish",
     "lint": "eslint --ext .ts,.tsx .",
-    "test": "npm run build && tsx --test",
-    "build": "tsc --build --force"
+    "test": "npm run build && tsx --test"
   },
   "keywords": [],
   "author": "Yami545",

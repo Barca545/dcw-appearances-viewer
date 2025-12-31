@@ -2,8 +2,9 @@ import { Path } from "../../core/load";
 import { None, Option, Some } from "../../core/option";
 import Electron, { app, BrowserWindow, dialog, ipcMain, Menu, shell } from "electron";
 import path from "node:path";
-import { DisplayOptions, Settings } from "../common/apiTypes";
-import { RESOURCE_PATH, SETTINGS_PATH, IS_DEV, __userdata, MESSAGES, IS_MAC, ROOT_DIRECTORY, UNIMPLEMENTED_FEATURE } from "./main_utils";
+import { DEFAULT_SETTINGS, Settings } from "./settings";
+import { DisplayOptions } from "./displayOptions";
+import { SETTINGS_PATH, IS_DEV, __userdata, MESSAGES, IS_MAC, ROOT_DIRECTORY, create_settings_file } from "./utils";
 import fs from "node:fs";
 import type { SearchRequest, SerializedAppTab, SettingsTabUpdate } from "../common/TypesAPI";
 import { openFileDialog } from "./menu";
@@ -70,8 +71,8 @@ export class Session {
   /**Waits until webContents are loaded. */
   private static createWindow(settings: Settings): BrowserWindow {
     let win = new BrowserWindow({
-      width: Number.parseInt(settings.width),
-      height: Number.parseInt(settings.height),
+      width: settings.width,
+      height: settings.height,
       webPreferences: {
         contextIsolation: true,
         nodeIntegration: false,
@@ -99,8 +100,8 @@ export class Session {
     const parentBounds = this.win.getBounds();
 
     let err_win = new BrowserWindow({
-      width: Number.parseInt(this.settings.width),
-      height: Number.parseInt(this.settings.height),
+      width: this.settings.width,
+      height: this.settings.height,
       parent: this.win,
       x: parentBounds.x + 50,
       y: parentBounds.y + 50,
@@ -117,7 +118,6 @@ export class Session {
       err_win.focus();
     });
 
-    // FIXME: This needs to become a path.join in the Session constrctor too. Also confirm root dir isn't just dirname
     if (IS_DEV) {
       err_win.loadURL(`${MAIN_WINDOW_VITE_DEV_SERVER_URL}/src/renderer/error.html`);
       err_win.setMenu(
@@ -190,6 +190,8 @@ export class Session {
     this.trySaveAppTabb();
     const res = openFileDialog();
 
+    console.log(res);
+
     // If the action was canceled, abort and return early
     if (res.isNone()) {
       return new None();
@@ -235,6 +237,7 @@ export class Session {
     const tab = this.getTab(ID);
     if (tab instanceof StartTab) {
       const res = openFileDialog();
+      console.log(res);
 
       // If the action was canceled, abort and return early
       if (res.isNone()) {
@@ -450,13 +453,13 @@ export class Session {
   }
 
   /**Set or reset the session's autosave timer */
-  setAutoSave(len: string) {
+  setAutoSave(interval: number) {
     // Clear any preexisting timer
     if (this.autosave) {
       this.autosave.close();
     }
     // Set the timer
-    this.autosave = setInterval(() => this.tabs.keys().forEach((id) => this.trySaveAppTabb(id)), Number.parseInt(len));
+    this.autosave = setInterval(() => this.tabs.keys().forEach((id) => this.trySaveAppTabb(id)), interval);
   }
 
   /**Restart the autosave timer. */
@@ -465,15 +468,25 @@ export class Session {
   }
 
   static getSettings(): Settings {
-    const settingsSrc = path.join(RESOURCE_PATH, "settings.json");
-    // Skip the production stuff below if we're in dev
+    const settingsPath = path.join(__userdata, "settings.json");
     if (IS_DEV) {
-      return JSON.parse(fs.readFileSync(settingsSrc, { encoding: "utf-8" })) as Settings;
+      return DEFAULT_SETTINGS;
+    } else if (!fs.existsSync(settingsPath)) {
+      return JSON.parse(fs.readFileSync(settingsPath, { encoding: "utf-8" })) as Settings;
     } else {
-      // Load settings
-      const settings = fs.readFileSync(path.join(__userdata, "settings.json"), { encoding: "utf-8" });
-
-      return JSON.parse(settings) as Settings;
+      try {
+        return create_settings_file();
+      } catch (e) {
+        const err = e as Error;
+        // Info cuz expected behavior but under some circumstances may indicate failure
+        err.message = `Settings creation failed: ${err.message}`;
+        LOGGER.info(err);
+        dialog.showErrorBox(
+          "Settings Creation Failed",
+          "Settings creation failed. Using default settings. If this problem persists, please reach out to the developer for help.",
+        );
+        return DEFAULT_SETTINGS;
+      }
     }
   }
 
@@ -493,26 +506,25 @@ export class Session {
     this.settings = settings;
     // Apply the theme settings
     Electron.nativeTheme.themeSource = settings.theme;
-    // TODO: apply window size changes
-    this.win.setSize(Number.parseInt(settings.width), Number.parseInt(settings.height));
-    // TODO: Apply fontsize
+    // Apply window size changes
+    this.win.setSize(settings.width, settings.height);
+    // Apply fontsize
     this.win.webContents.executeJavaScript(`document.documentElement.style.setProperty("--base-font-size","${settings.fontSize}px");`);
-    // TODO: Apply update frequency
-    // TODO: Apply autosave frequency if there is a difference between the two
+    // Apply update frequency
+    // Apply autosave frequency if there is a difference between the two
     this.setAutoSave(settings.saveSettings.autosaveFrequency);
   }
 
   resetSettings() {
-    const defaults = JSON.parse(fs.readFileSync(path.join(RESOURCE_PATH, "settings.json"), { encoding: "utf-8" })) as Settings;
     // Update the data for each settings tab
     // TODO: It occurs to me settings tabs don't need to store the data and can just load it ad hoc then send it
     this.tabs.forEach((tab) => {
-      if (tab instanceof SettingsTab) tab.data = defaults;
+      if (tab instanceof SettingsTab) tab.data = DEFAULT_SETTINGS;
     });
 
-    this.settings = defaults;
-    this.saveSettings(defaults);
-    this.applySettings(defaults);
+    this.settings = DEFAULT_SETTINGS;
+    this.saveSettings(DEFAULT_SETTINGS);
+    this.applySettings(DEFAULT_SETTINGS);
   }
 
   sendIPC<K extends keyof APIEventMap>(type: K, payload: APIEventMap[K]) {
@@ -644,7 +656,9 @@ export class Session {
 
     // Error Listeners
     // TODO: I think this needs to get fed to the logger
-    ipcMain.on(IPCError.Submit, () => UNIMPLEMENTED_FEATURE());
+
+    // ipcMain.on(IPCError.Submit, () => UNIMPLEMENTED_FEATURE());
+    ipcMain.on(IPCError.Submit, () => shell.openExternal(`mailto:n43oxv7io@mozmail.com?`));
     ipcMain.on(IPCError.Log, (_e, log: RendererLog) => LOGGER.writeRenderLog(log));
   }
 }

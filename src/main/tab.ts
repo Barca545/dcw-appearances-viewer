@@ -1,11 +1,13 @@
-import { loadList, Path, ProjectData, ProjectDataFromJSON } from "../../core/load";
+import { Path } from "../../core/load";
+import { ProjectData } from "./projectData";
 import { TabID, TabURL } from "../../src/common/ipcAPI";
 import { None, Option, Some } from "../../core/option";
 import { SerializedAppTab, SerializedSettingsTab, SerializedStartTab, SerializedTab } from "../../src/common/TypesAPI";
-import { DEFAULT_FILTER_OPTIONS, DisplayOptions, DisplayOrder, Settings } from "../../src/common/apiTypes";
+import { Settings } from "./settings";
+import { DisplayOptions, DisplayOrder } from "./displayOptions";
 import { pubDateSort } from "../../core/pub-sort";
-import { app, dialog } from "electron";
-import { __userdata, APPID, IS_DEV, MESSAGES, RESOURCE_PATH, SETTINGS_PATH } from "./main_utils";
+import { dialog } from "electron";
+import { __userdata, IS_DEV, MESSAGES, RESOURCE_PATH, SETTINGS_PATH } from "./utils";
 import path from "path";
 import fs from "fs";
 
@@ -137,28 +139,22 @@ export class AppTab implements DataTab {
 
   /**Load `ProjectData` from a file. Reflowing is unnecessary as it is assumed the file was reflowed according to its saved `FilterOptions`.*/
   static LoadProjectData(savePath: Path): ProjectData {
-    switch (savePath.ext()) {
-      case ".xml": {
-        return AppTab._reflow(
-          ProjectData.from({
-            header: { appID: APPID, version: app.getVersion() },
-            meta: { character: "", title: savePath.name(), opts: DEFAULT_FILTER_OPTIONS },
-            list: loadList(savePath),
-          }),
-        );
-      }
-      case ".json": {
-        try {
-          return AppTab._reflow(ProjectDataFromJSON(savePath));
-        } catch (err) {
-          dialog.showErrorBox("Load Failed", (err as Error).message);
+    try {
+      switch (savePath.ext) {
+        case ".xml": {
+          return AppTab._reflow(ProjectData.fromXML(savePath));
+        }
+        case ".json": {
+          return AppTab._reflow(ProjectData.fromJSON(savePath));
+        }
+        default: {
+          dialog.showErrorBox("Load Failed", MESSAGES.illegalFileType);
           return ProjectData.default();
         }
       }
-      default: {
-        dialog.showErrorBox("Load Failed", MESSAGES.illegalFileType);
-        return ProjectData.default();
-      }
+    } catch (err) {
+      dialog.showErrorBox("Load Failed", (err as Error).message);
+      return ProjectData.default();
     }
   }
 

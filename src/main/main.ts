@@ -1,18 +1,19 @@
 import { app, dialog } from "electron";
 import { Session } from "./session";
-import { __userdata, IS_DEV, makeUninstallScript, RESOURCE_PATH, UPDATE_PATH as UPDATE_DOT_EXE } from "./main_utils";
+import { __userdata, IS_DEV, makeUninstallScript, UPDATE_PATH as UPDATE_DOT_EXE } from "./utils";
 import path from "path";
 import LOGGER from "./log";
 import Child from "child_process";
 import fs from "fs";
 import { appUpdater } from "./autoupdate";
+import { create_settings_file } from "./utils";
 
 // TODO:
-// - URGENT: merge to main
-// - URGENT: Uninstall all appstuff on uninstall -> maybe impossible https://github.com/Squirrel/Squirrel.Windows/issues/1763 and https://github.com/electron/windows-installer/issues/113cd
-// - URGENT: Add github release - https://www.electronforge.io/config/publishers/github
+// - URGENT: Uninstall all appstuff on uninstall
 // - URGENT: Add autoupdater - https://www.electronforge.io/config/publishers/github && https://www.electronjs.org/docs/latest/tutorial/updates
 // - URGENT: Add check for all files installed correctly on first startup and log errors if stuff is missing
+// - URGENT: Add error reporting like this: https://github.com/Barca545/dcw-appearances-viewer/releases/tag/v0.1.1-PRERELEASE use a firefox masking email
+// - URGENT: Publish should actually publish not just make a draft
 
 // Read more on getPath: https://www.electronjs.org/docs/latest/api/app#appgetpathname
 
@@ -71,8 +72,12 @@ function handleStartupEvent(): boolean {
   }
 
   switch (event) {
+    case "--squirrel-firstrun": {
+      create_settings_file();
+    }
     // NOTE: Fall through
-    case "--squirrel-install":
+    case "--squirrel-install": {
+    }
     // Squirrel installer documentation: https://github.com/electron/windows-installer
     // case "--squirrel-firstrun":
     case "--squirrel-updated": {
@@ -81,16 +86,19 @@ function handleStartupEvent(): boolean {
       // TODO: Need some way to install new settings but keep existing user ones
       // I.e. diff the files and only paste new settings
       // TODO: Setting up userdata should probably go under first run
-      try {
-        const settingsSrc = path.join(RESOURCE_PATH, "settings.json");
-        const settingsDst = path.join(__userdata, "settings.json");
-        fs.copyFileSync(settingsSrc, settingsDst, fs.constants.COPYFILE_EXCL);
-      } catch (e) {
-        const err = e as Error;
-        // Info cuz expected behavior but under some circumstances may indicate failure
-        err.message = `Update copy fail: ${err.message}`;
-        LOGGER.info(err);
+
+      // If the settings file does not exist, make it
+      if (!fs.existsSync(path.join(__userdata, "settings.json"))) {
+        try {
+          create_settings_file();
+        } catch (e) {
+          const err = e as Error;
+          // Info cuz expected behavior but under some circumstances may indicate failure
+          err.message = `Settings creation failed: ${err.message}`;
+          LOGGER.info(err);
+        }
       }
+
       return true;
     }
     case "--squirrel-uninstall": {
@@ -135,7 +143,7 @@ if (handleStartupEvent()) app.quit();
 app.whenReady().then(() => {
   appUpdater.initListeners();
   appUpdater.checkForUpdate();
-  if (appUpdater.settings.autoCheckForUpdates) {
+  if (appUpdater.settings.updateSettings.autoCheckForUpdates) {
     appUpdater.startPeriodicUpdateChecks();
   }
 

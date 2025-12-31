@@ -1,5 +1,4 @@
 import React, { ErrorInfo, JSX } from "react";
-// import { LogLevel } from "../../main/log";
 
 // This cannot be imported from main log level because log level uses __dirname
 export enum LogLevel {

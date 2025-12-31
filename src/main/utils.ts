@@ -4,6 +4,8 @@ import fs from "node:fs";
 import { AppMessages } from "../common/apiTypes";
 import path from "node:path";
 import JSON from "json5";
+import { DEFAULT_SETTINGS, Settings } from "./settings";
+import LOGGER from "./log";
 
 // Constant declarations
 export const APPID = "DCDB-Appearance-Viewer";
@@ -82,4 +84,18 @@ export function makeUninstallScript(folders: string[]): string {
   }
 
   return script;
+}
+
+/**Function for creating a settings file during installation if no such file exists.
+ * **Will overwrite the existing settings file.**
+ * Returns the new settings.
+ */
+export function create_settings_file(): Settings {
+  // TODO: Should this be a constant?
+  const settingsDst = path.join(__userdata, "settings.json");
+  fs.copyFileSync(JSON.stringify(DEFAULT_SETTINGS), settingsDst);
+  // TODO: Settings is a common folder
+  // it cannot import anything that imports stuff unique to node.
+  LOGGER.info(new Error("Created missing settings.json"));
+  return DEFAULT_SETTINGS;
 }

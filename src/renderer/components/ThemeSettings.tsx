@@ -1,5 +1,11 @@
 import { FormEventHandler, JSX } from "react";
-import { SettingsTheme } from "../../common/apiTypes";
+import { SettingsTheme } from "../../main/settings";
+
+// export enum SettingsTheme {
+//   System = "system",
+//   Light = "light",
+//   Dark = "dark",
+// }
 
 interface ThemeSettingsProps {
   value: SettingsTheme;

@@ -20,7 +20,7 @@ const githubPublisherConfig: PublisherGitHubConfig = {
   draft: true,
   force: false,
   generateReleaseNotes: true,
-  prerelease: false,
+  prerelease: true,
   octokitOptions: {},
   tagPrefix: "v",
 };

@@ -6,7 +6,7 @@ interface SaveSettingsProps {
   onAutosaveChange: (value: boolean) => void;
   saveOnBlur: boolean;
   onSaveOnBlurChange: (value: boolean) => void;
-  saveFrequency: string;
+  saveFrequency: number;
   onSaveFrequencyChange: (value: string) => void;
 }
 
@@ -18,8 +18,8 @@ export default function SaveSettings({
   saveFrequency,
   onSaveFrequencyChange: setSaveFrequency,
 }: SaveSettingsProps): JSX.Element {
-  const [minutes, setMinutes] = useState(Math.floor(Number.parseInt(saveFrequency) / 1000 / 60));
-  const [seconds, setSeconds] = useState((Number.parseInt(saveFrequency) / 1000) % 60);
+  const [minutes, setMinutes] = useState(Math.floor(saveFrequency / 1000 / 60));
+  const [seconds, setSeconds] = useState((saveFrequency / 1000) % 60);
 
   const handleFrequencyMinutesChange = (e: React.FormEvent<HTMLInputElement>) => {
     setMinutes(Number.parseInt(e.currentTarget.value));

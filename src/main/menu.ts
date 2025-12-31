@@ -1,4 +1,4 @@
-import { UNIMPLEMENTED_FEATURE, IS_MAC, IS_DEV, MESSAGES } from "./main_utils";
+import { UNIMPLEMENTED_FEATURE, IS_MAC, IS_DEV, MESSAGES } from "./utils";
 import { BaseWindow, dialog } from "electron";
 import { None, Option, Some } from "../../core/option";
 import { Session } from "./session";
@@ -79,9 +79,10 @@ const VIEW_MENU_PROD: MenuEntry = { label: "View", submenu: [{ role: "zoomIn" },
 export function openFileDialog(): Option<string> {
   const res = dialog.showOpenDialogSync({
     filters: [
-      { name: "All Files", extensions: ["txt", "json", "xml"] },
+      { name: "All Files", extensions: ["txt", "json", "jsonc", "xml"] },
       { name: ".txt", extensions: ["txt"] },
       { name: ".json", extensions: ["json"] },
+      { name: ".jsonc", extensions: ["jsonc"] },
       { name: ".xml", extensions: ["xml"] },
     ],
     properties: ["openFile"],

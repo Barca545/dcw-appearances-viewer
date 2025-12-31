@@ -1,16 +1,7 @@
-// TODO: If this ends up being overly granular merge taking inspiration from
-// https://stackoverflow.com/a/66270356/24660323
-import { RendererLog, UserErrorInfo } from "src/main/log";
-import { DisplayOptions, Settings } from "../common/apiTypes";
+import { RendererLog, UserErrorInfo } from "../main/log";
+import { DisplayOptions } from "../main/displayOptions";
 import { IPCError, IPCEvent, SerializedTabBarState, TabID } from "../common/ipcAPI";
-import type {
-  TabDataUpdate,
-  SerializedTab,
-  SearchRequest,
-  SerializedSettingsTab,
-  SettingsTabUpdate,
-  SerializedAppTab,
-} from "../common/TypesAPI";
+import type { TabDataUpdate, SearchRequest, SerializedSettingsTab, SettingsTabUpdate, SerializedAppTab } from "../common/TypesAPI";
 import { contextBridge, ipcRenderer } from "electron";
 // REMINDER: Handle only takes invokes not sends
 console.log("PRELOAD RUNNING...");

@@ -1,12 +1,9 @@
 import { app, dialog } from "electron";
 import { autoUpdater, UpdateCheckResult, UpdateInfo } from "electron-updater";
 import { isVersionGreater, parseVersion } from "./semver";
-import { Settings } from "src/common/apiTypes";
+import { Settings } from "./settings";
 import LOGGER from "./log";
 import { Session } from "./session";
-
-// TODO: I think I should make it so the user
-// TODO:
 
 export class Updater {
   updateCheckInterval: NodeJS.Timeout | null = null;
@@ -20,7 +17,7 @@ export class Updater {
     autoUpdater.autoInstallOnAppQuit = false;
     // FIXME: Need to also explicitly set feed url
     // autoUpdater.setFeedURL({ provider: "github", channel: this.settings.updateChannel, vPrefixedTagName: true });
-    autoUpdater.channel = this.settings.updateChannel;
+    autoUpdater.channel = this.settings.updateSettings.updateChannel;
     LOGGER.info(new Error(autoUpdater.getFeedURL()?.toString()));
     autoUpdater.allowDowngrade = false;
     autoUpdater.logger;
@@ -29,7 +26,7 @@ export class Updater {
   private shouldUpdate(info: UpdateInfo) {
     const currentVersion = parseVersion(app.getVersion());
     const infoVersion = parseVersion(info.version);
-    if (isVersionGreater(infoVersion, currentVersion) && this.settings.updatePromptBefore) {
+    if (isVersionGreater(infoVersion, currentVersion) && this.settings.updateSettings.updatePromptBefore) {
       const res = dialog.showMessageBoxSync({
         type: "info",
         title: "Update Available",
@@ -73,7 +70,7 @@ export class Updater {
 
   startPeriodicUpdateChecks() {
     // Interval is in ms so we need to convert to minutes which is what the settings stores in
-    const interval = parseInt(this.settings.updateCheckInterval);
+    const interval = this.settings.updateSettings.updateCheckInterval;
     this.checkForUpdate();
     this.updateCheckInterval = setInterval(() => {
       this.checkForUpdate();

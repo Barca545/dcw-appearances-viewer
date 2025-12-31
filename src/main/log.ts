@@ -1,5 +1,5 @@
 import { app } from "electron";
-import { IS_DEV, ROOT_DIRECTORY } from "./main_utils";
+import { IS_DEV, ROOT_DIRECTORY } from "./utils";
 import path from "node:path";
 import fs from "node:fs";
 import os from "node:os";

@@ -2,7 +2,7 @@ import { ListEntry } from "../../../core/pub-sort";
 import { Fragment, JSX, useEffect } from "react";
 import { SerializedAppTab, SerializedListEntry } from "../../common/TypesAPI";
 import { TabID } from "../../common/ipcAPI";
-import { DisplayDensity } from "../../common/apiTypes";
+import { DisplayDensity } from "../../main/displayOptions";
 import LoadingSpinner from "./LoadingSpinner";
 
 interface ResultsListProps {

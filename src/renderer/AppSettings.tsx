@@ -1,5 +1,5 @@
 import React, { JSX, useEffect, useState } from "react";
-import { Settings, SettingsTheme } from "../common/apiTypes";
+import { Settings, SettingsTheme } from "../main/settings";
 import "../renderer/settings.css";
 import { TabID } from "../common/ipcAPI";
 import LoadingSpinner from "./components/LoadingSpinner";
@@ -43,7 +43,7 @@ export default function AppSettings() {
     setSettings({ ...settings, theme: e.currentTarget.value as SettingsTheme });
 
   const handleSaveFrequencyChange = (value: string) =>
-    setSettings({ ...settings, saveSettings: { ...settings.saveSettings, autosaveFrequency: value } });
+    setSettings({ ...settings, saveSettings: { ...settings.saveSettings, autosaveFrequency: Number.parseInt(value) } });
 
   const handleSaveOnBlurChange = (value: boolean) =>
     setSettings({ ...settings, saveSettings: { ...settings.saveSettings, saveOnBlur: value } });
@@ -52,7 +52,7 @@ export default function AppSettings() {
     setSettings({ ...settings, saveSettings: { ...settings.saveSettings, autosave: value } });
   };
 
-  const handleChangeFontSize = (value: string) => setSettings({ ...settings, fontSize: value });
+  const handleChangeFontSize = (value: string) => setSettings({ ...settings, fontSize: Number.parseInt(value) });
 
   return (
     <form id="settings" className="settings-form">
@@ -65,7 +65,7 @@ export default function AppSettings() {
         onAutosaveChange={handleAutosaveChange}
         saveFrequency={settings.saveSettings.autosaveFrequency}
       />
-      <AccessibilitySettings fontSize={settings.fontSize} setFontSize={handleChangeFontSize} />
+      <AccessibilitySettings fontSize={settings.fontSize.toString()} setFontSize={handleChangeFontSize} />
       <fieldset className="settings-subsection" id="save-buttons">
         <button type="button" id="save" className="save-button" name="save-settings" onClick={handleSave}>
           Save
