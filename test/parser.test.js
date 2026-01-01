@@ -5,6 +5,8 @@ import { isEqual } from "lodash-es";
 import fs from "fs";
 import { Template } from "../types";
 
+("npm run test ./test/parser.test.js");
+
 test("consumeIf", (_) => {
   const template = "ABC";
   let parser = new TemplateParser(template);

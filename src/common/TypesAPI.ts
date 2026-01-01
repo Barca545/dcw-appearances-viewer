@@ -8,6 +8,7 @@ export interface SerializedListEntry {
   title: string;
   synopsis: string;
   date: { year: number; month: number; day: number };
+  URL: string;
   link: string;
 }
 

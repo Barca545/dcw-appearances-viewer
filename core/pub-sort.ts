@@ -1,8 +1,14 @@
 import { SerializedListEntry } from "src/common/TypesAPI";
 
+// TODO: This should probably get renamed list entry
+// TODO: Sorting should go into a different file for the various sort functions
+
 export class ListEntry {
   readonly title: string;
   readonly date: EntryDate;
+  /**The URL of the entry's page on DC Database. */
+  readonly URL: string;
+  // TODO: I am unclear what this field actually is as it always is empty.
   readonly link: string;
   readonly synopsis: string;
 
@@ -11,6 +17,7 @@ export class ListEntry {
     this.title = title;
     this.date = new EntryDate(year.toString(), month.toString(), day.toString());
     this.link = link ?? "";
+    this.URL = `https://dc.fandom.com/wiki/${title.replaceAll(" ", "_")}`;
     this.synopsis = synopsis;
   }
 
@@ -19,11 +26,12 @@ export class ListEntry {
     return new ListEntry(data.title, data.synopsis, date.year, date.month, date.day, data.link);
   }
 
-  toAppearanceData(): SerializedListEntry {
+  serialize(): SerializedListEntry {
     return {
       title: this.title,
       date: { year: this.date.year, month: this.date.month, day: this.date.day },
       synopsis: this.synopsis,
+      URL: this.URL,
       link: this.link,
     };
   }
@@ -79,5 +87,9 @@ export class EntryDate {
     } else {
       return false;
     }
+  }
+
+  toString(): string {
+    return `${this.month}/${this.day}/${this.year}`;
   }
 }

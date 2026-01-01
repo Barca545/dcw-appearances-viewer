@@ -94,14 +94,14 @@ export class StartTab implements Tab {
  */
 export class AppTab implements DataTab {
   // TODO: maybe "meta" should be made an interface since I reuse it like 3 places
-  meta: { ID: TabID; URL: `/app/${TabID}`; tabName: string; characterName: string };
+  meta: { ID: TabID; URL: `/app/${TabID}`; tabName: string };
   savePath: Option<Path>;
   /**Indicates whether the tab has unsaved changes. */
   isClean: boolean;
   data: ProjectData;
 
   private constructor(args: { meta: { ID: TabID; tabName: string }; savePath: Option<Path>; projectData: ProjectData }) {
-    this.meta = { ID: args.meta.ID, URL: `/app/${args.meta.ID}`, tabName: args.meta.tabName, characterName: "" };
+    this.meta = { ID: args.meta.ID, URL: `/app/${args.meta.ID}`, tabName: args.meta.tabName };
     this.isClean = true;
     this.savePath = args.savePath;
     this.data = args.projectData;
@@ -127,8 +127,8 @@ export class AppTab implements DataTab {
       // TODO: This is kinda lazy but it's a quick and dirty check
       // TODO: I need to add a real check for a failed search
       success: this.data.list.length != 0,
-      meta: { ...this.meta, ID: this.meta.ID },
-      list: this.data.list.map((entry) => entry.toAppearanceData()),
+      meta: { ...this.meta, ID: this.meta.ID, characterName: this.data.meta.characterName },
+      list: this.data.list.map((entry) => entry.serialize()),
       opts: this.data.meta.opts,
     };
   }

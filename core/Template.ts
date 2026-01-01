@@ -1,4 +1,5 @@
 import { None, Some, Option } from "./option";
+import wtf from "wtf_wikipedia";
 
 /**An Appearence Template. */
 export class Template {
@@ -56,5 +57,38 @@ export class Template {
     }
 
     return `Template{${this.name.unwrap()}| ${data}}`;
+  }
+}
+
+export class DCTemplate {
+  private entries: Map<string, string>;
+
+  private constructor() {
+    this.entries = new Map();
+  }
+
+  static new(value: string): DCTemplate {
+    let newTemp = new DCTemplate();
+    const templates = wtf(value).templates();
+    console.log("templates count:", templates.length);
+
+    wtf(value)
+      .templates()
+      .forEach((temp) =>
+        Object.entries(temp.json()).forEach(([k, v]) => {
+          // Ignore the metadata for the template
+          if (k === "list" || k === "template") return;
+          newTemp.entries.set(k, v);
+        }),
+      );
+    return newTemp;
+  }
+
+  get(key: string): Option<Template | string> {
+    if (this.entries.has(key)) {
+      return new Some(this.entries.get(key) as string);
+    } else {
+      return new None();
+    }
   }
 }

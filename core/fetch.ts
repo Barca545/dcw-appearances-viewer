@@ -24,7 +24,8 @@ export async function getAppearances(character: string): Promise<ResultInterface
       format: "json",
       formatversion: "2",
       utf8: "1",
-      // TODO: Figure out why generators don't work, might be a thing because I'm treated as a bot
+      // TODO: Figure out why generators don't work,
+      // might be a thing because I'm treated as a bot
       // Properties
       prop: "revisions",
       rvprop: "content",

@@ -8,6 +8,7 @@
     "esModuleInterop": true,
     "noImplicitAny": true,
     "noImplicitThis": true,
+    // Tests fail when this is true, surely there is a way
     "noUnusedLocals": true,
     "sourceMap": true,
     "baseUrl": ".",

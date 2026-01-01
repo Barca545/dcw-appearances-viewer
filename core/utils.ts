@@ -1,7 +1,7 @@
-import { TemplateParser } from "./parser.js";
 import { TitleAndTemplate } from "./coreTypes.js";
 import { ListEntry } from "./pub-sort.js";
 import { OptionMap } from "./OptionMap.js";
+import { TemplateParser } from "./parser.js";
 
 /**Convert the text field of the appearances XML into a list entry. */
 export function templateStringToListEntry(data: TitleAndTemplate): ListEntry {
@@ -35,7 +35,6 @@ export function templateStringToListEntry(data: TitleAndTemplate): ListEntry {
   );
 
   const template = new TemplateParser(data.rawTemplate).parse(true);
-
   // Create the date
   // Need to also pull release date
   const release_date = template.get("Release Date");

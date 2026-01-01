@@ -65,76 +65,89 @@
 
 # 0.2.0
 
-## Organize Project
+## Features
 
-- [ ] Look at how [TS documentation](https://www.typescriptlang.org/docs/handbook/declaration-files/library-structures.html) recommends structuring projects.
-- [ ] Standardize documentation
-- [ ] Reorganize exports/imports between APITypes and core types
-- [ ] Many files need more descriptive names
-- [ ] Move types used by multiple modules to whichever is most logical
+- [x] Add markdown save option.
+- [x] Add functionality to hide the dates.
+
+## Fixes
+
+- [x] "Save As" should change the tabs savePath
+- [ ] Ensure Publish actually publishes.
+- [ ] Ensure `settings.json` is created when the app first runs.
+- [ ] Ensure autoupdating works.
+- [ ] Ensure all files and folders are uninstalled upon app uninstallation.
+- [ ] Add error logging to supabase.
+- [ ] Switch to [`wtf_wikipedia`](https://www.npmjs.com/package/wtf_wikipedia).
+  - [ ] Prevent NaN dates.
+  - [ ] Fix issue where synopsis does not load fully.
+
+# 0.3.0 - Robustness Fixes
 
 ## Refactor Project
 
-- [ ] Assess whether `Layout` should have a `root` HTML element
-- [ ] Asses whether `<body>` should be the `root` HTML element in `index.html`
-- [ ] Need to clean main up and create submodules
-- [ ] Need to create proper `*.d.ts` files
-- [ ] Remove unused IPC API endpoints
+- [ ] Assess whether `Layout` should have a `root` HTML element.
+- [ ] Asses whether `<body>` should be the `root` HTML element in `index.html`.
+- [ ] Need to clean main up and create submodules.
+- [ ] Need to create proper `*.d.ts` files.
+- [ ] Remove unused IPC API endpoints.
+- [ ] Replace casts with `Options` + `unwrap`s.
+
+## Organize Project
+
+- [ ] Look at how [TS documentation](https://www.typescriptlang.org/docs/handbook/declaration-files/library-structures.html) recommends structuring projects.
+- [ ] Standardize documentation.
+- [ ] Reorganize exports/imports between APITypes and core types.
+- [ ] Many files need more descriptive names.
+- [ ] Move types used by multiple modules to whichever is most logical.
+- [ ] Update `ARCHITECTURE.md`.
 
 ## Add New Tests
 
-- [ ] Update existing tests' file paths
-- [ ] add tests for electron features
-- [ ] Figure out why the renderer files don't need `src/renderer/`
+- [ ] Update existing tests' file paths.
+- [ ] add tests for electron features.
+- [ ] Figure out why the renderer files don't need `src/renderer/`.
 
-## Miscellaneous
+# 0.4.0 - Expanding functionality
 
-- [ ] Replace casts with `Options` + `unwrap`s
-- [ ] Update architecture.md
-- [x] Fetch should return an error if it fails
-- [ ] Fix issue where synopsis does not load fully; seems to be an error caused by failing to parse the templates in the synopsis properly.
+## Searching
 
-# 0.3.0
-
-## QOL
-
-- [ ] Character search recomendations when type
-- [ ] Save previous searches in a document to autofill them into the search
-- [ ] Add recent documents menu option to continue a previous project
-
-## Updating
-
-- [ ] Add autoupdates
-- [ ] Add Github releases
-- [ ] Have nightly vs prompt options in settings to control update frequency
-
-## Miscellaneous
-
-- [ ] Recent documents list on the start page
+- [ ] Add ability to filter for a specific date range.
+- [ ] Add searching multiple characters at once.
+- [ ] Add searching multiple earths at once.
 
 # 0.5.0
 
+## QOL
+
+- [ ] Character name recomendations.
+- [ ] Save previous searches in a document to autofill them into the search.
+- [ ] Add recent documents menu on start page.
+- [ ] Select date formatting in settings.
+
 ## Styling
 
-- [ ] Toggles should use [sliders](https://www.w3schools.com/howto/howto_css_switch.asp)
-- [ ] Normal list has purple links `"Name Only"` has blue ones
-- [ ] Text size needs to be scaled better
-- [ ] All sizes should be in something absoulute not `px` units
+- [ ] Text size needs to be scaled better.
+- [ ] All sizes should be in something absoulute not `px` units.
 
 # 0.6.0
 
-## Filtering
+## Parsing Overhaul
 
-- [ ] Add ability to filter for a specific date range
-- [ ] Sorting by type of appearance
-- [ ] Multiple Characters
-
-## QOL
-
-- [ ] Character inference for `.xml` files
+- [ ] Fork wtf_wikipedia.
+  - [ ] Add typing.
+  - [ ] Enable parsing custom DCDB templates.
+  - [ ] Enable parsing nested templates in synopses and appearances.
 
 # 0.7.0
 
-## Accessability
+## QOL
+
+- [ ] Character inference for `.xml` files.
+- [ ] Sorting by type of appearance.
+
+# 0.8.0
 
 # 0.9.0
+
+# 1.0.0

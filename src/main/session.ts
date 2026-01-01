@@ -4,7 +4,7 @@ import Electron, { app, BrowserWindow, dialog, ipcMain, Menu, shell } from "elec
 import path from "node:path";
 import { DEFAULT_SETTINGS, Settings } from "./settings";
 import { DisplayOptions } from "./displayOptions";
-import { SETTINGS_PATH, IS_DEV, __userdata, MESSAGES, IS_MAC, ROOT_DIRECTORY, create_settings_file } from "./utils";
+import { SETTINGS_PATH, IS_DEV, __userdata, MESSAGES, IS_MAC, ROOT_DIRECTORY, create_settings_file, UNIMPLEMENTED_FEATURE } from "./utils";
 import fs from "node:fs";
 import type { SearchRequest, SerializedAppTab, SettingsTabUpdate } from "../common/TypesAPI";
 import { openFileDialog } from "./menu";
@@ -166,7 +166,7 @@ export class Session {
    */
   newAppTab() {
     // Try to save the current tab
-    this.trySaveAppTabb();
+    this.trySaveAppTab();
     const tab = AppTab.default({
       meta: {
         ID: TabID.create(),
@@ -187,10 +187,8 @@ export class Session {
    */
   newAppTabFromFile() {
     // Try to save the current tab
-    this.trySaveAppTabb();
+    this.trySaveAppTab();
     const res = openFileDialog();
-
-    console.log(res);
 
     // If the action was canceled, abort and return early
     if (res.isNone()) {
@@ -293,11 +291,10 @@ export class Session {
       if (mustSaveAs || tab.savePath.isNone()) {
         const res = dialog.showSaveDialogSync(this.win, {
           defaultPath: app.getPath("documents"),
-          // FIXME: Can't be this and openFile figure out the difference
           properties: ["createDirectory", "showOverwriteConfirmation"],
           filters: [
-            // I don't really think there is a reason to add txt saving since JSONs are plaintext but maybe
-            { name: ".json", extensions: ["json"] },
+            { name: ".json", extensions: ["json", "jsonc"] },
+            { name: ".md", extensions: ["md"] },
           ],
         });
 
@@ -308,22 +305,39 @@ export class Session {
         tab.savePath = new Some(new Path(res));
       }
 
-      tab.data.saveAsJSON(tab.savePath.unwrap());
+      const path = tab.savePath.unwrap();
+
+      if (path.ext === ".json") {
+        tab.data.saveAsJSON(path);
+      } else if (path.ext === ".md") {
+        tab.data.saveAsMDList(path);
+      }
+
       this.updateTabIsClean(tab.meta.ID, true);
     } else if (tab == undefined) {
       // TODO: This probalby needs to be stuck in messages although I am not sure when this case would happen
       // TODO: This probably also should be logged as an error
+      // Probably should make a show error static function that logs and displays notice to the user
       alert(`Tab with ID ${this.currentTab} does not exist!`);
       return;
     }
   }
 
   /**Try to save a tab. Will fail if it does not have a save path. Defaults to saving the `currentTab`.*/
-  trySaveAppTabb(id?: TabID) {
+  trySaveAppTab(id?: TabID) {
     const tab = this.getTab(id ? id : this.currentTab.unwrap());
-    if (tab instanceof AppTab && tab.savePath.isSome()) {
-      tab.data.saveAsJSON(tab.savePath.unwrap());
-      this.updateTabIsClean(tab.meta.ID, true);
+    if (tab instanceof AppTab && tab.savePath.isSome() && !tab.isClean) {
+      const path = tab.savePath.unwrap();
+      try {
+        if (path.ext === ".json") {
+          tab.data.saveAsJSON(path);
+        } else if (path.ext === ".md") {
+          tab.data.saveAsMDList(path);
+        }
+        this.updateTabIsClean(tab.meta.ID, true);
+      } catch (e) {
+        LOGGER.error(e as Error);
+      }
     }
   }
 
@@ -433,9 +447,9 @@ export class Session {
       const tabType = tab instanceof SettingsTab ? "SettingsTab" : "StartTab";
       throw new Error(`Cannot update tab ${req.id} as it is a ${tabType} tab not an AppTab`);
     }
-    tab.meta.characterName = createCharacterName(req);
+    tab.data.meta.characterName = createCharacterName(req);
 
-    tab.data.list = (await fetchList(tab.meta.characterName)).unwrap_or([]);
+    tab.data.list = (await fetchList(tab.data.meta.characterName)).unwrap_or([]);
 
     this.updateTabIsClean(tab.meta.ID, false);
 
@@ -459,7 +473,7 @@ export class Session {
       this.autosave.close();
     }
     // Set the timer
-    this.autosave = setInterval(() => this.tabs.keys().forEach((id) => this.trySaveAppTabb(id)), interval);
+    this.autosave = setInterval(() => this.tabs.keys().forEach((id) => this.trySaveAppTab(id)), interval);
   }
 
   /**Restart the autosave timer. */
@@ -618,12 +632,12 @@ export class Session {
       }
     });
 
-    this.win.on("blur", () => this.trySaveAppTabb());
+    this.win.on("blur", () => this.trySaveAppTab());
 
     // TAB BAR LISTENERS
     ipcMain.handle(IPCEvent.TabRequest, () => this.serializeTabBarState());
     ipcMain.handle(IPCEvent.TabGo, (_e, ID: TabID) => (this.navigateToTab(ID), this.serializeTabBarState()));
-    ipcMain.handle(IPCEvent.TabOpen, () => (this.newAppTab(), this.serializeTabBarState()));
+    ipcMain.handle(IPCEvent.TabOpen, () => (this.newStartTab(), this.serializeTabBarState()));
     ipcMain.handle(IPCEvent.TabReorder, (_e, state: SerializedTabBarState) => this.setTabBarState(state));
     ipcMain.handle(IPCEvent.TabClose, (_e, ID) => (this.closeTab(ID), this.serializeTabBarState()));
 
@@ -641,7 +655,6 @@ export class Session {
     ipcMain.handle(IPCEvent.SettingsReset, () => (this.resetSettings(), this.settings));
 
     // START TAB LISTENERS
-    // FIXME: I am pretty sure this is actually a start tab function
     ipcMain.on(IPCEvent.StartOpenNew, (_e, ID: TabID) => {
       this.newAppTabInStartTab(ID);
       this.sendIPC(IPCEvent.TabUpdate, this.serializeTabBarState());
@@ -657,8 +670,7 @@ export class Session {
     // Error Listeners
     // TODO: I think this needs to get fed to the logger
 
-    // ipcMain.on(IPCError.Submit, () => UNIMPLEMENTED_FEATURE());
-    ipcMain.on(IPCError.Submit, () => shell.openExternal(`mailto:n43oxv7io@mozmail.com?`));
+    ipcMain.on(IPCError.Submit, () => UNIMPLEMENTED_FEATURE());
     ipcMain.on(IPCError.Log, (_e, log: RendererLog) => LOGGER.writeRenderLog(log));
   }
 }

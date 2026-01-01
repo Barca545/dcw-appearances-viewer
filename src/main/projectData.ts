@@ -7,12 +7,12 @@ import fs from "fs";
 
 export class ProjectData {
   header: { appID: typeof APPID; version: string };
-  meta: { character: string; title: string; opts: DisplayOptions };
+  meta: { characterName: string; title: string; opts: DisplayOptions };
   list: ListEntry[];
 
   private constructor(
     header: { appID: typeof APPID; version: string },
-    meta: { character: string; title: string; opts: DisplayOptions },
+    meta: { characterName: string; title: string; opts: DisplayOptions },
     list: ListEntry[],
   ) {
     this.header = header;
@@ -22,7 +22,7 @@ export class ProjectData {
 
   /** Create a new, empty, instance of `ProjectData`. */
   static default(): ProjectData {
-    return new ProjectData({ appID: APPID, version: app.getVersion() }, { title: "", character: "", opts: DEFAULT_FILTER_OPTIONS }, []);
+    return new ProjectData({ appID: APPID, version: app.getVersion() }, { title: "", characterName: "", opts: DEFAULT_FILTER_OPTIONS }, []);
   }
 
   static from(value: SerializedProjectData): ProjectData {
@@ -39,7 +39,25 @@ export class ProjectData {
   }
 
   saveAsJSON(path: Path) {
-    fs.writeFileSync(path.fullPath, JSON.stringify(this.list), { encoding: "utf8" });
+    this.meta.title = path.fileName;
+    console.log(this.meta.title);
+    fs.writeFileSync(path.fullPath, JSON.stringify(this), { encoding: "utf8" });
+  }
+
+  saveAsMDList(path: Path) {
+    let doc = "";
+    this.list.map((entry) => {
+      // TODO:need to create the link
+      // TODO: Take the url thing from the renderer and make a URL field on the listentry
+      if (this.meta.opts.showDates) {
+        doc += `* [${entry.title}](${entry.URL})      ${entry.date.toString()}\n`;
+      } else {
+        doc += `* [${entry.title}](${entry.URL})\n`;
+      }
+    });
+
+    this.meta.title = path.fileName;
+    fs.writeFileSync(path.fullPath, doc, { encoding: "utf8" });
   }
 
   /**Loads `ProjectData` from a JSON file. Error if the file is not a JSON. */
@@ -68,7 +86,7 @@ export class ProjectData {
   static fromXML(path: Path): ProjectData {
     return ProjectData.from({
       header: { appID: APPID, version: app.getVersion() },
-      meta: { character: "", title: path.name, opts: DEFAULT_FILTER_OPTIONS },
+      meta: { characterName: "", title: path.name, opts: DEFAULT_FILTER_OPTIONS },
       list: loadList(path),
     });
   }
@@ -78,6 +96,6 @@ export class ProjectData {
 // I think this was initially intended for serialization over IPC but I think the TabData stuff replaced it
 export interface SerializedProjectData {
   header: { appID: typeof APPID; version: string };
-  meta: { character: string; title: string; opts: DisplayOptions };
+  meta: { characterName: string; title: string; opts: DisplayOptions };
   list: ListEntry[];
 }

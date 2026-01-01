@@ -23,6 +23,7 @@ export function MENU_TEMPLATE(session: Session): MenuTemplate {
         },
         {
           label: "Open File",
+          toolTip: "Open a saved project in a new tab.",
           accelerator: "CommandOrControl+O",
           click: (_item, _base, _e) => {
             session.newAppTabFromFile();
@@ -82,7 +83,6 @@ export function openFileDialog(): Option<string> {
       { name: "All Files", extensions: ["txt", "json", "jsonc", "xml"] },
       { name: ".txt", extensions: ["txt"] },
       { name: ".json", extensions: ["json"] },
-      { name: ".jsonc", extensions: ["jsonc"] },
       { name: ".xml", extensions: ["xml"] },
     ],
     properties: ["openFile"],

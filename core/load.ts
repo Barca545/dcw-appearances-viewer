@@ -48,7 +48,7 @@ export class Path {
 
   /**Returns the name of a path's file if it has one */
   get fileName(): string {
-    return path.basename(this._fullPath);
+    return path.basename(this._fullPath, this.ext);
   }
 
   /**Returns the full path as a string. */
