@@ -2,6 +2,8 @@
 everything else has the same background. The add tab button is not at the end but has a fixed place
 */
 
+/* FIXME: Why is the tab-list container 1px bigger than the AddTab one? */
+
 .TabBar,
 .tab-list,
 .Tab,
@@ -20,6 +22,11 @@ everything else has the same background. The add tab button is not at the end bu
 .TabBar {
   --TabBar-height: 6vh;
   --border-thickness: 1vw;
+  --scollbar-height: 1vh;
+  --scrollbar-color: rgba(255, 0, 0, 0.8);
+  --tab-color: #277705;
+  --tab-color-hovered: color-mix(in srgb, var(--tab-color) 70%, white 30%);
+  --tab-color-selected: #46d508;
   width: 100%;
   height: var(--TabBar-height);
   /* Override other styles */
@@ -27,62 +34,87 @@ everything else has the same background. The add tab button is not at the end bu
   cursor: pointer;
   /* Display */
   display: grid;
-  grid-template-columns: 90% 10%;
+  grid-template-columns: 95% 5%;
 }
 
 .tab-list {
   /* Sizing and Display */
   display: flex;
   flex-direction: row;
-  white-space: unset;
-  /* Remove inherited styles */
-  list-style: none;
+  /* Scrollbar appearance */
   overflow-x: auto;
-  height: 100%;
+  height: calc(100% + var(--scollbar-height)); /* Extend below to push scrollbar down */
+  margin-bottom: calc(-1 * var(--scollbar-height)); /* Pull container back up */
+  /* Remove styling */
+  list-style: none;
+  white-space: unset;
 }
 
-/* TODO: Both have */
 .tab-list::-webkit-scrollbar {
+  height: var(--scollbar-height);
+  position: absolute; /* Try to overlay */
+  bottom: 0;
+}
+
+.tab-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tab-list::-webkit-scrollbar-thumb {
+  background: transparent; /* Hidden by default */
+  border-radius: 0.15rem;
+}
+
+.tab-list.hovered::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-color);
+}
+
+.tab-list::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-color);
+}
+
+.tab-list::-webkit-scrollbar-button {
   display: none;
 }
 
 .Tab {
   /* Sizing & Display */
+  box-sizing: border-box;
+  position: relative;
+  height: 100%;
+  width: 100%;
   flex: 0 0 20%; /* Tab will shrink to min width but not grow because grow */
   /* Child Content Display */
   display: flex;
   flex-direction: row;
   align-items: center;
   /* Colors */
-  background-color: #277705;
-  border-left: 1px solid #ff0000;
+  background-color: var(--tab-color);
 }
 
-/* FIXME: Does not seem to fill tab contents */
 .AddTab {
+  height: 100%;
   display: flex;
   border: none;
   align-items: center;
   justify-content: center;
-  height: var(--TabBar-height);
-  background-color: #46d508;
+  background-color: var(--tab-color-selected);
 }
 
 .Tab.hovered {
-  background-color: rgba(39, 119, 5, 0.3);
+  background-color: var(--tab-color-hovered);
 }
 
 .TabBar nav {
   height: 100%;
 }
 
-/* FIXME: The close button area does not inherit the active background*/
-.selected {
-  border-top: var(--border-thickness) solid hotpink;
+.Tab.selected {
   background-color: #46d508;
+  border-top: var(--border-thickness) solid hotpink;
 }
 
-.over {
+.hovering-over {
   border-left: var(--border-thickness) solid hotpink;
   opacity: 0.5;
 }

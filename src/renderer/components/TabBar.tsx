@@ -1,8 +1,7 @@
-import { useRef, MouseEventHandler, JSX, useState, useEffect, DragEventHandler } from "react";
+import { MouseEventHandler, JSX, useState, useEffect, DragEventHandler } from "react";
 import "./TabBar.css";
 import { useNavigate } from "react-router";
 import { SerializedTabBarState, TabID } from "src/common/ipcAPI";
-import HorizontalScrollBar from "./ScrollBar";
 import { ButtonMouseEvent } from "./types";
 import { isSerializedDataTab } from "../../common/TypesAPI";
 
@@ -66,9 +65,9 @@ function Tab({
       onDragEnd={onDragEnd}
       id={ID}
     >
-      <span className={"tab-content"}>{tabName}</span>
+      <span className="tab-content">{tabName}</span>
       <span className="unsaved-indicator" style={{ visibility: isClean ? "hidden" : "visible" }} />
-      <button className={"tab-button close"} onClick={handleClose}>
+      <button className="tab-button close" onClick={handleClose}>
         <b>✕</b>
       </button>
     </li>
@@ -86,7 +85,6 @@ function isPastHalfway(e: React.DragEvent): boolean {
 
 // TODO: I feel link this being async might cause problems
 export default function TabBar(): JSX.Element {
-  const contentRef = useRef<HTMLDivElement>(null);
   const [tabBarState, setTabBarState] = useState<SerializedTabBarState | null>(null);
   const [draggedTabIdx, setDraggedTabIdx] = useState<number | null>(null);
   const navigate = useNavigate();
@@ -138,11 +136,11 @@ export default function TabBar(): JSX.Element {
     e.preventDefault();
     e.dataTransfer.effectAllowed = "move";
     // TODO: Need to define this class
-    (e.currentTarget as Element).classList.add("over");
+    (e.currentTarget as Element).classList.add("hovering-over");
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
-    (e.currentTarget as Element).classList.remove("over");
+    (e.currentTarget as Element).classList.remove("hovering-over");
   };
 
   const handleDrop = async (e: React.DragEvent) => {
@@ -211,9 +209,9 @@ export default function TabBar(): JSX.Element {
 
   return (
     <div className={"TabBar"}>
-      <nav>
+      <nav style={{ position: "relative", height: "100%" }}>
         {/* TODO: I think I want the LI to be a part of the list not built into the tabs */}
-        <ol className="tab-list">
+        <ol className="tab-list" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
           {tabBarState?.list.map((tab) => {
             return (
               <Tab
@@ -253,7 +251,6 @@ export default function TabBar(): JSX.Element {
           </span>
         </button>
       </span>
-      <HorizontalScrollBar contentRef={contentRef} />
     </div>
   );
 }
