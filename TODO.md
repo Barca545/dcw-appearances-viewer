@@ -108,7 +108,16 @@
 - [ ] add tests for electron features.
 - [ ] Figure out why the renderer files don't need `src/renderer/`.
 
-# 0.4.0 - Expanding functionality
+# 0.4.0 - Updating parsing
+
+## Parsing
+
+- [ ] Switch from handrolled parser to [`wtf_wikipedia`](https://www.npmjs.com/package/wtf_wikipedia) for more robust template parsing.
+  - [ ] Need a custom prepass that splits the template into (key, value) pairs
+  - [ ] Need to parse bodies of text into HTML
+  - [ ] Need to extract appearance type information from the appearances section
+
+# 0.5.0 - Expanding functionality
 
 ## Searching
 
@@ -116,7 +125,7 @@
 - [ ] Add searching multiple characters at once.
 - [ ] Add searching multiple earths at once.
 
-# 0.5.0
+# 0.6.0
 
 ## QOL
 
@@ -127,10 +136,15 @@
 
 ## Styling
 
+- [ ] Expanding the details box on the app page should not cause it to change size - [ ] Tabs should have a min and max size and should brow between them as text content requires.
+- [ ] The display options bar should stick to the top of the screen when scrolling.
+- [ ] Need a back to top button.
+- [ ] Hovering over a details to expand them should trigger the selection mouse ico
 - [ ] Text size needs to be scaled better.
 - [ ] All sizes should be in something absoulute not `px` units.
+- [ ] Add icons to the tabs like a magnifier for the search and gear for settings
 
-# 0.6.0
+# 0.7.0
 
 ## Parsing Overhaul
 
@@ -139,14 +153,12 @@
   - [ ] Enable parsing custom DCDB templates.
   - [ ] Enable parsing nested templates in synopses and appearances.
 
-# 0.7.0
+# 0.8.0
 
 ## QOL
 
 - [ ] Character inference for `.xml` files.
 - [ ] Sorting by type of appearance.
-
-# 0.8.0
 
 # 0.9.0
 

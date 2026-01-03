@@ -5,7 +5,8 @@ import { SerializedTabBarState, TabID } from "src/common/ipcAPI";
 import { ButtonMouseEvent } from "./types";
 import { isSerializedDataTab } from "../../common/TypesAPI";
 
-// https://stackoverflow.com/questions/42495731/should-i-use-react-router-for-a-tabs-component
+// TODO: Maybe give the tabs a min and max size
+// but allow them to grow a little bit to accomadate longer names line VSC does
 
 // TODO: Accessibility
 // - https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/tablist_role

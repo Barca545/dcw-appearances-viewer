@@ -13,7 +13,7 @@ dotenv.config();
 
 const githubPublisherConfig: PublisherGitHubConfig = {
   repository: {
-    name: "publication_date_sort",
+    name: "dcw-appearances-viewer",
     owner: "Barca545",
   },
   authToken: process.env.GITHUB_TOKEN,
@@ -31,7 +31,7 @@ const config: ForgeConfig = {
     name: "dcdb-appearance-viewer",
     appBundleId: "DCDB-Appearance-Viewer",
     executableName: "DCDB Appearance Viewer",
-    extraResource: ["./resources/appMessages.json", "./resources/settings.json"],
+    extraResource: ["./resources/appMessages.json"],
     icon: "assets/dcdc_appearance_viewer_icon.ico",
     overwrite: true,
   },

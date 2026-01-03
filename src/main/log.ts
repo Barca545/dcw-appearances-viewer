@@ -55,7 +55,7 @@ class LoggerClass {
     // Append to the end of the current session
     logFile.sessions[logFile.sessions.length - 1].logs.push(log);
 
-    fs.writeFileSync(this.LOG_PATH, JSON.stringify(logFile), "utf-8");
+    fs.writeFileSync(this.LOG_PATH, JSON.stringify(logFile, null, 2), "utf-8");
   }
 
   private static newSessionLog(): SessionLog {

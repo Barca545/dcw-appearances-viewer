@@ -21,6 +21,14 @@ export class Updater {
     LOGGER.info(new Error(autoUpdater.getFeedURL()?.toString()));
     autoUpdater.allowDowngrade = false;
     autoUpdater.logger;
+
+    // Fallback in the case of error with update.yml see: https://stackoverflow.com/questions/67191654/problem-with-app-update-yml-files-is-not-generated-in-electron
+    autoUpdater.setFeedURL({
+      provider: "github",
+      owner: "Barca545",
+      repo: "dcw-appearances-viewer",
+      vPrefixedTagName: true,
+    });
   }
 
   private shouldUpdate(info: UpdateInfo) {

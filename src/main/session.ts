@@ -96,6 +96,11 @@ export class Session {
     return win;
   }
 
+  /**A message containing information about the current application. */
+  static info(): string {
+    return `Name: ${app.name}\nApp Version: ${app.getVersion()}`;
+  }
+
   newErrorWin() {
     const parentBounds = this.win.getBounds();
 
@@ -410,25 +415,16 @@ export class Session {
    * @returns `false` if the process was aborted. */
   closeTab(ID: TabID): boolean {
     const tab = this.getTab(ID);
-    if (tab && tab instanceof AppTab) {
-      if (tab.isClean) {
-        this.perfromTabClose(ID);
-        return true;
-      }
+    if (tab && tab instanceof AppTab && !tab.isClean) {
       const res = this.promptUsavedClose();
 
       if (res === CloseType.Cancel) {
         return false;
       } else if (res === CloseType.Save) {
         this.saveAppTab(false, ID);
-        this.perfromTabClose(ID);
-        return true;
-      } else {
-        // This is don't save
-        this.perfromTabClose(ID);
-        return true;
       }
     }
+    this.perfromTabClose(ID);
 
     return true;
   }
@@ -485,7 +481,7 @@ export class Session {
     const settingsPath = path.join(__userdata, "settings.json");
     if (IS_DEV) {
       return DEFAULT_SETTINGS;
-    } else if (!fs.existsSync(settingsPath)) {
+    } else if (fs.existsSync(settingsPath)) {
       return JSON.parse(fs.readFileSync(settingsPath, { encoding: "utf-8" })) as Settings;
     } else {
       try {
@@ -512,7 +508,7 @@ export class Session {
     });
     this.applySettings(state);
     // Actually save the settings
-    fs.writeFileSync(SETTINGS_PATH, JSON.stringify(state), { encoding: "utf-8" });
+    fs.writeFileSync(SETTINGS_PATH, JSON.stringify(state, null, 2), { encoding: "utf-8" });
   }
 
   applySettings(settings: Settings) {
