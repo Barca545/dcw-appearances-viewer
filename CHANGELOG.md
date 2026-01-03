@@ -13,3 +13,19 @@
 
 - The current parser is still unable to handle some sections (appearances and synopses) of a page. As a result, page data for more complex sections likely has corrupted data. This will not affect basic appearance information but may result in unexpected typos in synopses.
 - If two startabs are opened simultaneously, they cannot be closed.
+
+# v0.1.3-PRERELEASE
+
+## Fixes
+
+- Start tabs can now be closed.
+- Settings are properly created during installation.
+
+## Features
+
+- AutoUpdates are here!
+- Minor appearance tweaks to the tab bar (say hello to the scroll bar).
+
+## Known Bugs
+
+- The current parser is still unable to handle some sections of the page template. This will not affect basic appearance information but may result in unexpected typos in synopses. **Expected repair: v0.4.0**.
