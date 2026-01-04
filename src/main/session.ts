@@ -4,7 +4,18 @@ import Electron, { app, BrowserWindow, dialog, ipcMain, Menu, shell } from "elec
 import path from "node:path";
 import { DEFAULT_SETTINGS, Settings } from "./settings";
 import { DisplayOptions } from "./displayOptions";
-import { SETTINGS_PATH, IS_DEV, __userdata, MESSAGES, IS_MAC, ROOT_DIRECTORY, create_settings_file, UNIMPLEMENTED_FEATURE } from "./utils";
+import {
+  SETTINGS_PATH,
+  IS_DEV,
+  __userdata,
+  MESSAGES,
+  IS_MAC,
+  ROOT_DIRECTORY,
+  create_settings_file,
+  UNIMPLEMENTED_FEATURE,
+  MAIN_WINDOW_VITE_DEV_SERVER_URL,
+  MAIN_WINDOW_VITE_NAME,
+} from "./utils";
 import fs from "node:fs";
 import type { SearchRequest, SerializedAppTab, SettingsTabUpdate } from "../common/TypesAPI";
 import { openFileDialog } from "./menu";

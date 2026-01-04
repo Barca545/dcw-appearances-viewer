@@ -19,6 +19,8 @@
     "jsx": "react-jsx"
     // "allowImportingTsExtensions": true
   },
+  // FIXME: Just added might cause errors
+  "include": ["src/**/*", "types/**/*"],
   "exclude": ["node_modules", "dist"]
 }
 

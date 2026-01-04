@@ -72,15 +72,13 @@
 
 ## Fixes
 
+- [ ] Add error logging to supabase.
 - [x] "Save As" should change the tabs savePath
-- [ ] Ensure Publish actually publishes.
+- [ ] Ensure Publish actually publishes instead of just creating a draft.
 - [ ] Ensure `settings.json` is created when the app first runs.
 - [ ] Ensure autoupdating works.
 - [ ] Ensure all files and folders are uninstalled upon app uninstallation.
-- [ ] Add error logging to supabase.
-- [ ] Switch to [`wtf_wikipedia`](https://www.npmjs.com/package/wtf_wikipedia).
-  - [ ] Prevent NaN dates.
-  - [ ] Fix issue where synopsis does not load fully.
+- [ ] Fix app launching multiple times during first run.
 
 # 0.3.0 - Robustness Fixes
 
@@ -116,6 +114,8 @@
   - [ ] Need a custom prepass that splits the template into (key, value) pairs
   - [ ] Need to parse bodies of text into HTML
   - [ ] Need to extract appearance type information from the appearances section
+- [ ] Prevent NaN dates.
+- [ ] Fix issue where synopsis does not load fully.
 
 # 0.5.0 - Expanding functionality
 

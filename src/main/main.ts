@@ -9,10 +9,9 @@ import { appUpdater } from "./autoupdate";
 // FIXME: Why is trysave failing
 // FIXME: Why does the dot reset if trysave fails?
 //  - Because despite throwing an error trysave continues to resetting is clean
-// FIXME: If two star tabs are opened simultaneously, they cannot be closed
-// FIXME: Settings creation failed dialog appears too many times
-// FIXME: Does not remain open after first install
 
+// FIXME: Stuff Appears alphabetically and reversed on load, needs to be fixed see (bruce Wayne results)
+// BH says to download the wiki to save time at runtime
 process.on("uncaughtException", (err) => {
   LOGGER.fatal(err);
 });

@@ -44,14 +44,14 @@ export default function handleStartupEvent(): boolean {
       return true;
     }
     case "--squirrel-uninstall": {
-      const UNINSTALL_SCRIPT = makeUninstallScript([
+      const UNINSTALL_SCRIPT = makeUninstallScript(
         app.getPath("appData"),
         app.getPath("userData"),
         // "appDataPath"
         // "localAppDataPath",
         // "userDataPath",
         // "squirrelTempPath",
-      ]);
+      );
 
       // TODO: This probably needs an an error dialog on fail too
       spawnUpdate("--removeShortcut", exeName, "--shortcut-locations=Desktop,StartMenu");
