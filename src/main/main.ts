@@ -5,6 +5,14 @@ import LOGGER from "./log";
 import handleStartupEvent from "./squirrel";
 import { appUpdater } from "./autoupdate";
 
+// TODO: Closing the error window seems to also minimize the main window
+// TODO: Store dates as YYYY-MM-DD as Amelia suggested and give user choice of how to display
+
+enum DateOrder {
+  YYYYMMDDD = "YYYY-MM-DD",
+  MMDDDYYYY = "MM-DD-YYYY",
+}
+
 // - URGENT: Add autoupdater - https://www.electronforge.io/config/publishers/github && https://www.electronjs.org/docs/latest/tutorial/updates
 // FIXME: Why is trysave failing
 // FIXME: Why does the dot reset if trysave fails?

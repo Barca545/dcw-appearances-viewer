@@ -17,68 +17,70 @@
 
 # 0.1.0
 
-## Installation and Uninstallation
-
-- [x] Add desktop shortcut during install
-- [x] Add startmenu shortcut during install
-- [ ] Copy resources to userdata during install
-- [x] Remove shortcuts during uninstall
-- [ ] Delete userdata during uninstall
-
 ## Renderer Refactor
 
 - [x] Retool pages in React
 - [ ] Download the React [DevTools](https://react.dev/link/react-devtools)
 - [x] Delete now extraneous `.ts` and `.html` pages
-- [ ] Allegedly no need to await `"dom-content-loaded"`
-
-## Logging
-
-- [ ] Create user info file that gets submitted with log reports
-- [ ] Add a send logs option to the menu
-- [ ] Add ability to send crash reports alongside logs
-- [ ] Add renderer logging
 
 ## Saving
 
-- [ ] Exiting with unsaved changes prompts user to "Save", "Don't Save", or "Cancel".
+- [x] Exiting with unsaved changes prompts user to "Save", "Don't Save", or "Cancel".
 
 ## Error Fixes
 
-- [ ] Creating a new project does not reset stored project data
 - [x] Prompt on exiting with unsaved changes: Two "Don't Save" buttons
 - [x] Prompt on exiting with unsaved changes: No button to exit without saving
 - [x] Prompt on exiting with unsaved changes: Clicking "Save" does nothing
 - [x] Prompt on exiting with unsaved changes: Clicking any button throws an error saying I illegally attempted to open 'C:\Users\jamar\OneDrive\Documents'
-- [ ] Filter options fails on pages; possibly a reflow issue
-- [ ] Why is there a `.vite` in the renderer folder?
 
 ## Multiple Tabs
 
-- [ ] Tab data stored in main process
-- [ ] Updating a tab creates a new tab in the session
-- [ ] TabBar has an api listener that causes it to rerender when the main process' tab list is modified
-- [ ] `TabBar` added to `Layout`
-- [ ] Exiting a tab should autosave or prompt a save if it is untitled
+- [x] Tab data stored in main process
+- [x] Updating a tab creates a new tab in the session
+- [x] TabBar has an api listener that causes it to rerender when the main process' tab list is modified
+- [x] `TabBar` added to `Layout`
+- [x] Exiting a tab should autosave or prompt a save if it is untitled
 - [ ] Tab should indicate if unsaved like VSCode
-- [ ] Style tabs ([guide](https://www.w3schools.com/howto/howto_js_tabs.asp))
+- [x] Style tabs ([guide](https://www.w3schools.com/howto/howto_js_tabs.asp))
 
 # 0.2.0
 
 ## Features
 
 - [x] Add markdown save option.
+- [ ] Add CSS save option.
 - [x] Add functionality to hide the dates.
 
-## Fixes
+## Publishing
 
-- [ ] Add error logging to supabase.
-- [x] "Save As" should change the tabs savePath
 - [ ] Ensure Publish actually publishes instead of just creating a draft.
+- [ ] Add custom description to publish instead of it using the default.
+
+## Switch to NSIS installer
+
 - [ ] Ensure `settings.json` is created when the app first runs.
 - [ ] Ensure autoupdating works.
 - [ ] Ensure all files and folders are uninstalled upon app uninstallation.
 - [ ] Fix app launching multiple times during first run.
+- [ ] Ensure shortcuts are created.
+
+## Logging
+
+- [ ] Create user info file that gets submitted with log reports
+- [ ] Add a send logs option to the menu
+- [ ] Add renderer logging
+- [ ] Add logging [crash reports](https://www.electronjs.org/docs/latest/api/crash-reporter)
+- [ ] Add sending crashreports as error reports
+
+## Error Fixes
+
+- [ ] Ensure Large lists sort correctly.
+- [ ] Add error logging to supabase.
+- [x] "Save As" should change the tabs savePath
+- [ ] Creating a new project does not reset stored project data
+- [ ] Filter options fails on pages; possibly a reflow issue
+- [ ] Why is there a `.vite` in the renderer folder?
 
 # 0.3.0 - Robustness Fixes
 
@@ -87,7 +89,7 @@
 - [ ] Assess whether `Layout` should have a `root` HTML element.
 - [ ] Asses whether `<body>` should be the `root` HTML element in `index.html`.
 - [ ] Need to clean main up and create submodules.
-- [ ] Need to create proper `*.d.ts` files.
+- [ ] Evaluate need for proper `*.d.ts` files.
 - [ ] Remove unused IPC API endpoints.
 - [ ] Replace casts with `Options` + `unwrap`s.
 

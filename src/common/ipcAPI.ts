@@ -2,7 +2,8 @@ import { UUID } from "crypto";
 import { SearchRequest, SerializedAppTab, SerializedSettingsTab, SettingsTabUpdate } from "./TypesAPI";
 import { DisplayOptions } from "../main/displayOptions";
 import { Settings } from "../main/settings";
-import { UserErrorInfo as ErrorReport, RendererLog } from "src/main/log";
+import { RendererLog } from "src/main/log";
+import { UserErrorReport } from "src/main/errors";
 import { TabMetaData } from "src/main/tab";
 
 export type VoidReturnFunction = () => void;
@@ -65,7 +66,7 @@ declare global {
     ERROR: {
       log: (error: RendererLog) => void;
       /**Submit an error report.*/
-      submit: (info: ErrorReport) => void;
+      submit: (info: UserErrorReport) => void;
     };
     API: {
       appTab: {

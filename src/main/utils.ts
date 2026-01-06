@@ -40,9 +40,6 @@ export const SETTINGS_PATH = path.join(__userdata, "settings.json");
 export const MESSAGES: AppMessages = JSON.parse(fs.readFileSync(`${RESOURCE_PATH}/appMessages.json`, { encoding: "utf-8" }));
 export const APP_NAME = "dcdb_appearances_viewer";
 
-export declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
-export declare const MAIN_WINDOW_VITE_NAME: string;
-
 /**Address of the root directory */
 // TODO: Arguably this should be renamed since __dirname points inside the asar
 export const ROOT_DIRECTORY = IS_DEV ? MAIN_WINDOW_VITE_DEV_SERVER_URL : __dirname;

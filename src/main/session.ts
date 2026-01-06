@@ -4,18 +4,7 @@ import Electron, { app, BrowserWindow, dialog, ipcMain, Menu, shell } from "elec
 import path from "node:path";
 import { DEFAULT_SETTINGS, Settings } from "./settings";
 import { DisplayOptions } from "./displayOptions";
-import {
-  SETTINGS_PATH,
-  IS_DEV,
-  __userdata,
-  MESSAGES,
-  IS_MAC,
-  ROOT_DIRECTORY,
-  create_settings_file,
-  UNIMPLEMENTED_FEATURE,
-  MAIN_WINDOW_VITE_DEV_SERVER_URL,
-  MAIN_WINDOW_VITE_NAME,
-} from "./utils";
+import { SETTINGS_PATH, IS_DEV, __userdata, MESSAGES, IS_MAC, ROOT_DIRECTORY, create_settings_file, UNIMPLEMENTED_FEATURE } from "./utils";
 import fs from "node:fs";
 import type { SearchRequest, SerializedAppTab, SettingsTabUpdate } from "../common/TypesAPI";
 import { openFileDialog } from "./menu";
@@ -29,8 +18,6 @@ import JSON from "json5";
 
 // FIXME: This not being a variable vite exposes is an issue with vite
 const MAIN_WINDOW_PRELOAD_VITE_ENTRY = path.join(__dirname, `preload.js`);
-
-declare const ERROR_WINDOW_VITE_DEV_SERVER_URL: string;
 
 // TODO: This should probably go wherever controls the API serialization and stuff
 interface APIEventMap {

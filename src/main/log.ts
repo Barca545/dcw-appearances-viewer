@@ -38,6 +38,11 @@ class LoggerClass {
     this.sessionStart = LoggerClass.makeCurrentTimestamp();
   }
 
+  /**The user's logs from the current app version. */
+  get versionLogs(): LogFile {
+    return JSON.parse(fs.readFileSync(this.LOG_PATH, { encoding: "utf-8" })) as LogFile;
+  }
+
   // TODO: If this is async it can be made async
   private async writeLogToFile(log: Log) {
     // Open and parse the file
@@ -132,12 +137,9 @@ class LoggerClass {
   }
 }
 
-const LOGGER = new LoggerClass();
-export default LOGGER;
-
-interface LogFile {
+export interface LogFile {
   info: UserInfo;
-  /// Field indicating if any files or folders the app requires are missing.
+  /**Field indicating if any files or folders the app requires are missing. */
   requiredPathsDoNotExist?: string[];
   sessions: SessionLog[];
 }
@@ -169,10 +171,11 @@ export interface RendererLog {
 
 type Log = MainProcessLog | RendererLog;
 
-interface UserInfo {
+// TODO: Confirm there is a reason this can't be a class with a constructor
+export interface UserInfo {
   /**The operating system name as returned by [`uname(3)`](https://linux.die.net/man/3/uname). */
   osType: string;
-  /**OS model and */
+  /**OS model */
   platform: string;
   /** Arch the program was compiled for. */
   arch: string;
@@ -180,6 +183,8 @@ interface UserInfo {
   cpuInfo: os.CpuInfo[];
   /**The current application directory.*/
   app_path: string;
+  // TODO: The memory stuff seems like it'd be per run
+  // Not useful on a one-time struct like this
   /**Returns the process' [memory info](https://www.electronjs.org/docs/latest/api/structures/process-memory-info). */
   memUse: Electron.ProcessMemoryInfo;
   /**Returns the [process' metrics](https://www.electronjs.org/docs/latest/api/structures/process-metric). */
@@ -198,13 +203,5 @@ async function makeUserInfoUserInfo(): Promise<UserInfo> {
   };
 }
 
-interface ErrorReport {
-  userInfo: UserErrorInfo;
-  logs: LogFile;
-}
-
-export interface UserErrorInfo {
-  title: string;
-  startTime: string;
-  description: string;
-}
+const LOGGER = new LoggerClass();
+export default LOGGER;
