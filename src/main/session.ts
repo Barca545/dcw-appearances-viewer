@@ -15,6 +15,8 @@ import { MENU_TEMPLATE } from "./menu";
 import { AppTab, DataTab, isDataTab, SettingsTab, StartTab, Tab } from "./tab";
 import LOGGER, { RendererLog } from "./log";
 import JSON from "json5";
+import { uploadError } from "./errors";
+import { UserErrorInfo } from "src/common/apiTypes";
 
 // FIXME: This not being a variable vite exposes is an issue with vite
 const MAIN_WINDOW_PRELOAD_VITE_ENTRY = path.join(__dirname, `preload.js`);
@@ -101,6 +103,8 @@ export class Session {
 
   newErrorWin() {
     const parentBounds = this.win.getBounds();
+
+    // TODO: Should not be able to make more than one report at a time
 
     let err_win = new BrowserWindow({
       width: this.settings.width,
@@ -597,6 +601,12 @@ export class Session {
     }
   }
 
+  handleErrorReport(err: UserErrorInfo) {
+    // TODO: Confirm error report uploaded
+    uploadError(err);
+    // TODO: close window
+  }
+
   /**Register `IPC` event handlers for communication between the renderer and main process*/
   async initListeners() {
     // FOR SPACE, THESE MAY USE THE COMMA OPERATOR
@@ -662,9 +672,8 @@ export class Session {
     ipcMain.on(IPCEvent.OpenURL, (_e, url: string) => shell.openExternal(url));
 
     // Error Listeners
-    // TODO: I think this needs to get fed to the logger
-
-    ipcMain.on(IPCError.Submit, () => UNIMPLEMENTED_FEATURE());
+    // TODO: This should probably close the window once submission is done
+    ipcMain.on(IPCError.Submit, (_e, err: UserErrorInfo) => this.handleErrorReport(err));
     ipcMain.on(IPCError.Log, (_e, log: RendererLog) => LOGGER.writeRenderLog(log));
   }
 }

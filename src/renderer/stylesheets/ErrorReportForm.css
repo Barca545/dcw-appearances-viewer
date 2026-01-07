@@ -1,0 +1,4 @@
+.error-report-field {
+  display: flex;
+  flex-direction: column;
+}

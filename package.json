@@ -10,6 +10,7 @@
     "lint": "eslint --ext .ts,.tsx .",
     "tsc": "tsc",
     "test": "npm run tsc -- --noUnusedLocals false && tsx --test",
+    "supabase:typegen": "npx supabase gen types typescript --project-id tjjtirdijggfqixxmueh --schema error_report_schema > database.types.ts",
     "test:parser": "npm run test ./test/parser.test.ts"
   },
   "keywords": [],

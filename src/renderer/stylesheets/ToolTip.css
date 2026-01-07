@@ -1,0 +1,38 @@
+.ToolTip {
+  position: relative;
+  display: inline-block;
+  /* Add dots under the hoverable text */
+  border-bottom: 1px dotted black;
+  cursor: pointer;
+}
+
+/* TODO: Add shadow */
+/* TODO: Backround needs to change depending on the theme might be easiest to just invert colors for now */
+
+.tooltiptext {
+  /* Hidden by default */
+  position: absolute;
+  visibility: hidden;
+  background-color: black;
+  outline: 0.3rem solid #ffffff;
+  text-align: center;
+  padding: 0.2rem;
+  border-radius: 0.2rem;
+  /* Ensure tooltip is displayed above content */
+  z-index: 1;
+  transition: opacity 0.5s;
+}
+
+.ToolTip:hover .tooltiptext {
+  visibility: visible;
+  opacity: 1;
+}
+
+/*TODO: Create the arrow. */
+/* This might need to be an inline since I think it is dir dependant */
+.tooltiptext:after {
+}
+
+.error-report-field-title {
+  text-align: center;
+}

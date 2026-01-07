@@ -6,7 +6,8 @@ import React, { JSX, useRef, useState } from "react";
 // - https://uploadcare.com/blog/how-to-upload-file-in-react/
 
 interface FileInputProps {
-  onFileSelected?: (files: File[]) => void;
+  id?: string;
+  name?: string;
   /**
    * Maximum size of files in the list in bytes.
    * Defaults to 200kb
@@ -17,10 +18,13 @@ interface FileInputProps {
   /**A comma-separated list of one or more [MIME](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/MIME_types) types, or unique file type specifiers, describing which file types to allow. */
   accept?: string;
   buttonText?: string;
+  onFilesChange?: (files: File[]) => void;
 }
 
 export default function FileInput({
-  onFileSelected,
+  id,
+  name,
+  onFilesChange,
   maxSize = 200000,
   accept,
   multiple = false,
@@ -55,8 +59,8 @@ export default function FileInput({
     } else {
       setFiles([...files, ...newFiles]);
 
-      if (onFileSelected) {
-        onFileSelected(newFiles);
+      if (onFilesChange) {
+        onFilesChange([...files, ...newFiles]);
       }
     }
   };
@@ -64,8 +68,8 @@ export default function FileInput({
   return (
     <div>
       <input
-        id="error-image"
-        name="error-image"
+        id={id}
+        name={name}
         type="file"
         accept={accept}
         ref={uploadRef}
@@ -95,9 +99,3 @@ function bytesToReadable(value: number): string {
   else if (1000000 <= value && value < 1073741824) return `${value / 1000000}Mb`;
   else return `${value / 1073741824}GiB`;
 }
-
-// FIXME: This may need to be a method on the form not the component
-const handleUpload = () => {
-  // TODO: Convert every file to .webp
-  // const files = webp.cwebp()
-};

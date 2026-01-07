@@ -1,93 +1,131 @@
 import { createClient } from "@supabase/supabase-js";
 import { FileOptions } from "@supabase/storage-js/src/lib/types";
-import { Database, BackendErrorReport } from "types/database";
+import { Database, ErrorReport } from "types/database";
 import { dialog } from "electron";
-import LOGGER, { LogFile, UserInfo } from "./log";
-import webp from "webp-converter";
-
-export interface UserErrorReport {
-  title: string;
-  error_start_time: string;
-  description: string;
-  images: File[];
-}
-
-// TODO: This cannot be uploaded
-// http://127.0.0.1:54321/storage/v1/s3                             │
-// │ Access Key │ 625729a08b95bf1b7ff351a663f3a23c                                 │
-// │ Secret Key │ 850181e4652dd023b7a98c58ae0d2d34bd487ee0cc3254aed6eda37307425907 │
-// │ Region     │ local
-
-// Info submitted is non-identifying and will make it easier for the developer to diagnose problems. What info?
-
-// TODO: Get logs cannot be a method on session it should be on logger
+import LOGGER, { UserInfo } from "./log";
+// import webp from "webp-converter";
+import sharp from "sharp";
+import crypto, { UUID } from "node:crypto";
+import path from "path";
+import { IPCSafeFile, UserErrorInfo } from "src/common/apiTypes";
 
 // TODO: Create INSERT RLS policy
 
-// TODO: Should database types be in the types forder even tho its not a .d.ts
+// TODO: Where should I store the database.types.ts file
 
-// TODO: Add image insertion support
+// TODO: Delete accidental local schema creation?
 
-// TODO: Create database types
-// TODO: Make JSON fields more specific
-// TODO: Delete accidental schema creation
+// Create a single supabase client for interacting with database
+const supabase = createClient<Database, "error_report_schema">(
+  "https://tjjtirdijggfqixxmueh.supabase.co",
+  "sb_publishable_FDs8Wr7Dk9x3iveVBEfHrg_PAmpYMpo",
+  {
+    db: { schema: "error_report_schema" },
+  },
+);
 
-// TODO: Provide users the option to not submit user info
+// TODO: This might be necessary
+// const { data, error } = await supabase.auth.signInAnonymously();
 
-const supabase = createClient<Database>("https://tjjtirdijggfqixxmueh.supabase.co", "publishable-or-anon-key");
+type ImageUploadResult = {
+  /**The url paths of the uploads that succeeded. */
+  uploaded: string[];
+  /**The indicies of the uploads that failed. */
+  failed: number[];
+};
 
-function uploadErrorImage(reportID: BigUint64Array, images: File[]): string[] {
-  let paths: string[] = [];
-  images.forEach(async (img) => {
-    // TODO: There might be a more efficient way to do this
+async function uploadErrorImage(reportID: UUID, images: IPCSafeFile[]): Promise<ImageUploadResult> {
+  const failed: number[] = [];
 
-    const buf = await webp.buffer2webpbuffer(await img.arrayBuffer(), img.type, "-q 70");
-    // TODO: Unsure public is correct
-    // TODO: I think name retains the extension but I really want it without the extension
-    const path = `public/${reportID}/${img.name}.webp`;
+  const uploaded: string[] = [];
+
+  for (const idx in images) {
+    const img = images[idx];
+    const buf = await sharp(img.fileBits).webp({ quality: 70 }).toBuffer();
+    const serverPath = `${reportID}/${path.basename(img.name, path.extname(img.name)).replace(/\s+/g, "_")}.webp`;
     const opts: FileOptions = { contentType: "image/webp", upsert: false };
-    const { data, error } = await supabase.storage.from("error_images").upload(path, buf, opts);
-    if (error) {
-      dialog.showMessageBoxSync({ message: `Error ${error.message}.\n Please try again` });
-    }
-    if (data) {
-      paths.push(data.fullPath);
-    }
-  });
+    const { data, error } = await supabase.storage.from("error-reports").upload(serverPath, buf, opts);
 
-  return paths;
+    if (error) {
+      console.log(error);
+      failed.push(parseInt(idx));
+    } else {
+      uploaded.push(data.fullPath);
+    }
+  }
+
+  return { uploaded, failed };
 }
 
-// This command generates types
-// TODO: Add to package.json
-// npx supabase gen types typescript --project-id "tjjtirdijggfqixxmueh" --schema error_report_schema > database.types.ts
+// Delete uploaded images if an error report fails
+async function cleanUploadedImages(reportID: UUID, images: IPCSafeFile[]) {
+  if (images.length === 0) return;
 
-// Create a single supabase client for interacting with your database
-export async function uploadError({ title, error_start_time, description, userInfo, images }: BackendErrorReport) {
-  const reportID = crypto.getRandomValues(new BigUint64Array());
+  const paths = await Promise.all(
+    await images.map(async (img) => {
+      const imgExt = path.extname(img.name);
+      return `${reportID}/${path.basename(img.name, imgExt).replace(/\s+/g, "_")}.webp`;
+    }),
+  );
+  await supabase.storage.from("error-reports").remove(paths);
+}
 
-  const imgPaths = uploadErrorImage(reportID, images);
+// TODO: Error start time and Userinfo failed to upload
+// TODO: Confirm the image paths worked
+// I might need a better way of associating the image with the error report
+// Also store the error report as a JSON just in case it fails for some reason
+export async function uploadError({ title, error_start_time, description, submitUserInfo, images }: UserErrorInfo) {
+  const error_id = crypto.randomUUID();
+
+  let screenshots: string[] | null = null;
+
+  if (images.length > 0) {
+    const { uploaded, failed } = await uploadErrorImage(error_id, images);
+    screenshots = uploaded;
+  }
+
+  let user_info: UserInfo | null = null;
+
+  if (submitUserInfo) {
+    user_info = await UserInfo.create();
+  }
 
   // TODO: Should I give them the option to attach logs from previous versions?
   // TODO: If so let them just select by version instead of in a file picker
   // Give the logger the ability to see which versions they have logs for
   const logs = LOGGER.versionLogs;
 
-  const { error } = await supabase.from("user_error_reports").insert({
-    title,
-    error_start_time,
-    description,
-    userInfo,
-    logs,
-  });
+  const report: ErrorReport = { error_id, title, error_start_time, description, user_info, logs, screenshots };
 
-  // TODO: Maybe return the error instead of handling it internally
-  if (error) {
+  const { data, error } = await supabase.from("user_error_reports").insert(report);
+
+  console.log(error);
+
+  // Handle ID collision (extremely unlikely)
+  if (error?.message?.includes("duplicate key") || error?.code === "23505") {
+    // Handle collision by calling recursively for now
+    // This is a rare enough concern there is basically 0 chance this is an error
+    cleanUploadedImages(error_id, images);
+    uploadError({ title, error_start_time, description, submitUserInfo, images });
+  } else if (error) {
     // TODO: Add to messages JSON
-    // How to store interpolatable strings in JSON
+    // TODO: How to store interpolatable strings in JSON
     dialog.showMessageBoxSync({ message: `Error ${error.message}.\n Please try again.` });
   } else {
     // TODO: Add to messages JSON
     dialog.showMessageBoxSync({ message: "Report Submitted Successfully" });
   }
+}
+
+// TODO: Switch to using edge function so requests can be bundled
+// On the other hand using an edge function doesn't really bundle it just pushes the pain point later
+// async function serializeImage(images: IPCSafeFile): Promise<IPCSafeFile> {}
+// TODO: These will now be server side in the edge function
+// const opts: FileOptions = { contentType: "image/webp", upsert: false };
+// const { data, error } = await supabase.storage.from("error-reports").upload(serverPath, buf, opts);
+
+interface SerializedImage {
+  name: string;
+  type: string;
+  fileBits: Uint8Array;
 }

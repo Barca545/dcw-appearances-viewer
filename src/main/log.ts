@@ -69,7 +69,7 @@ class LoggerClass {
 
   async createNewLogFile(): Promise<LogFile> {
     // Create a new LogFile
-    const logfile: LogFile = { info: await makeUserInfoUserInfo(), requiredPathsDoNotExist: [], sessions: [LoggerClass.newSessionLog()] };
+    const logfile: LogFile = { requiredPathsDoNotExist: [], sessions: [LoggerClass.newSessionLog()] };
 
     // Log whether required paths exist
     // If no paths are missing it will not exist
@@ -138,7 +138,6 @@ class LoggerClass {
 }
 
 export interface LogFile {
-  info: UserInfo;
   /**Field indicating if any files or folders the app requires are missing. */
   requiredPathsDoNotExist?: string[];
   sessions: SessionLog[];
@@ -171,7 +170,6 @@ export interface RendererLog {
 
 type Log = MainProcessLog | RendererLog;
 
-// TODO: Confirm there is a reason this can't be a class with a constructor
 export interface UserInfo {
   /**The operating system name as returned by [`uname(3)`](https://linux.die.net/man/3/uname). */
   osType: string;
@@ -181,8 +179,6 @@ export interface UserInfo {
   arch: string;
   /**Physical CPU info. */
   cpuInfo: os.CpuInfo[];
-  /**The current application directory.*/
-  app_path: string;
   // TODO: The memory stuff seems like it'd be per run
   // Not useful on a one-time struct like this
   /**Returns the process' [memory info](https://www.electronjs.org/docs/latest/api/structures/process-memory-info). */
@@ -191,16 +187,17 @@ export interface UserInfo {
   processInfo: Electron.ProcessMetric[];
 }
 
-async function makeUserInfoUserInfo(): Promise<UserInfo> {
-  return {
-    osType: os.type(),
-    platform: `${os.platform()} ${process.getSystemVersion()}`,
-    arch: os.arch(),
-    cpuInfo: os.cpus(),
-    app_path: app.getPath("exe"),
-    memUse: await process.getProcessMemoryInfo(),
-    processInfo: app.getAppMetrics(),
-  };
+export namespace UserInfo {
+  export async function create(): Promise<UserInfo> {
+    return {
+      osType: os.type(),
+      platform: `${os.platform()} ${process.getSystemVersion()}`,
+      arch: os.arch(),
+      cpuInfo: os.cpus(),
+      memUse: await process.getProcessMemoryInfo(),
+      processInfo: app.getAppMetrics(),
+    };
+  }
 }
 
 const LOGGER = new LoggerClass();

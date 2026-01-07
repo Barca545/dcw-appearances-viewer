@@ -1,5 +1,7 @@
 import { PathLike } from "fs";
 
+// TODO: Probably needs to be deleted if the sharp libary works
+
 declare module "webp-converter" {
   export function grant_permission(): void;
 
@@ -9,7 +11,7 @@ declare module "webp-converter" {
   /**Convert buffer to webp buffer.
    *
    * @param buffer Buffer
-   * @param option Options and quality,it should be given between 0 to 100.
+   * @param option Options and quality, it should be given between 0 to 100.
    */
   export async function buffer2webpbuffer(
     buffer: ArrayBuffer,

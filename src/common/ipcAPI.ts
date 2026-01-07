@@ -3,8 +3,8 @@ import { SearchRequest, SerializedAppTab, SerializedSettingsTab, SettingsTabUpda
 import { DisplayOptions } from "../main/displayOptions";
 import { Settings } from "../main/settings";
 import { RendererLog } from "src/main/log";
-import { UserErrorReport } from "src/main/errors";
 import { TabMetaData } from "src/main/tab";
+import { UserErrorInfo } from "./apiTypes";
 
 export type VoidReturnFunction = () => void;
 
@@ -66,7 +66,7 @@ declare global {
     ERROR: {
       log: (error: RendererLog) => void;
       /**Submit an error report.*/
-      submit: (info: UserErrorReport) => void;
+      submit: (info: UserErrorInfo) => void;
     };
     API: {
       appTab: {

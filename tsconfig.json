@@ -9,6 +9,7 @@
     "esModuleInterop": true,
     "noImplicitAny": true,
     "noImplicitThis": true,
+    "strictNullChecks": true,
     // Tests fail when this is true, surely there is a way
     "noUnusedLocals": true,
     "sourceMap": true,
