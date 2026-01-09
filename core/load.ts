@@ -1,16 +1,16 @@
 import fs from "fs";
 import convert from "xml-js";
-import { ListEntry } from "./pub-sort";
-import { templateStringToListEntry } from "./utils";
+import { IssueData } from "./issue_data";
+import { templateToIssueData } from "./utils";
 import path from "path";
 import { AppearancesDataResponse } from "./coreTypes";
 
 /**
- * Loads and parses a locally stored XML list of appearance data into a list of ListEntrys.
+ * Loads and parses a locally stored XML list of appearance data into a list of `IssueData`.
  * @param path
  * @returns
  */
-export function loadList(path: Path): ListEntry[] {
+export function loadList(path: Path): IssueData[] {
   // Load the xml file and convert it to a json
   const json = JSON.parse(
     convert.xml2json(fs.readFileSync(path.fullPath, "utf-8"), {
@@ -20,9 +20,9 @@ export function loadList(path: Path): ListEntry[] {
   ) as AppearancesDataResponse;
 
   // Convert each appearance into a list entry
-  let appearances: ListEntry[] = [];
+  let appearances: IssueData[] = [];
   for (const entry of json.mediawiki.page) {
-    appearances.push(templateStringToListEntry({ title: entry.title._text, rawTemplate: entry.revision.text._text }));
+    appearances.push(templateToIssueData({ title: entry.title._text, rawTemplate: entry.revision.text._text }));
   }
   return appearances;
 }
@@ -64,5 +64,10 @@ export class Path {
   /**Returns the filetype of the file the path references. Returns None if there is no extension. */
   get ext(): string {
     return path.extname(this._fullPath);
+  }
+
+  /**Returns the directory name of the path. */
+  get dir(): string {
+    return path.dirname(this._fullPath);
   }
 }

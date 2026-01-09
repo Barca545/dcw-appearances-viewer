@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { FileOptions } from "@supabase/storage-js/src/lib/types";
-import { Database, ErrorReport } from "types/database";
+import { Database } from "types/database";
 import { dialog } from "electron";
 import LOGGER, { UserInfo } from "./log";
 // import webp from "webp-converter";
@@ -8,12 +8,32 @@ import sharp from "sharp";
 import crypto, { UUID } from "node:crypto";
 import path from "path";
 import { IPCSafeFile, UserErrorInfo } from "src/common/apiTypes";
+import { zip } from "zip-a-folder";
 
 // TODO: Create INSERT RLS policy
 
 // TODO: Where should I store the database.types.ts file
 
 // TODO: Delete accidental local schema creation?
+
+// TODO: Should I give them the option to attach logs from previous versions?
+// TODO: If so let them just select by version instead of in a file picker
+
+// TODO: Confirm the image paths worked
+
+// TODO: Temporarily store the error report and images in a zip folder
+// in case the error report fails to go through.
+// - This only really makes sense if I have a way to contact them for more information
+// - Should I add a way to contact them for more information?
+
+// TODO: Give error reports a recieved timestamp serverside to allow sorting by most recent
+
+// TODO: Store image at their full URL to make clicking to them easier?
+// - Tho I would need to make those URLs accessable easily.
+// - I don't want to always have to go through the dashboard.
+// - I suppose I could just write a script that pulls based on the error ID and makes a zip folder.
+
+// TODO: Clicking "ok" should close the file
 
 // Create a single supabase client for interacting with database
 const supabase = createClient<Database, "error_report_schema">(
@@ -47,7 +67,6 @@ async function uploadErrorImage(reportID: UUID, images: IPCSafeFile[]): Promise<
     const { data, error } = await supabase.storage.from("error-reports").upload(serverPath, buf, opts);
 
     if (error) {
-      console.log(error);
       failed.push(parseInt(idx));
     } else {
       uploaded.push(data.fullPath);
@@ -70,17 +89,13 @@ async function cleanUploadedImages(reportID: UUID, images: IPCSafeFile[]) {
   await supabase.storage.from("error-reports").remove(paths);
 }
 
-// TODO: Error start time and Userinfo failed to upload
-// TODO: Confirm the image paths worked
-// I might need a better way of associating the image with the error report
-// Also store the error report as a JSON just in case it fails for some reason
-export async function uploadError({ title, error_start_time, description, submitUserInfo, images }: UserErrorInfo) {
+export async function uploadError({ title, email, error_start_time, description, submitUserInfo, images }: UserErrorInfo) {
   const error_id = crypto.randomUUID();
 
   let screenshots: string[] | null = null;
 
   if (images.length > 0) {
-    const { uploaded, failed } = await uploadErrorImage(error_id, images);
+    const { uploaded } = await uploadErrorImage(error_id, images);
     screenshots = uploaded;
   }
 
@@ -90,30 +105,25 @@ export async function uploadError({ title, error_start_time, description, submit
     user_info = await UserInfo.create();
   }
 
-  // TODO: Should I give them the option to attach logs from previous versions?
-  // TODO: If so let them just select by version instead of in a file picker
-  // Give the logger the ability to see which versions they have logs for
   const logs = LOGGER.versionLogs;
 
-  const report: ErrorReport = { error_id, title, error_start_time, description, user_info, logs, screenshots };
-
-  const { data, error } = await supabase.from("user_error_reports").insert(report);
-
-  console.log(error);
+  const { error } = await supabase
+    .from("user_error_reports")
+    .insert({ error_id, title, error_start_time, description, email, user_info, logs, screenshots });
 
   // Handle ID collision (extremely unlikely)
   if (error?.message?.includes("duplicate key") || error?.code === "23505") {
     // Handle collision by calling recursively for now
     // This is a rare enough concern there is basically 0 chance this is an error
     cleanUploadedImages(error_id, images);
-    uploadError({ title, error_start_time, description, submitUserInfo, images });
+    uploadError({ title, email, error_start_time, description, submitUserInfo, images });
   } else if (error) {
     // TODO: Add to messages JSON
     // TODO: How to store interpolatable strings in JSON
     dialog.showMessageBoxSync({ message: `Error ${error.message}.\n Please try again.` });
   } else {
     // TODO: Add to messages JSON
-    dialog.showMessageBoxSync({ message: "Report Submitted Successfully" });
+    dialog.showMessageBoxSync({ message: "Report Submitted Successfully.\n" });
   }
 }
 
@@ -124,8 +134,8 @@ export async function uploadError({ title, error_start_time, description, submit
 // const opts: FileOptions = { contentType: "image/webp", upsert: false };
 // const { data, error } = await supabase.storage.from("error-reports").upload(serverPath, buf, opts);
 
-interface SerializedImage {
-  name: string;
-  type: string;
-  fileBits: Uint8Array;
-}
+// interface SerializedImage {
+//   name: string;
+//   type: string;
+//   fileBits: Uint8Array;
+// }

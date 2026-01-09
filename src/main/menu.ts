@@ -59,12 +59,12 @@ export function MENU_TEMPLATE(session: Session): MenuTemplate {
     {
       role: "help",
       submenu: [
+        { label: "Report Error", click: (_item, _base, _e) => session.newErrorWin() },
         { label: "About", click: (_item, base, _e) => dialog.showMessageBoxSync(base as BaseWindow, { message: Session.info() }) },
         {
           label: "Contact Developer",
           click: (_item, base, _e) => dialog.showMessageBoxSync(base as BaseWindow, { message: MESSAGES.devContact }),
         },
-        { label: "Report Error", click: (_item, _base, _e) => session.newErrorWin() },
       ],
     },
   ];

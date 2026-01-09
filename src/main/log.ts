@@ -4,6 +4,8 @@ import path from "node:path";
 import fs from "node:fs";
 import os from "node:os";
 
+// TODO: Give the logger the ability to see which versions they have logs for
+
 /**
  *
  * # Log Levels

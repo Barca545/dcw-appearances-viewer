@@ -1,7 +1,7 @@
-import { templateStringToListEntry } from "./utils";
-import { ListEntry } from "./pub-sort";
+import { templateToIssueData } from "./utils";
 import { TitleAndTemplate, AppearancesResposeJSONStructure } from "./coreTypes";
 import { Err, Ok, ResultInterface } from "./Result";
+import { IssueData } from "./issue_data";
 
 export const WIKI_URL = new URL(`https://dc.fandom.com/api.php`);
 
@@ -115,11 +115,11 @@ export async function getRealitiesList(): Promise<any[]> {
 }
 
 /**
- * Fetches the apearance data for the requested character and parses it into a list of ListEntrys.
+ * Fetches the apearance data for the requested character and parses it into a list of `IssueData`.
  * @param character
- * @returns Promise<ListEntry[]>
+ * @returns Promise<IssueData[]>
  */
-export async function fetchList(character: string): Promise<ResultInterface<ListEntry[]>> {
+export async function fetchList(character: string): Promise<ResultInterface<IssueData[]>> {
   // Fetch the file and convert it into a json
 
   const res = await getAppearances(character);
@@ -128,10 +128,10 @@ export async function fetchList(character: string): Promise<ResultInterface<List
     return new Err(res.unwrapp_err());
   }
 
-  // Convert each appearance into a list entry
-  let appearances: ListEntry[] = [];
-  for (const entry of res.unwrap()) {
-    appearances.push(templateStringToListEntry(entry));
+  // Convert each appearance into IssueData
+  let appearances: IssueData[] = [];
+  for (const issue of res.unwrap()) {
+    appearances.push(templateToIssueData(issue));
   }
 
   return new Ok(appearances);

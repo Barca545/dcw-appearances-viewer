@@ -4,7 +4,7 @@ import Electron, { app, BrowserWindow, dialog, ipcMain, Menu, shell } from "elec
 import path from "node:path";
 import { DEFAULT_SETTINGS, Settings } from "./settings";
 import { DisplayOptions } from "./displayOptions";
-import { SETTINGS_PATH, IS_DEV, __userdata, MESSAGES, IS_MAC, ROOT_DIRECTORY, create_settings_file, UNIMPLEMENTED_FEATURE } from "./utils";
+import { SETTINGS_PATH, IS_DEV, __userdata, MESSAGES, IS_MAC, ROOT_DIRECTORY, create_settings_file } from "./utils";
 import fs from "node:fs";
 import type { SearchRequest, SerializedAppTab, SettingsTabUpdate } from "../common/TypesAPI";
 import { openFileDialog } from "./menu";
@@ -29,6 +29,7 @@ interface APIEventMap {
 
 export class Session {
   win: BrowserWindow;
+  err_win: BrowserWindow | null;
   settings: Settings;
   tabs: Map<TabID, Tab>;
   tabEventStack: TabEvent[];
@@ -45,6 +46,7 @@ export class Session {
     this.tabs = new Map();
     this.tabEventStack = [];
     this.win = Session.createWindow(settings);
+    this.err_win = null;
     this.currentTab = new None();
 
     // Load Contents
@@ -102,6 +104,11 @@ export class Session {
   }
 
   newErrorWin() {
+    if (this.err_win) {
+      dialog.showErrorBox("Invalid Window Creation", "You may only open one error report window at a time.");
+      return;
+    }
+
     const parentBounds = this.win.getBounds();
 
     // TODO: Should not be able to make more than one report at a time
@@ -139,6 +146,7 @@ export class Session {
       err_win.loadFile(path.join(ROOT_DIRECTORY, "..", "renderer", MAIN_WINDOW_VITE_NAME, "src", "renderer", "error.html"));
       err_win.setMenu(null);
     }
+    this.err_win = err_win;
   }
 
   /** - Set the `current` field to the specified TabID and update the `TabEventStack`
@@ -297,11 +305,12 @@ export class Session {
       // If there is no save_path or if this is explicitly a save as command update the save path.
       if (mustSaveAs || tab.savePath.isNone()) {
         const res = dialog.showSaveDialogSync(this.win, {
-          defaultPath: app.getPath("documents"),
+          defaultPath: tab.savePath.unwrap_or(new Path(app.getPath("documents"))).dir,
           properties: ["createDirectory", "showOverwriteConfirmation"],
           filters: [
             { name: ".json", extensions: ["json", "jsonc"] },
             { name: ".md", extensions: ["md"] },
+            { name: ".csv", extensions: ["csv"] },
           ],
         });
 
@@ -318,6 +327,8 @@ export class Session {
         tab.data.saveAsJSON(path);
       } else if (path.ext === ".md") {
         tab.data.saveAsMDList(path);
+      } else if (path.ext === ".csv") {
+        tab.data.saveAsCSV(path);
       }
 
       this.updateTabIsClean(tab.meta.ID, true);
@@ -448,6 +459,8 @@ export class Session {
     tab.data.meta.characterName = createCharacterName(req);
 
     tab.data.list = (await fetchList(tab.data.meta.characterName)).unwrap_or([]);
+
+    tab.reflow();
 
     this.updateTabIsClean(tab.meta.ID, false);
 
@@ -605,6 +618,8 @@ export class Session {
     // TODO: Confirm error report uploaded
     uploadError(err);
     // TODO: close window
+    this.err_win?.close();
+    this.err_win = null;
   }
 
   /**Register `IPC` event handlers for communication between the renderer and main process*/
@@ -673,7 +688,7 @@ export class Session {
 
     // Error Listeners
     // TODO: This should probably close the window once submission is done
-    ipcMain.on(IPCError.Submit, (_e, err: UserErrorInfo) => this.handleErrorReport(err));
+    ipcMain.on(IPCError.Submit, (e, err: UserErrorInfo) => this.handleErrorReport(err));
     ipcMain.on(IPCError.Log, (_e, log: RendererLog) => LOGGER.writeRenderLog(log));
   }
 }

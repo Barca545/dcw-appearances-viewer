@@ -1,6 +1,6 @@
-import { ListEntry } from "../../../core/pub-sort";
+import { IssueData } from "../../../core/issue_data";
 import { Fragment, JSX, useEffect } from "react";
-import { SerializedAppTab, SerializedListEntry } from "../../common/TypesAPI";
+import { SerializedAppTab } from "../../common/TypesAPI";
 import { TabID } from "../../common/ipcAPI";
 import { DisplayDensity } from "../../main/displayOptions";
 import LoadingSpinner from "./LoadingSpinner";
@@ -46,7 +46,7 @@ export default function ResultsList({ ID, data, isLoading }: ResultsListProps): 
   }
 }
 
-function DenseEntries({ list, id, data }: { list: SerializedListEntry[]; id?: string; data: SerializedAppTab }): JSX.Element {
+function DenseEntries({ list, id, data }: { list: IssueData[]; id?: string; data: SerializedAppTab }): JSX.Element {
   return (
     <div id={id}>
       {list.map((entry) => {
@@ -56,7 +56,7 @@ function DenseEntries({ list, id, data }: { list: SerializedListEntry[]; id?: st
   );
 }
 
-function SparseEntries({ list, id, data }: { list: SerializedListEntry[]; id?: string; data: SerializedAppTab }): JSX.Element {
+function SparseEntries({ list, id, data }: { list: IssueData[]; id?: string; data: SerializedAppTab }): JSX.Element {
   return (
     <div id={id}>
       {list.map((entry) => {
@@ -73,34 +73,29 @@ function SparseEntries({ list, id, data }: { list: SerializedListEntry[]; id?: s
   );
 }
 
-function ResultTitle({ entry, data }: { entry: ListEntry | SerializedListEntry; data: SerializedAppTab }): JSX.Element {
+function ResultTitle({ entry: issue, data }: { entry: IssueData; data: SerializedAppTab }): JSX.Element {
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.currentTarget.classList.add("visited");
-    // TODO: The URL should be built into the list entry so it's entry.URL
-    window.API.openURL(entry.URL);
+    window.API.openURL(issue.URL);
   };
 
   const resultsCSS: React.CSSProperties = { display: "flex" };
 
   if (data.opts.showDates) {
-    // TODO: Ideally there would be a small space between the names and the dates
-    // | title |<space>| date
     return (
       <div className="result-title" style={resultsCSS}>
         <span className="result-name pseudo-link" onClick={handleClick}>
-          {entry.title}
+          {issue.title}
         </span>
-        <span className="result-date">{`${entry.date.month}/${entry.date.day}/${entry.date.year}`}</span>
+        <span className="result-date">{`${issue.date.month}/${issue.date.day}/${issue.date.year}`}</span>
       </div>
     );
   } else {
-    // TODO: Ideally there would be a small space between the names and the dates
-    // | title |<space>| date
     return (
       <div className="result-title" style={resultsCSS}>
         <span className="result-name pseudo-link" onClick={handleClick}>
-          {entry.title}
+          {issue.title}
         </span>
       </div>
     );

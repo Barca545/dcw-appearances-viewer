@@ -4,8 +4,8 @@ import { TabID, TabURL } from "../../src/common/ipcAPI";
 import { None, Option, Some } from "../../core/option";
 import { SerializedAppTab, SerializedSettingsTab, SerializedStartTab, SerializedTab } from "../../src/common/TypesAPI";
 import { Settings } from "./settings";
-import { DisplayOptions, DisplayOrder } from "./displayOptions";
-import { pubDateSort } from "../../core/pub-sort";
+import { DisplayDirection, DisplayOptions, DisplayOrder } from "./displayOptions";
+import { sortAlphabetical, sortCoverDate } from "../../core/sort";
 import { dialog } from "electron";
 import { __userdata, IS_DEV, MESSAGES, RESOURCE_PATH, SETTINGS_PATH } from "./utils";
 import path from "path";
@@ -128,7 +128,7 @@ export class AppTab implements DataTab {
       // TODO: I need to add a real check for a failed search
       success: this.data.list.length != 0,
       meta: { ...this.meta, ID: this.meta.ID, characterName: this.data.meta.characterName },
-      list: this.data.list.map((entry) => entry.serialize()),
+      list: this.data.list,
       opts: this.data.meta.opts,
     };
   }
@@ -169,26 +169,17 @@ export class AppTab implements DataTab {
   static _reflow(data: ProjectData): ProjectData {
     switch (data.meta.opts.order) {
       case DisplayOrder.PubDate: {
-        data.list = pubDateSort(data.list);
+        sortCoverDate(data.list);
         break;
       }
       case DisplayOrder.AlphaNumeric: {
-        // TODO: This type of sorting needs to be checked for correctness
-        data.list.sort((a, b) => {
-          if (a.title < b.title) {
-            return -1;
-          }
-          if (a.title > b.title) {
-            return 1;
-          }
-          return 0;
-        });
+        sortAlphabetical(data.list);
         break;
       }
     }
 
     // Make sure it does ascending/descending
-    if (!data.meta.opts.dir) {
+    if (data.meta.opts.dir === DisplayDirection.Descending) {
       data.list.reverse();
     }
 

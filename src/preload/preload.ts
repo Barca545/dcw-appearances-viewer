@@ -1,4 +1,5 @@
-import { RendererLog, UserErrorInfo } from "../main/log";
+import { RendererLog } from "../main/log";
+import { UserErrorInfo } from "../common/apiTypes";
 import { DisplayOptions } from "../main/displayOptions";
 import { IPCError, IPCEvent, SerializedTabBarState, TabID } from "../common/ipcAPI";
 import type { TabDataUpdate, SearchRequest, SerializedSettingsTab, SettingsTabUpdate, SerializedAppTab } from "../common/TypesAPI";

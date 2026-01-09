@@ -18,18 +18,30 @@ root.render(
 
 function ErrorReportForm() {
   const [images, setImages] = useState<File[]>([]);
-  const [title, setTitle] = useState("");
-  const [data, setData] = useState("");
-  const [description, setDescription] = useState("");
 
   // TODO: Don't clear on submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const data = new FormData(e.target as HTMLFormElement);
+    // console.log(data.get("error_start-time") as string | null);
+    const startTime = data.get("error_start_time");
+    console.log("error_start_time value:", startTime);
+    console.log("Type:", typeof startTime);
+    console.log("Is empty string:", startTime === "");
+    const payload = {
+      title: data.get("title") as string,
+      error_start_time: data.get("error_start-time") as string | null,
+      description: data.get("description") as string | null,
+      email: data.get("email") as string | null,
+      submitUserInfo: Boolean(data.get("submit-user-info")),
+      images: await filesToIPCSafe(images),
+    };
+    console.log(payload);
     window.ERROR.submit({
       title: data.get("title") as string,
-      error_start_time: data.get("start-time") as string,
-      description: data.get("description") as string,
+      error_start_time: data.get("error_start_time") as string | null,
+      description: data.get("description") as string | null,
+      email: data.get("email") as string | null,
       submitUserInfo: Boolean(data.get("submit-user-info")),
       images: await filesToIPCSafe(images),
     });
@@ -47,10 +59,17 @@ function ErrorReportForm() {
         <input id="title" name="title" type="text" maxLength={50} autoFocus required />
       </fieldset>
       <fieldset className="error-report-field">
-        <label className="error-report-field-title" htmlFor="duration">
+        <label className="error-report-field-title" htmlFor="email">
+          Email
+        </label>
+        Include your email if you would like to be contacted when the error is resolved or for further information.
+        <input type="email" id="email" name="email" />
+      </fieldset>
+      <fieldset className="error-report-field">
+        <label className="error-report-field-title" htmlFor="error_start_time">
           When did you first identify this issue?
         </label>
-        <input type="date" id="start-time" />
+        <input type="date" id="error_start_time" name="error_start_time" />
       </fieldset>
       <fieldset className="error-report-field">
         <label className="error-report-field-title" htmlFor="description">
@@ -73,8 +92,7 @@ function ErrorReportForm() {
             What's shared?
           </ToolTip>
         </span>
-
-        <BooleanToggle id="privacy" name="privacy" />
+        <BooleanToggle id="submit-user-info" name="submit-user-info" />
       </fieldset>
       <fieldset className="error-report-field">
         <label htmlFor="screenshot-upload" className="error-report-field-title">
@@ -83,7 +101,6 @@ function ErrorReportForm() {
         <span>Share screenshots of the problem if relevant.</span>
         <FileInput id="screenshot-upload" name="screenshot-upload" accept="image/*" onFilesChange={(files) => setImages(files)} multiple />
       </fieldset>
-
       <button type="submit">Submit</button>
     </form>
   );

@@ -7,8 +7,10 @@ import { UUID } from "node:crypto";
 export interface ErrorReport {
   error_id: UUID;
   title: string;
+  recieved: null;
   error_start_time: string | null;
   description: string | null;
+  email: string | null;
   logs: LogFile | null;
   user_info: UserInfo | null;
   screenshots: string[];

@@ -21,6 +21,7 @@ interface FileInputProps {
   onFilesChange?: (files: File[]) => void;
 }
 
+// FIXME: This is checking the max size per packet not per each file
 export default function FileInput({
   id,
   name,
@@ -77,7 +78,9 @@ export default function FileInput({
         style={{ display: "none" }}
         multiple={multiple}
       />
-      <button onClick={handleClick}>{buttonText}</button>
+      <button type="button" onClick={handleClick}>
+        {buttonText}
+      </button>
       <ul style={{ listStyleType: "none" }}>
         {files.map((file, idx) => (
           <li key={idx}>{file.name}</li>

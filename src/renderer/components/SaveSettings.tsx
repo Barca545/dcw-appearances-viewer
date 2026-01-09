@@ -38,7 +38,7 @@ export default function SaveSettings({
     <fieldset className="settings-subsection">
       <legend className="settings-subsection-title">Save Settings</legend>
       <label htmlFor="autosave">Autosave</label>
-      <BooleanToggle id="autosave" checked={autosave} onChange={(e) => onAutosaveChange(e.currentTarget.checked)} />
+      <BooleanToggle id="autosave" checked={autosave} onChange={(e) => onAutosaveChange((e.currentTarget as HTMLInputElement).checked)} />
       <label htmlFor="autosave-frequency">Autosave Frequency</label>
       <span id="autosave-frequency">
         <input
@@ -61,7 +61,11 @@ export default function SaveSettings({
         />
       </span>
       <label htmlFor="save-on-blur">Save on Blur</label>
-      <BooleanToggle id="save-on-blur" checked={saveOnBlur} onChange={(e) => onSaveOnBlurChange(e.currentTarget.checked)} />
+      <BooleanToggle
+        id="save-on-blur"
+        checked={saveOnBlur}
+        onChange={(e) => onSaveOnBlurChange((e.currentTarget as HTMLInputElement).checked)}
+      />
     </fieldset>
   );
 }

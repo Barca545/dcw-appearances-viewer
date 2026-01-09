@@ -4,15 +4,20 @@
 
 - Start tabs can now be closed.
 - Settings are properly created during installation.
+- Lists are actually sorted!
 
 ## Features
 
 - AutoUpdates are here!
 - Minor appearance tweaks to the tab bar (say hello to the scroll bar).
+- Added a button to hide dates.
+- Added the option to export as Markdown.
+- Added the option to export as a CSVs.
 
 ## Known Bugs
 
 - The current parser is still unable to handle some sections of the page template. This will not affect basic appearance information but may result in unexpected typos in synopses. **Expected repair: v0.4.0**.
+- The parser code which handle extracting appears to be treating some non-missing dates as missing dates and replacing them with the base date "1/1/1".
 
 # v0.1.2-PRERELEASE
 

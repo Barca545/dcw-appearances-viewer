@@ -1,24 +1,24 @@
-import { TitleAndTemplate } from "./coreTypes.js";
-import { ListEntry } from "./pub-sort.js";
-import { OptionMap } from "./OptionMap.js";
-import { TemplateParser } from "./parser.js";
+import { TitleAndTemplate } from "./coreTypes";
+import { IssueData, IssueDate } from "./issue_data";
+import { OptionMap } from "./OptionMap";
+import { TemplateParser } from "./parser";
 
-/**Convert the text field of the appearances XML into a list entry. */
-export function templateStringToListEntry(data: TitleAndTemplate): ListEntry {
+// TODO: Why is Title not just a template field / if it's a computed field why not compute it in this function?
+export function templateToIssueData(data: TitleAndTemplate): IssueData {
   const months = new OptionMap(
     Object.entries({
-      January: "1",
-      February: "2 ",
-      March: "3",
-      April: "4",
-      May: "5",
-      June: "6",
-      July: "7",
-      August: "8",
-      September: "9",
-      October: "10",
-      November: "11",
-      December: "12",
+      january: "1",
+      february: "2 ",
+      march: "3",
+      april: "4",
+      may: "5",
+      june: "6",
+      july: "7",
+      august: "8",
+      september: "9",
+      october: "10",
+      november: "11",
+      december: "12",
     }),
   );
 
@@ -27,46 +27,49 @@ export function templateStringToListEntry(data: TitleAndTemplate): ListEntry {
   const seasons = new OptionMap(
     Object.entries({
       // This I super don't like because Winter of a year could be the December or January!
-      Winter: "1",
-      Spring: "4",
-      Summer: "7",
-      Fall: "3",
+      winter: "1",
+      spring: "4",
+      summer: "7",
+      fall: "3",
     }),
   );
 
   const template = new TemplateParser(data.rawTemplate).parse(true);
+
+  let inferred = false;
+
+  const infer = () => {
+    // console.log("infer() called from:", new Error().stack);
+    inferred = true;
+    return "1";
+  };
+
   // Create the date
-  // Need to also pull release date
-  const release_date = template.get("Release Date");
 
-  let year: string;
-  let month: string;
-  let day: string;
+  const year = template.get("Year").unwrap_or_else(() => template.get("Pubyear").unwrap_or_else(infer)) as string;
 
-  if (release_date.isSome()) {
-    const parsed = new Date(release_date.unwrap() as string);
-    year = parsed.getUTCFullYear().toString();
-    // The JS month is 0 indexed while Day and Year are 1 indexed
-    month = (parsed.getUTCMonth() + 1).toString();
-    day = parsed.getUTCDate().toString();
-  } else {
-    year = template.get("Year").unwrap_or(template.get("Pubyear").unwrap_or("")) as string;
-    // If no month check for a pub month before going to ""
-    month = template.get("Month").unwrap_or(template.get("Pubmonth").unwrap_or("")) as string;
+  // month and day get tricky because of issues with seasonal dates like "Spring 1940"
+  // They also may list the month by name i.e "April" not 4
+  let month = template.get("Month").unwrap_or_else(() => template.get("Pubmonth").unwrap_or_else(infer)) as string;
 
-    // This could be more robust but I think the possible values for the month are well defined enough this should be sufficient
-    if (isNaN(parseFloat(month))) {
-      // If the month is not a number try to get it from the months object
-      // If that fails, check the pubdate fields
-      // If that fails try to get it from the seasons template
-      // If that fails mark with ""
-      month = months.get(month).unwrap_or(template.get("Pubmonth").unwrap_or(seasons.get(month).unwrap_or("")) as string);
-    }
-    day = template.get("Day").unwrap_or(template.get("Pubday").unwrap_or("")) as string;
+  // Need to handle the seasonal case
+  // If the month is not a number try to get it from the months object
+  if (isNaN(parseInt(month))) {
+    // Normalize casing in case they're entered differently
+    month = month.toLowerCase();
+    // Base case cannot be an empty string. It needs to be a number
+    month = months.get(month).unwrap_or_else(() => seasons.get(month).unwrap_or_else(infer));
   }
 
+  const day = template.get("Day").unwrap_or_else(() => template.get("Pubday").unwrap_or_else(infer)) as string;
+
+  // TODO: Confirm this returns null when there's no string not an empty string
+  const link = (template.get("Link").unwrap_or("") as string) || null;
+
+  // TODO: This needs updating for when issues with multiple stories occur but this is fine for now.
   const synopsis = template.get("Synopsis1").unwrap_or("Issue is missing a synopsis") as string;
 
-  const entry = new ListEntry(data.title, synopsis, year, month, day, template.get("Link").unwrap_or("") as string);
-  return entry;
+  const date = IssueDate.make(year, month, day);
+
+  return IssueData.make(data.title, inferred, synopsis, date, link);
 }

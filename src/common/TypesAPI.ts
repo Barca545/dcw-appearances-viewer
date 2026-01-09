@@ -1,16 +1,8 @@
+import { IssueData } from "../../core/issue_data";
 import type { DisplayDensity, DisplayDirection, DisplayOptions, DisplayOrder } from "../main/displayOptions";
 import type { Settings } from "../main/settings";
 import type { TabID, TabURL } from "./ipcAPI";
 import type { TabMetaData } from "src/main/tab";
-
-/**Interface containing the data used to construct a list entry. The return result of window.api.form.submit */
-export interface SerializedListEntry {
-  title: string;
-  synopsis: string;
-  date: { year: number; month: number; day: number };
-  URL: string;
-  link: string;
-}
 
 export interface SerializedTab {
   meta: TabMetaData;
@@ -27,7 +19,7 @@ export interface SerializedAppTab extends SerializedDataTab {
   /**Whether the search suceeded. */
   success: boolean;
   opts: DisplayOptions;
-  list: SerializedListEntry[];
+  list: IssueData[];
 }
 
 /**A serialized snapshot of a setting `Tab`'s state.*/

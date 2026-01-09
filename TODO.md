@@ -9,7 +9,7 @@
 
 - [x] The whole dropdown should not be a link, only the text
 - [x] Fix renderer files for the start and settings pages are not compiling
-- [x] The `ListEntry`s actually need to capture the history field
+- [x] The `IssueData`s actually need to capture the history field
 - [x] Figure out how to have it create a settings file in userdata
 - [x] View should not show dev stuff when packaged
 - [x] Open dialog should be a modal
@@ -65,21 +65,22 @@
 - [ ] Fix app launching multiple times during first run.
 - [ ] Ensure shortcuts are created.
 
-## Logging
+## Logging and Error Reports
 
 - [ ] Create user info file that gets submitted with log reports
 - [ ] Add a send logs option to the menu
 - [ ] Add renderer logging
 - [ ] Add logging [crash reports](https://www.electronjs.org/docs/latest/api/crash-reporter)
-- [ ] Add sending crashreports as error reports
+- [x] Add error logging to Supabase.
 
 ## Error Fixes
 
-- [ ] Ensure Large lists sort correctly.
-- [ ] Add error logging to supabase.
-- [x] "Save As" should change the tabs savePath
-- [ ] Creating a new project does not reset stored project data
-- [ ] Filter options fails on pages; possibly a reflow issue
+- [ ] Heroes in Crisis has dates but code is inferring them, why?
+- [x] Sort fetch results before displaying them.
+- [x] Too many dates tagged as inferred.
+- [x] "Save As" should change the tabs savePath.
+- [x] Creating a new project does not reset stored project data.
+- [x] Filter options fails on pages; possibly a reflow issue.
 - [ ] Why is there a `.vite` in the renderer folder?
 
 # 0.3.0 - Robustness Fixes
@@ -131,6 +132,7 @@
 
 ## QOL
 
+- [ ] Order of date display option.
 - [ ] Character name recomendations.
 - [ ] Save previous searches in a document to autofill them into the search.
 - [ ] Add recent documents menu on start page.

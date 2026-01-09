@@ -7,8 +7,9 @@ export interface AppMessages {
 
 export interface UserErrorInfo {
   title: string;
-  error_start_time: string;
-  description: string;
+  error_start_time: string | null;
+  description: string | null;
+  email: string | null;
   submitUserInfo: boolean;
   images: IPCSafeFile[];
 }

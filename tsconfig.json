@@ -22,7 +22,7 @@
     // "allowImportingTsExtensions": true
   },
   // FIXME: Just added might cause errors
-  "include": ["src/**/*", "types/**/*"],
+  "include": ["src/**/*", "types/**/*", "core/issue_data.ts"],
   "exclude": ["node_modules", "dist"]
 }
 
