@@ -1,18 +1,26 @@
-# v0.1.3-PRERELEASE
-
-## Fixes
-
-- Start tabs can now be closed.
-- Settings are properly created during installation.
-- Lists are actually sorted!
+# v0.1.4-PRERELEASE
 
 ## Features
 
 - AutoUpdates are here!
-- Minor appearance tweaks to the tab bar (say hello to the scroll bar).
-- Added a button to hide dates.
 - Added the option to export as Markdown.
 - Added the option to export as a CSVs.
+
+## Bug Fixes
+
+- Lists are actually sorted!
+
+# v0.1.3-PRERELEASE
+
+## Features
+
+- Minor appearance tweaks to the tab bar (say hello to the scroll bar).
+- Added a button to hide dates.
+
+## Bug Fixes
+
+- Start tabs can now be closed.
+- Settings are properly created during installation.
 
 ## Known Bugs
 
@@ -21,14 +29,14 @@
 
 # v0.1.2-PRERELEASE
 
-## Fixes
-
-- Corrected installation error where `settings.json` was not created on first run.
-
 ## Features
 
 - Added option to remove dates from appearance lists.
 - Added option to save as a [Markdown](https://en.wikipedia.org/wiki/Markdown) (.md) list in addition to saving as a JSON.
+
+## Bug Fixes
+
+- Corrected installation error where `settings.json` was not created on first run.
 
 ## Known Bugs
 
