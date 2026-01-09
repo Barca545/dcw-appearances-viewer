@@ -42,6 +42,7 @@ class LoggerClass {
 
   /**The user's logs from the current app version. */
   get versionLogs(): LogFile {
+    if (IS_DEV) return { requiredPathsDoNotExist: [], sessions: [] };
     return JSON.parse(fs.readFileSync(this.LOG_PATH, { encoding: "utf-8" })) as LogFile;
   }
 

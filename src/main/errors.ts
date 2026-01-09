@@ -3,12 +3,10 @@ import { FileOptions } from "@supabase/storage-js/src/lib/types";
 import { Database } from "types/database";
 import { dialog } from "electron";
 import LOGGER, { UserInfo } from "./log";
-// import webp from "webp-converter";
-import sharp from "sharp";
+// import sharp from "sharp";
 import crypto, { UUID } from "node:crypto";
 import path from "path";
 import { IPCSafeFile, UserErrorInfo } from "src/common/apiTypes";
-import { zip } from "zip-a-folder";
 
 // TODO: Create INSERT RLS policy
 
@@ -61,10 +59,13 @@ async function uploadErrorImage(reportID: UUID, images: IPCSafeFile[]): Promise<
 
   for (const idx in images) {
     const img = images[idx];
-    const buf = await sharp(img.fileBits).webp({ quality: 70 }).toBuffer();
-    const serverPath = `${reportID}/${path.basename(img.name, path.extname(img.name)).replace(/\s+/g, "_")}.webp`;
+    // FIXME: Sharp is annoying to package
+    // const buf = await sharp(img.fileBits).webp({ quality: 70 }).toBuffer();
+    // const serverPath = `${reportID}/${path.basename(img.name, path.extname(img.name)).replace(/\s+/g, "_")}.webp`;
+
+    const serverPath = `${reportID}/${path.basename(img.name).replace(/\s+/g, "_")}`;
     const opts: FileOptions = { contentType: "image/webp", upsert: false };
-    const { data, error } = await supabase.storage.from("error-reports").upload(serverPath, buf, opts);
+    const { data, error } = await supabase.storage.from("error-reports").upload(serverPath, img.fileBits, opts);
 
     if (error) {
       failed.push(parseInt(idx));

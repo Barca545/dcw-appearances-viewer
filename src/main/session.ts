@@ -618,8 +618,8 @@ export class Session {
     // TODO: Confirm error report uploaded
     uploadError(err);
     // TODO: close window
-    this.err_win?.close();
-    this.err_win = null;
+    // this.err_win?.close();
+    // this.err_win = null;
   }
 
   /**Register `IPC` event handlers for communication between the renderer and main process*/

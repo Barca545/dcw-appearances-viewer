@@ -23,25 +23,12 @@ function ErrorReportForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const data = new FormData(e.target as HTMLFormElement);
-    // console.log(data.get("error_start-time") as string | null);
-    const startTime = data.get("error_start_time");
-    console.log("error_start_time value:", startTime);
-    console.log("Type:", typeof startTime);
-    console.log("Is empty string:", startTime === "");
-    const payload = {
-      title: data.get("title") as string,
-      error_start_time: data.get("error_start-time") as string | null,
-      description: data.get("description") as string | null,
-      email: data.get("email") as string | null,
-      submitUserInfo: Boolean(data.get("submit-user-info")),
-      images: await filesToIPCSafe(images),
-    };
-    console.log(payload);
+
     window.ERROR.submit({
       title: data.get("title") as string,
-      error_start_time: data.get("error_start_time") as string | null,
-      description: data.get("description") as string | null,
-      email: data.get("email") as string | null,
+      error_start_time: (data.get("error_start_time") as string) || null,
+      description: (data.get("description") as string) || null,
+      email: (data.get("email") as string) || null,
       submitUserInfo: Boolean(data.get("submit-user-info")),
       images: await filesToIPCSafe(images),
     });
