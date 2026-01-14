@@ -41,7 +41,7 @@
 - [x] TabBar has an api listener that causes it to rerender when the main process' tab list is modified
 - [x] `TabBar` added to `Layout`
 - [x] Exiting a tab should autosave or prompt a save if it is untitled
-- [ ] Tab should indicate if unsaved like VSCode
+- [x] Tab should indicate if unsaved like VSCode
 - [x] Style tabs ([guide](https://www.w3schools.com/howto/howto_js_tabs.asp))
 
 # 0.2.0
@@ -49,12 +49,12 @@
 ## Features
 
 - [x] Add markdown save option.
-- [ ] Add CSV save option.
+- [x] Add CSV save option.
 - [x] Add functionality to hide the dates.
 
 ## Publishing
 
-- [ ] Ensure Publish actually publishes instead of just creating a draft.
+- [x] Ensure publish actually publishes instead of just creating a draft.
 - [ ] Add custom description to publish instead of it using the default.
 
 ## Switch to NSIS installer
@@ -62,7 +62,7 @@
 - [ ] Ensure `settings.json` is created when the app first runs.
 - [ ] Ensure autoupdating works.
 - [ ] Ensure all files and folders are uninstalled upon app uninstallation.
-- [ ] Fix app launching multiple times during first run.
+- [ ] Prevent app from launching multiple times during first run.
 - [ ] Ensure shortcuts are created.
 
 ## Logging and Error Reports
@@ -72,6 +72,7 @@
 - [ ] Add renderer logging
 - [ ] Add logging [crash reports](https://www.electronjs.org/docs/latest/api/crash-reporter)
 - [x] Add error logging to Supabase.
+- [ ] Confirm uploaded image urls are correct.
 
 ## Error Fixes
 
@@ -103,7 +104,7 @@
 - [ ] Move types used by multiple modules to whichever is most logical.
 - [ ] Update `ARCHITECTURE.md`.
 
-## Add New Tests
+## Update Tests
 
 - [ ] Update existing tests' file paths.
 - [ ] add tests for electron features.
@@ -137,6 +138,7 @@
 - [ ] Save previous searches in a document to autofill them into the search.
 - [ ] Add recent documents menu on start page.
 - [ ] Select date formatting in settings.
+- [ ] Ctrl + N on a start page should make the new search inside the start page.
 
 ## Styling
 

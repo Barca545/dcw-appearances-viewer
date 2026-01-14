@@ -4,13 +4,15 @@
 
 ## Bug Fixes
 
+- Fixed parsing error caused by header boxes on templates
+
 ## Known Bugs
 
 # v0.1.4-PRERELEASE
 
 ## Features
 
-- AutoUpdates are here!
+- Automatic updates are here!
 - Added the option to export as Markdown.
 - Added the option to export as a CSVs.
 
