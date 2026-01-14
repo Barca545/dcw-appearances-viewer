@@ -1,10 +1,16 @@
+import { appendFileSync, writeFileSync } from "node:fs";
 import { TitleAndTemplate } from "./coreTypes";
 import { IssueData, IssueDate } from "./issue_data";
 import { OptionMap } from "./OptionMap";
 import { TemplateParser } from "./parser";
 
+// FIXME: Should make the template in here
+
 // TODO: Why is Title not just a template field / if it's a computed field why not compute it in this function?
 export function templateToIssueData(data: TitleAndTemplate): IssueData {
+  // The issue with copy edit is caused by header boxes (i.e. Copy Edit or Stub) so I need to find a way to handle those with parsing
+  data.rawTemplate = data.rawTemplate.replace("{{Copy Edit}}", "");
+  data.rawTemplate = data.rawTemplate.replace("{{Stub}}", "");
   const months = new OptionMap(
     Object.entries({
       january: "1",
@@ -34,18 +40,21 @@ export function templateToIssueData(data: TitleAndTemplate): IssueData {
     }),
   );
 
-  const template = new TemplateParser(data.rawTemplate).parse(true);
+  const template = new TemplateParser(data.rawTemplate).parse();
 
   let inferred = false;
 
   const infer = () => {
-    // console.log("infer() called from:", new Error().stack);
     inferred = true;
     return "1";
   };
 
   // Create the date
 
+  if (data.title.includes("Heroes in Crisis Vol 1 3")) {
+    appendFileSync("template.txt", data.rawTemplate + "\n", { encoding: "utf-8" });
+    appendFileSync("template_names.txt", data.title + "\n", { encoding: "utf-8" });
+  }
   const year = template.get("Year").unwrap_or_else(() => template.get("Pubyear").unwrap_or_else(infer)) as string;
 
   // month and day get tricky because of issues with seasonal dates like "Spring 1940"
@@ -70,6 +79,13 @@ export function templateToIssueData(data: TitleAndTemplate): IssueData {
   const synopsis = template.get("Synopsis1").unwrap_or("Issue is missing a synopsis") as string;
 
   const date = IssueDate.make(year, month, day);
+
+  if (data.title.includes("Heroes in Crisis Vol 1 3")) {
+    console.log(template.toString());
+    console.log(IssueData.make(data.title, inferred, synopsis, date, link));
+    appendFileSync("template.txt", data.rawTemplate + "\n", { encoding: "utf-8" });
+    appendFileSync("template_names.txt", data.title + "\n", { encoding: "utf-8" });
+  }
 
   return IssueData.make(data.title, inferred, synopsis, date, link);
 }

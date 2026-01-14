@@ -49,7 +49,7 @@
 ## Features
 
 - [x] Add markdown save option.
-- [ ] Add CSS save option.
+- [ ] Add CSV save option.
 - [x] Add functionality to hide the dates.
 
 ## Publishing
@@ -67,21 +67,21 @@
 
 ## Logging and Error Reports
 
-- [ ] Create user info file that gets submitted with log reports
-- [ ] Add a send logs option to the menu
+- [x] Create user info file that gets submitted with log reports
+- [x] Add a send logs option to the menu
 - [ ] Add renderer logging
 - [ ] Add logging [crash reports](https://www.electronjs.org/docs/latest/api/crash-reporter)
 - [x] Add error logging to Supabase.
 
 ## Error Fixes
 
-- [ ] Heroes in Crisis has dates but code is inferring them, why?
+- [x] Parser is inferring dates for issues with dates, i.e. Heroes in Crisis.
 - [x] Sort fetch results before displaying them.
 - [x] Too many dates tagged as inferred.
-- [x] "Save As" should change the tabs savePath.
+- [x] "Save As" should change the tab's savePath.
 - [x] Creating a new project does not reset stored project data.
 - [x] Filter options fails on pages; possibly a reflow issue.
-- [ ] Why is there a `.vite` in the renderer folder?
+- [x] `.vite` created in renderer folder.
 
 # 0.3.0 - Robustness Fixes
 

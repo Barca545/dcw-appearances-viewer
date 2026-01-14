@@ -48,8 +48,9 @@ export class ProjectData {
   saveAsMDList(path: Path) {
     let doc = "";
     this.list.map((entry) => {
+      console.log(IssueDate.toYYYYMMDD(entry.date));
       if (this.meta.opts.showDates) {
-        doc += `* [${entry.title}](${entry.URL})      ${entry.date.toString()}\n`;
+        doc += `* [${entry.title}](${entry.URL})   |   ${IssueDate.toYYYYMMDD(entry.date)}\n`;
       } else {
         doc += `* [${entry.title}](${entry.URL})\n`;
       }

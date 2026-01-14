@@ -13,10 +13,14 @@ export class TemplateParser {
     this.src = new Peekable([...src]);
   }
 
+  parse(): Template {
+    return this._parse(true);
+  }
+
   // Parse until a '{' is encountered while (const ch = this.#src.next()) { switch (ch) case '{': {
   // Start parsing template } case '|':{
   // Push the most recent pair of key/value
-  parse(top_level: boolean): Template {
+  private _parse(top_level: boolean): Template {
     // This is sort of brute force but it's needed to ensure the top level name does not contain {{
     if (top_level) {
       this.consumeIf("{");
@@ -46,7 +50,7 @@ export class TemplateParser {
       }
       if (phase === ParsingStage.Value && ch === "{" && this.consumeIf("{")) {
         // If true, this marks the beginning of a new template and tell the function to recur
-        value = this.parse(false);
+        value = this._parse(false);
         phase = ParsingStage.Identifier;
       } else if (ch === "|" && phase === ParsingStage.Identifier) {
         // This signifies we are done parsing the identifier and can switch to parsing the first entry
@@ -109,7 +113,7 @@ export class TemplateParser {
   }
 
   /**Consume the next character from the src iterator if it matches the expexted character. */
-  consumeIf(expected: string): boolean {
+  private consumeIf(expected: string): boolean {
     let res = this.src.peek();
     if (res.isSome() && res.unwrap() === expected) {
       // Actually consume by calling next and dropping the result
@@ -121,7 +125,7 @@ export class TemplateParser {
   }
 
   /**Returns the index where the comment string the source may currently be yielding ends*/
-  consumeComment(): number {
+  private consumeComment(): number {
     // Clone the source
     let src: Peekable<string> = this.src.clone();
 

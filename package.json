@@ -1,5 +1,5 @@
 {
-  "version": "0.1.4-PRERELEASE",
+  "version": "0.1.5-PRERELEASE",
   "name": "dcdb-appearance-viewer",
   "main": ".vite/build/main.js",
   "scripts": {
