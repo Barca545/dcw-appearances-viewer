@@ -1,12 +1,14 @@
 import { createClient } from "@supabase/supabase-js";
 import { FileOptions } from "@supabase/storage-js/src/lib/types";
 import { Database } from "types/database";
-import { dialog } from "electron";
+import { app, crashReporter, dialog } from "electron";
 import LOGGER, { UserInfo } from "./log";
 // import sharp from "sharp";
 import crypto, { UUID } from "node:crypto";
 import path from "path";
 import { IPCSafeFile, UserErrorInfo } from "src/common/apiTypes";
+import fs from "fs";
+import { Path } from "../../core/load";
 
 // TODO: Create INSERT RLS policy
 
@@ -32,7 +34,6 @@ import { IPCSafeFile, UserErrorInfo } from "src/common/apiTypes";
 // - I suppose I could just write a script that pulls based on the error ID and makes a zip folder.
 
 // TODO: Clicking "ok" should close the file
-
 // Create a single supabase client for interacting with database
 const supabase = createClient<Database, "error_report_schema">(
   "https://tjjtirdijggfqixxmueh.supabase.co",
@@ -41,6 +42,45 @@ const supabase = createClient<Database, "error_report_schema">(
     db: { schema: "error_report_schema" },
   },
 );
+
+export namespace Crash {
+  export async function initCrashReports() {
+    crashReporter.start({ uploadToServer: false, compress: false });
+  }
+
+  export async function uploadCrashReports() {
+    const crashDir = new Path(app.getPath("crashDumps"), "reports");
+    // for each .dmp file in crashDir
+    // upload to bucket
+    // delete file
+    const dmps = fs.readdirSync(crashDir.fullPath);
+    if (dmps.length === 0) return;
+    for (const file of dmps) {
+      const dmp = new Path(crashDir.fullPath, file);
+      if (fs.existsSync(dmp.fullPath)) {
+        uploadCrashReport(dmp).then((success) => {
+          if (success) fs.unlinkSync(dmp.fullPath);
+          else {
+            LOGGER.error(new Error(`Failed to upload crash dump ${dmp}`));
+          }
+        });
+      } else {
+        console.log(`${dmp} does not exist!`);
+      }
+    }
+  }
+}
+
+/**Uploads a crash report. Returns a boolean indicating if the upload was successful. */
+async function uploadCrashReport(reportPath: Path): Promise<boolean> {
+  const report = fs.readFileSync(reportPath.fullPath);
+
+  // TODO: The RLS policy on the storage needs to require some kinda metadata to prevent uploads of viruses
+  const opts: FileOptions = { contentType: "application/octet-stream", upsert: false };
+  const { error } = await supabase.storage.from("crash-reports").upload(reportPath.name, report, opts);
+  console.log(`returned with error: ${error}`);
+  return !error;
+}
 
 // TODO: This might be necessary
 // const { data, error } = await supabase.auth.signInAnonymously();
@@ -64,7 +104,7 @@ async function uploadErrorImage(reportID: UUID, images: IPCSafeFile[]): Promise<
     // const serverPath = `${reportID}/${path.basename(img.name, path.extname(img.name)).replace(/\s+/g, "_")}.webp`;
 
     const serverPath = `${reportID}/${path.basename(img.name).replace(/\s+/g, "_")}`;
-    const opts: FileOptions = { contentType: "image/webp", upsert: false };
+    const opts: FileOptions = { contentType: "image/*", upsert: false };
     const { data, error } = await supabase.storage.from("error-reports").upload(serverPath, img.fileBits, opts);
 
     if (error) {

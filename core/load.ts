@@ -46,7 +46,7 @@ export class Path {
     path.parse(this._fullPath);
   }
 
-  /**Returns the name of a path's file if it has one */
+  /**Returns the name of a path's file, without the extension, if it has one. */
   get fileName(): string {
     return path.basename(this._fullPath, this.ext);
   }

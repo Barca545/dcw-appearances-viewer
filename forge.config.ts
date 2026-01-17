@@ -65,7 +65,9 @@ const config: ForgeConfig = {
       // license:
       oneClick: false,
       shortcutName: "DCDB Appearance Viewer",
-      // TODO: Create short cuts based on options at install
+      // TODO: Create short cuts based on options at install instead of automatically
+      createStartMenuShortcut: true,
+      createDesktopShortcut: true,
       deleteAppDataOnUninstall: true,
     }),
   ],

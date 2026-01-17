@@ -59,20 +59,21 @@
 
 ## Switch to NSIS installer
 
-- [ ] Ensure `settings.json` is created when the app first runs.
-- [ ] Ensure autoupdating works.
-- [ ] Ensure all files and folders are uninstalled upon app uninstallation.
-- [ ] Prevent app from launching multiple times during first run.
-- [ ] Ensure shortcuts are created.
+- [ ] Ensure `settings.json` is created when the app first runs (replace squirrel startup handler with NSIS script)
+- [x] Ensure autoupdating works.
+- [x] Ensure all files and folders are uninstalled upon app uninstallation.
+- [x] Prevent app from launching multiple times during first run.
+- [x] Ensure shortcuts are created.
+- [ ] Create install script
 
 ## Logging and Error Reports
 
 - [x] Create user info file that gets submitted with log reports
 - [x] Add a send logs option to the menu
 - [ ] Add renderer logging
-- [ ] Add logging [crash reports](https://www.electronjs.org/docs/latest/api/crash-reporter)
+- [x] Add logging [crash reports](https://www.electronjs.org/docs/latest/api/crash-reporter)
 - [x] Add error logging to Supabase.
-- [ ] Confirm uploaded image urls are correct.
+- [ ] Confirm uploaded error image urls in error reports are correct.
 
 ## Error Fixes
 

@@ -24,6 +24,8 @@ export default class MakerNSIS extends MakerBase<NsisOptions> {
       // FIXME: I think I want this to come from the
       appId: packageJSON.name,
       productName: appName,
+      // FIXME: Errors because it needs to be 256x256
+      // icon: "assets/dcdc_appearance_viewer_icon.ico",
       directories: {
         output: outDir,
       },
