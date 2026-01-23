@@ -3,13 +3,14 @@ import { MakerSquirrel } from "@electron-forge/maker-squirrel";
 import { MakerZIP } from "@electron-forge/maker-zip";
 import { MakerDeb } from "@electron-forge/maker-deb";
 import { MakerRpm } from "@electron-forge/maker-rpm";
-import { MakerNSIS } from "./maker-nsis";
+import { MakerNSIS } from "./MakerNsis";
 import { VitePlugin } from "@electron-forge/plugin-vite";
 import { FusesPlugin } from "@electron-forge/plugin-fuses";
 import { FuseV1Options, FuseVersion } from "@electron/fuses";
 import { PublisherGitHubConfig } from "@electron-forge/publisher-github";
 import dotenv from "dotenv";
 
+// TODO: Switch to using packageJSON so there is a single source of truth
 dotenv.config();
 
 const githubPublisherConfig: PublisherGitHubConfig = {
@@ -60,15 +61,15 @@ const config: ForgeConfig = {
       // installerIcon: "assets/dcdc_appearance_viewer_icon.ico",
       // uninstallerIcon: "assets/dcdc_appearance_viewer_icon.ico",
       // installerHeaderIcon: "assets/dcdc_appearance_viewer_icon.ico",
-      // include:
       // script:
       // license:
       oneClick: false,
       shortcutName: "DCDB Appearance Viewer",
-      // TODO: Create short cuts based on options at install instead of automatically
       createStartMenuShortcut: true,
       createDesktopShortcut: true,
       deleteAppDataOnUninstall: true,
+      // TODO: Create short cuts based on options at install instead of automatically
+      // include: "build/installer.nsi",
     }),
   ],
   plugins: [

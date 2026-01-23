@@ -97,9 +97,9 @@ async function uploadErrorImage(reportID: UUID, images: IPCSafeFile[]): Promise<
 
   const uploaded: string[] = [];
 
-  for (const idx in images) {
-    const img = images[idx];
+  for (const [idx, img] of images.entries()) {
     // FIXME: Sharp is annoying to package
+    // TODO: Could try packaging it with the binary
     // const buf = await sharp(img.fileBits).webp({ quality: 70 }).toBuffer();
     // const serverPath = `${reportID}/${path.basename(img.name, path.extname(img.name)).replace(/\s+/g, "_")}.webp`;
 
@@ -107,9 +107,14 @@ async function uploadErrorImage(reportID: UUID, images: IPCSafeFile[]): Promise<
     const opts: FileOptions = { contentType: "image/*", upsert: false };
     const { data, error } = await supabase.storage.from("error-reports").upload(serverPath, img.fileBits, opts);
 
+    // TODO: Is there a way to get the link upon upload?
+    // TODO: The server is rejecting because they are not webp
     if (error) {
-      failed.push(parseInt(idx));
+      console.log(error);
+      failed.push(idx);
     } else {
+      // FIXME: fullpath is null for some reason
+      console.log(await supabase.storage.from("error-reports").createSignedUrl(data.fullPath, 6000));
       uploaded.push(data.fullPath);
     }
   }
@@ -136,8 +141,9 @@ export async function uploadError({ title, email, error_start_time, description,
   let screenshots: string[] | null = null;
 
   if (images.length > 0) {
-    const { uploaded } = await uploadErrorImage(error_id, images);
+    const { uploaded, failed } = await uploadErrorImage(error_id, images);
     screenshots = uploaded;
+    console.log(failed);
   }
 
   let user_info: UserInfo | null = null;

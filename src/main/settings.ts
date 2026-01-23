@@ -1,3 +1,4 @@
+import { fieldExists } from "../common/utils";
 import { Option, Some, None } from "../../core/option";
 import { __userdata } from "./utils";
 
@@ -48,6 +49,7 @@ interface UpdateSettings {
   updateCheckInterval: number;
 }
 
+// TODO: Should these be read only?
 export interface Settings {
   theme: SettingsTheme;
   width: number;
@@ -74,3 +76,7 @@ export const DEFAULT_SETTINGS: Settings = {
     updateCheckInterval: 3600000, // 1 hour
   },
 };
+
+export function isSettings(object: any): object is Settings {
+  return Object.entries(DEFAULT_SETTINGS).every(([k, v]) => fieldExists(object, k, typeof v));
+}

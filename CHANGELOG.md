@@ -2,9 +2,11 @@
 
 ## Features
 
+- Automatically sends crash reports on next startup
+
 ## Bug Fixes
 
-- Fixed parsing error caused by header boxes on templates
+- Addressed parsing error caused by header boxes on templates
 
 ## Known Bugs
 

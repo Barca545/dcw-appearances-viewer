@@ -41,29 +41,17 @@ export default function FileInput({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newFiles = Array.from(e.target.files || []);
-    // Confirm the filetype is correct because this input does not do validation inherently
-    // Confirm not too big
-    // TODO: I think either show a popup and just block the file upload or highlight them red and show errors next to it.
-    if (accept && !newFiles.every((file) => new RegExp("image/*").test(file.type))) {
-      window.alert(
-        newFiles
-          .filter((file) => file.size > maxSize)
-          .map((file) => `${file.name}, is unaccepted file type ${file.type}. Accepted file types: ${accept}`),
-      );
-    } else if (newFiles.some((file) => file.size > maxSize)) {
-      window.alert(
-        newFiles
-          .filter((file) => file.size <= maxSize)
-          .map((file) => `${file.name} is too large. Files must be ${bytesToReadable(maxSize)} or less.\n`),
-      );
-    } else {
-      setFiles([...files, ...newFiles]);
-
-      if (onFilesChange) {
-        onFilesChange([...files, ...newFiles]);
+    Array.from(e.target.files || []).map((file) => {
+      if (accept && !new RegExp("image/*").test(file.type)) {
+        window.alert(`${file.name}, is unaccepted file type ${file.type}. Accepted file types: ${accept}`);
+      } else if (file.size >= maxSize) {
+        window.alert(`${file.name} is too large. Files must be ${bytesToReadable(maxSize)} or less.\n`);
+      } else {
+        // Slow but probably fine
+        setFiles([...files, file]);
+        if (onFilesChange) onFilesChange([...files, file]);
       }
-    }
+    });
   };
 
   return (

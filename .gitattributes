@@ -1,4 +1,4 @@
 # I think this is what I want but I am not 100% sure
 # I just want it to enforce consistency across all files
 # Look into more options but it is not pressing: https://git-scm.com/docs/gitattributes
-core.autocrlf = true
+core.autocrlf=true

@@ -64,7 +64,6 @@
 - [x] Ensure all files and folders are uninstalled upon app uninstallation.
 - [x] Prevent app from launching multiple times during first run.
 - [x] Ensure shortcuts are created.
-- [ ] Create install script
 
 ## Logging and Error Reports
 
@@ -74,6 +73,9 @@
 - [x] Add logging [crash reports](https://www.electronjs.org/docs/latest/api/crash-reporter)
 - [x] Add error logging to Supabase.
 - [ ] Confirm uploaded error image urls in error reports are correct.
+- [x] Error form displays empty alert when image is too large.
+- [ ] Contact developer should _attempt_ to open the user's email client.
+- [ ] Close report window on submit
 
 ## Error Fixes
 
@@ -91,13 +93,16 @@
 
 - [ ] Assess whether `Layout` should have a `root` HTML element.
 - [ ] Asses whether `<body>` should be the `root` HTML element in `index.html`.
-- [ ] Need to clean main up and create submodules.
 - [ ] Evaluate need for proper `*.d.ts` files.
 - [ ] Remove unused IPC API endpoints.
 - [ ] Replace casts with `Options` + `unwrap`s.
+- [ ] Variables for paths being in utils errors if not part of an app instance
+- [ ] Only create settings file during start up. If no settings during runtime use default and log error.
+- [ ] Fix punycode problem (use `npm ls punycode` to see dependants)
 
 ## Organize Project
 
+- [ ] Need to clean main up and create submodules.
 - [ ] Look at how [TS documentation](https://www.typescriptlang.org/docs/handbook/declaration-files/library-structures.html) recommends structuring projects.
 - [ ] Standardize documentation.
 - [ ] Reorganize exports/imports between APITypes and core types.
@@ -105,7 +110,7 @@
 - [ ] Move types used by multiple modules to whichever is most logical.
 - [ ] Update `ARCHITECTURE.md`.
 
-## Update Tests
+## Update and Add Tests
 
 - [ ] Update existing tests' file paths.
 - [ ] add tests for electron features.
@@ -129,6 +134,7 @@
 - [ ] Add ability to filter for a specific date range.
 - [ ] Add searching multiple characters at once.
 - [ ] Add searching multiple earths at once.
+- [ ] Add filtering by type of appearance
 
 # 0.6.0
 

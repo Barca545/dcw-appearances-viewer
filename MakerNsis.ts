@@ -1,8 +1,12 @@
 import { MakerBase, MakerOptions } from "@electron-forge/maker-base";
 import { ForgeArch, ForgePlatform } from "@electron-forge/shared-types";
-import { build, buildForge, Platform, Arch, NsisOptions, Configuration } from "app-builder-lib";
+import { build, Platform, Arch, NsisOptions, Configuration } from "app-builder-lib";
 import path from "path";
 import fs from "fs";
+
+// see how many ppl see
+// how many ppl each place has
+// try and make even groups
 
 export default class MakerNSIS extends MakerBase<NsisOptions> {
   name = "nsis";
@@ -48,6 +52,7 @@ export default class MakerNSIS extends MakerBase<NsisOptions> {
       });
 
       // Filter out any directories, keep only files
+      // TODO: Why this
       const files = artifacts.filter((artifact) => {
         const isFile = fs.statSync(artifact).isFile();
         console.log(`  ${isFile ? "✓" : "✗"} ${path.basename(artifact)} ${isFile ? "(file)" : "(directory)"}`);
@@ -55,6 +60,7 @@ export default class MakerNSIS extends MakerBase<NsisOptions> {
       });
 
       // Verify latest.yml was created
+      // TODO: Should error if this is not created
       const latestYml = path.join(outDir, "latest.yml");
       if (fs.existsSync(latestYml)) {
         console.log(`✓ Generated latest.yml for electron-updater`);
@@ -74,12 +80,18 @@ export default class MakerNSIS extends MakerBase<NsisOptions> {
   }
 
   private mapArch(targetArch: ForgeArch): Arch {
-    if (targetArch === "ia32") return Arch.ia32;
-    else if (targetArch === "x64") return Arch.x64;
-    else if (targetArch === "armv7l") return Arch.armv7l;
-    else if (targetArch === "arm64") return Arch.arm64;
-    // Not sure this is proper but I think this works
-    else return Arch.universal;
+    switch (targetArch) {
+      case "ia32":
+        return Arch.ia32;
+      case "x64":
+        return Arch.x64;
+      case "armv7l":
+        return Arch.armv7l;
+      case "arm64":
+        return Arch.arm64;
+      default:
+        return Arch.universal;
+    }
     // mips64el is omitted because it seems to only be relevant for linux
   }
 }

@@ -46,44 +46,9 @@ export const ROOT_DIRECTORY = IS_DEV ? MAIN_WINDOW_VITE_DEV_SERVER_URL : __dirna
 
 // LOGGING
 
-/** Create a script to uninstall the program. */
-export function makeUninstallScript(...folders: string[]): string {
-  let script = `@echo off
-  :loopstart
-
-  REM %1 = first command line argument 
-  REM TODO: possibly replace %1 with file path via string interpolation
-  tasklist /fi "IMAGENAME eq ${UPDATE_PATH}" /fo csv 2>NUL | find /I "${UPDATE_PATH}"
-  
-  REM error 0 means no error was found which means the file is still running
-  
-  IF %ERRORLEVEL% EQU 0 (
-    REM wait 5 seconds before checking again
-    timeout /t 5 /nobreak >NUL
-    goto loopstart
-  )
-    
-  REM Also wait for Squirrel's Update.exe to end
-  tasklist /FI "IMAGENAME eq Update.exe" | find /I "Update.exe" >NUL
-  
-  IF %ERRORLEVEL% EQU 0 (
-    REM wait 5 seconds before checking again
-    timeout /t 5 /nobreak >NUL
-    goto loopstart
-  )`;
-
-  // Add the folders to delete to the script
-  for (const folder of folders) {
-    // /S deletes a folder and its contents and /Q keeps it from prompting the user
-    // script += `\nRMDIR /S /Q "${folder}"`;
-    script += `\nRMDIR /S "${folder}"`;
-  }
-
-  return script;
-}
-
 // Settings is a common folder
 // it cannot import anything that imports stuff unique to node so this needs to be in utils
+
 /**Function for creating a settings file during installation.
  * Returns the new settings.
  */

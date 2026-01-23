@@ -34,3 +34,17 @@ export function msToMinutes(): number {
 export function minutesToMs(): number {
   throw new Error("'minutesToMs' is not yet implemented.");
 }
+
+// TODO: This probably belongs somewhere else
+// TODO: This needs a different name, really it's checking whether a field matches exactly not just if it exists
+// Used to create type guards
+// Basically checks if a field exists and has the expected value in an object
+export function fieldExists<T extends Record<string, any>>(object: T, key: string, expectedType: string): boolean {
+  if (object.hasOwnProperty(key) && typeof object[key] !== "object") {
+    return typeof object[key] === expectedType;
+  } else if (object.hasOwnProperty(key) && typeof object[key] === "object") {
+    return Object.entries(object).every(([k, v]) => fieldExists(object[key], k, typeof v));
+  } else {
+    return false;
+  }
+}

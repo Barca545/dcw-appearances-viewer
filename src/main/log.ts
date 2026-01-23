@@ -33,7 +33,6 @@ export enum LogLevel {
 
 /**Each new version of the application will generate its own `LogFile`. */
 class LoggerClass {
-  private LOG_PATH = path.join(app.getPath("logs"), `LOG_v${app.getVersion()}.json`);
   private sessionStart: string;
 
   constructor() {
@@ -44,6 +43,13 @@ class LoggerClass {
   get versionLogs(): LogFile {
     if (IS_DEV) return { requiredPathsDoNotExist: [], sessions: [] };
     return JSON.parse(fs.readFileSync(this.LOG_PATH, { encoding: "utf-8" })) as LogFile;
+  }
+
+  // TODO: Make friendly for both dev and tests by
+  // routing logging so it goes to the console outside of production
+  get LOG_PATH(): string {
+    // TODO: Memoize
+    return path.join(app.getPath("logs"), `LOG_v${app.getVersion()}.json`);
   }
 
   // TODO: If this is async it can be made async

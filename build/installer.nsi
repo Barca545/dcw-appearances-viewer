@@ -11,3 +11,19 @@
 
 
 ; DeleteRegKey HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\ProgName"
+
+; Create application shortcut (first in installation dir to have the correct "start in" target)
+
+; TODO: Make shortcuts optional using nsdialogs: https://nsis.sourceforge.io/Docs/nsDialogs/Readme.html
+
+; section "install"
+; NAME "dcdb-appearance-viewer"
+
+; SetOutPath "$INSTDIR\bin"
+; CreateShortCut "$INSTDIR\bin\${NAME}.lnk" "$INSTDIR\bin\${NAME}.exe"
+
+; ; Start menu entries
+; SetOutPath "$SMPROGRAMS\${NAME}\"
+; CopyFiles "$INSTDIR\bin\${NAME}.lnk" "$SMPROGRAMS\${NAME}\"
+; Delete "$INSTDIR\bin\${NAME}.lnk"
+; SectionEnd

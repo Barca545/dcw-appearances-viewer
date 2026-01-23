@@ -1,10 +1,11 @@
-import { app, crashReporter } from "electron";
+import { app } from "electron";
 import { Session } from "./session";
 import { __userdata } from "./utils";
 import LOGGER from "./log";
-import handleStartupEvent from "./squirrel";
+// import handleStartupEvent from "./squirrel";
 import { appUpdater } from "./autoupdate";
 import { Crash } from "./errors";
+import { handleStartupEvent } from "./startup";
 
 // TODO: Closing the error window seems to also minimize the main window
 
@@ -19,7 +20,10 @@ process.on("uncaughtException", (err) => {
 });
 
 // Prevent multiple startups during installation
-if (handleStartupEvent()) app.quit();
+// if (handleStartupEvent()) app.quit();
+
+// TODO: Ideally this only runs the first time after an update
+handleStartupEvent();
 
 Crash.initCrashReports();
 // Onstart upload any crashes from previous sessions
