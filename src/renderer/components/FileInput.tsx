@@ -5,14 +5,22 @@ import React, { JSX, useRef, useState } from "react";
 // - https://www.davebernhard.com/blog/pretty-file-upload-in-react
 // - https://uploadcare.com/blog/how-to-upload-file-in-react/
 
+// TODO: Could use these for type verification:
+// - https://github.com/sindresorhus/file-type
+// - https://pye.hashnode.dev/how-to-validate-javascript-file-types-with-magic-bytes-and-mime-type
+
 interface FileInputProps {
   id?: string;
   name?: string;
   /**
-   * Maximum size of files in the list in bytes.
+   * Maximum size of a file in the list in bytes.
    * Defaults to 200kb
    */
   maxSize?: number;
+  /**
+   * Maximum number of files a user can submit.
+   * Defaults to 3. */
+  maxNum?: number;
   /**Whether the file input allows the user to select more than one file. */
   multiple?: boolean;
   /**A comma-separated list of one or more [MIME](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/MIME_types) types, or unique file type specifiers, describing which file types to allow. */
@@ -27,8 +35,8 @@ export default function FileInput({
   name,
   onFilesChange,
   maxSize = 200000,
-  accept,
-  multiple = false,
+  maxNum = 3,
+  accept = "*/*",
   buttonText = "Upload file",
 }: FileInputProps): JSX.Element {
   const uploadRef = useRef<HTMLInputElement>(null);
@@ -37,12 +45,16 @@ export default function FileInput({
   const handleClick = (e: React.MouseEvent) => {
     // This is needed otherwise it tries to submit
     e.preventDefault();
-    uploadRef.current?.click();
+
+    if (files.length < maxNum) {
+      uploadRef.current?.click();
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // TODO: Need to stop submissions when max number is hit.
     Array.from(e.target.files || []).map((file) => {
-      if (accept && !new RegExp("image/*").test(file.type)) {
+      if (wildCardMatching(file.type, accept)) {
         window.alert(`${file.name}, is unaccepted file type ${file.type}. Accepted file types: ${accept}`);
       } else if (file.size >= maxSize) {
         window.alert(`${file.name} is too large. Files must be ${bytesToReadable(maxSize)} or less.\n`);
@@ -56,6 +68,8 @@ export default function FileInput({
 
   return (
     <div>
+      {maxNum > 1 ? <>{`The maximum number of files allowed is ${maxNum}.`}</> : <></>}
+      <br />
       <input
         id={id}
         name={name}
@@ -64,7 +78,7 @@ export default function FileInput({
         ref={uploadRef}
         onChange={handleChange}
         style={{ display: "none" }}
-        multiple={multiple}
+        multiple={maxNum > 1}
       />
       <button type="button" onClick={handleClick}>
         {buttonText}
@@ -89,4 +103,11 @@ function bytesToReadable(value: number): string {
   if (1000 <= value && value < 1000000) return `${value / 1000}Kb`;
   else if (1000000 <= value && value < 1073741824) return `${value / 1000000}Mb`;
   else return `${value / 1073741824}GiB`;
+}
+
+/**Confirms if text containing a wildcard matches a pattern.*/
+// TODO: Rename
+// TODO: Implement
+function wildCardMatching(text, pattern): boolean {
+  new RegExp(accept).test(file.type);
 }

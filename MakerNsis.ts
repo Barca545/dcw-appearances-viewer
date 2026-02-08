@@ -4,9 +4,7 @@ import { build, Platform, Arch, NsisOptions, Configuration } from "app-builder-l
 import path from "path";
 import fs from "fs";
 
-// see how many ppl see
-// how many ppl each place has
-// try and make even groups
+// WARNING: only create a build/installer.nsi once I have an actual script otherwise it will prevent building
 
 export default class MakerNSIS extends MakerBase<NsisOptions> {
   name = "nsis";
@@ -70,10 +68,10 @@ export default class MakerNSIS extends MakerBase<NsisOptions> {
 
       return files;
     } catch (error) {
-      console.error("Build failed with error:");
-      console.error(error);
+      // console.error("Build failed with error:");
+      // console.error(error);
       if (error instanceof Error) {
-        console.error("Stack trace:", error.stack);
+        // console.error("Stack trace:", error.stack);
       }
       throw error;
     }

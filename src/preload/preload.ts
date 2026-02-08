@@ -67,6 +67,7 @@ contextBridge.exposeInMainWorld("API", {
 contextBridge.exposeInMainWorld("ERROR", {
   log: (log: RendererLog) => ipcRenderer.send(IPCError.Log, log),
   submit: (data: UserErrorInfo) => ipcRenderer.send(IPCError.Submit, data),
+  close: () => ipcRenderer.send(IPCError.Close),
 });
 
 console.log("PRELOAD FINSHED...");

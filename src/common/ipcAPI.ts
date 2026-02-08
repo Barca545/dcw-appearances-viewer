@@ -42,6 +42,7 @@ export enum IPCEvent {
 export enum IPCError {
   Submit = "error:submit",
   Log = "error:log",
+  Close = "error:close",
 }
 
 // TODO: Use this once we switch to single source of truth
@@ -67,6 +68,8 @@ declare global {
       log: (error: RendererLog) => void;
       /**Submit an error report.*/
       submit: (info: UserErrorInfo) => void;
+      /**Close the error report window.*/
+      close: () => void;
     };
     API: {
       appTab: {

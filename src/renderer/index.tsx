@@ -6,6 +6,30 @@ import Layout from "./Layout";
 import Start from "./Start";
 import AppSettings from "./AppSettings";
 import ErrorBoundry from "./components/ErrorBoundry";
+import * as Sentry from "@sentry/electron/renderer";
+import { init as reactInit } from "@sentry/react";
+
+// TODO: Do I still need the error boundry?
+
+Sentry.init(
+  {
+    // TODO: Disable in production
+    debug: true,
+    // Adds request headers and IP for users, for more info visit:
+    // https://docs.sentry.io/platforms/javascript/guides/electron/configuration/options/#sendDefaultPii
+    // sendDefaultPii: true,
+    integrations: [Sentry.browserTracingIntegration(), Sentry.replayIntegration()],
+    replaysSessionSampleRate: 0.1,
+    replaysOnErrorSampleRate: 1.0,
+    // Set tracesSampleRate to 1.0 to capture 100%
+    // of transactions for performance monitoring.
+    // We recommend adjusting this value in production
+    // Learn more at
+    // https://docs.sentry.io/platforms/javascript/configuration/options/#traces-sample-rate
+    tracesSampleRate: 1.0,
+  },
+  reactInit,
+);
 
 // FIXME:
 // - The components on the app page need to be locked in place
@@ -25,7 +49,15 @@ import ErrorBoundry from "./components/ErrorBoundry";
 // - add remote error reporting
 // - Add auto updates
 
-const root = createRoot(document.getElementById("root") as HTMLElement);
+const root = createRoot(
+  document.getElementById("root") as HTMLElement /*{
+  onUncaughtError:Sentry.reactErrorHandler((error, errorInfo) => {
+    console.warn("Uncaught error", error, errorInfo.componentStack);
+  }),
+  onCaughtError:Sentry.reactErr
+}*/,
+);
+
 root.render(
   <React.StrictMode>
     <ErrorBoundry fallback={<div>An error has occured. Please submit an error report from the "Help" tab.</div>}>

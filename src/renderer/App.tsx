@@ -9,6 +9,7 @@ import { useParams } from "react-router";
 import DisplayOptions from "./components/DisplayOptions";
 
 // TODO: Solution to preserving searchbar state might just be to send it back to main
+// TODO: This should be renamed from app and App should be what is currently in the index
 
 export default function App(): JSX.Element {
   const { ID } = useParams<Record<"ID", TabID>>();

@@ -1,5 +1,5 @@
 import { UNIMPLEMENTED_FEATURE, IS_MAC, IS_DEV, MESSAGES } from "./utils";
-import { BaseWindow, dialog } from "electron";
+import { BaseWindow, clipboard, dialog, shell } from "electron";
 import { None, Option, Some } from "../../core/option";
 import { Session } from "./session";
 import { IPCEvent } from "../common/ipcAPI";
@@ -60,11 +60,15 @@ export function MENU_TEMPLATE(session: Session): MenuTemplate {
       role: "help",
       submenu: [
         { label: "Report Error", click: (_item, _base, _e) => session.newErrorWin() },
-        { label: "About", click: (_item, base, _e) => dialog.showMessageBoxSync(base as BaseWindow, { message: Session.info() }) },
         {
-          label: "Contact Developer",
-          click: (_item, base, _e) => dialog.showMessageBoxSync(base as BaseWindow, { message: MESSAGES.devContact }),
+          label: "About",
+          click: (_item, base, _e) => dialog.showMessageBoxSync(base as BaseWindow, { type: "info", message: Session.info() }),
         },
+        // {
+        //   label: "Contact Developer",
+        //   // click: (_item, base, _e) => dialog.showMessageBoxSync(base as BaseWindow, { message: MESSAGES.devContact }),
+        //   click: (_item, base, _e) => ContactDev("yamibarca545@gmail.com"),
+        // },
       ],
     },
   ];
@@ -90,4 +94,17 @@ export function openFileDialog(): Option<string> {
   });
 
   return res ? new Some(res[0]) : new None();
+}
+
+function ContactDev(devEmail: string) {
+  const res = dialog.showMessageBoxSync({
+    type: "question",
+    message: MESSAGES.devContact,
+    buttons: ["Open Email Client", "Copy Email Adress", "Cancel"],
+  });
+  if (res === 0) {
+    shell.openExternal(`mailto:${devEmail}?subject=DCW REQUEST`);
+  } else if (res === 1) {
+    clipboard.writeText(devEmail);
+  }
 }

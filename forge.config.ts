@@ -70,6 +70,8 @@ const config: ForgeConfig = {
       deleteAppDataOnUninstall: true,
       // TODO: Create short cuts based on options at install instead of automatically
       // include: "build/installer.nsi",
+      allowToChangeInstallationDirectory: true,
+      perMachine: false,
     }),
   ],
   plugins: [

@@ -20,9 +20,11 @@
     "url": "https://github.com/Barca545/dcw-appearances-viewer"
   },
   "license": "ISC",
-  "description": "An app for viewing a list of a character's appearances in DC comics. App uses data from the DC Database Wiki.",
+  "description": "An app for viewing a list of character appearances in DC comics. App uses data from the DC Database Wiki.",
   "dependencies": {
     "@reduxjs/toolkit": "^2.11.0",
+    "@sentry/electron": "^7.7.1",
+    "@sentry/react": "^10.36.0",
     "@supabase/supabase-js": "^2.89.0",
     "@types/electron-squirrel-startup": "^1.0.2",
     "@vitejs/plugin-react": "^5.1.2",

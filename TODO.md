@@ -25,7 +25,7 @@
 
 ## Saving
 
-- [x] Exiting with unsaved changes prompts user to "Save", "Don't Save", or "Cancel".
+- [x] Exiting with unsaved changes prompts user "Save", "Don't Save", or "Cancel".
 
 ## Error Fixes
 
@@ -38,7 +38,7 @@
 
 - [x] Tab data stored in main process
 - [x] Updating a tab creates a new tab in the session
-- [x] TabBar has an api listener that causes it to rerender when the main process' tab list is modified
+- [x] TabBar should rerender when the main process' tab list is modified
 - [x] `TabBar` added to `Layout`
 - [x] Exiting a tab should autosave or prompt a save if it is untitled
 - [x] Tab should indicate if unsaved like VSCode
@@ -59,7 +59,9 @@
 
 ## Switch to NSIS installer
 
-- [ ] Ensure `settings.json` is created when the app first runs (replace squirrel startup handler with NSIS script)
+- [ ] Ensure `settings.json` is created when the app first runs.
+  - [ ] Define NSIS startup behaviour.
+  - [ ] Replace squirrel startup handler with NSIS script.
 - [x] Ensure autoupdating works.
 - [x] Ensure all files and folders are uninstalled upon app uninstallation.
 - [x] Prevent app from launching multiple times during first run.
@@ -67,15 +69,17 @@
 
 ## Logging and Error Reports
 
-- [x] Create user info file that gets submitted with log reports
-- [x] Add a send logs option to the menu
-- [ ] Add renderer logging
-- [x] Add logging [crash reports](https://www.electronjs.org/docs/latest/api/crash-reporter)
-- [x] Add error logging to Supabase.
-- [ ] Confirm uploaded error image urls in error reports are correct.
-- [x] Error form displays empty alert when image is too large.
-- [ ] Contact developer should _attempt_ to open the user's email client.
-- [ ] Close report window on submit
+- [x] Create user info file that gets submitted with log reports.
+- [ ] Add main logging.
+- [ ] Add preload logging.
+- [ ] Add renderer logging.
+- [ ] Add [crash](https://www.electronjs.org/docs/latest/api/crash-reporter) logging.
+- [ ] Add user feedback.
+  - [x] Remove Sentry default button.
+  - [ ] Allow attaching files.
+  - [ ] Confirm error form alerts users when image is too large.
+  - [ ] Confirm error form validates attachments based on type.
+  - [ ] Close report window on submit.
 
 ## Error Fixes
 
@@ -86,6 +90,7 @@
 - [x] Creating a new project does not reset stored project data.
 - [x] Filter options fails on pages; possibly a reflow issue.
 - [x] `.vite` created in renderer folder.
+- [ ] Opening error window causes session to hallucinate a new tab.
 
 # 0.3.0 - Robustness Fixes
 
@@ -124,6 +129,7 @@
   - [ ] Need a custom prepass that splits the template into (key, value) pairs
   - [ ] Need to parse bodies of text into HTML
   - [ ] Need to extract appearance type information from the appearances section
+  - [ ] Enable parsing nested templates in synopses and appearances.
 - [ ] Prevent NaN dates.
 - [ ] Fix issue where synopsis does not load fully.
 
@@ -146,25 +152,25 @@
 - [ ] Add recent documents menu on start page.
 - [ ] Select date formatting in settings.
 - [ ] Ctrl + N on a start page should make the new search inside the start page.
+- [ ] Add a back to top button.
 
-## Styling
+## Delete Unneeded Features
 
-- [ ] Expanding the details box on the app page should not cause it to change size - [ ] Tabs should have a min and max size and should brow between them as text content requires.
-- [ ] The display options bar should stick to the top of the screen when scrolling.
-- [ ] Need a back to top button.
-- [ ] Hovering over a details to expand them should trigger the selection mouse ico
-- [ ] Text size needs to be scaled better.
-- [ ] All sizes should be in something absoulute not `px` units.
-- [ ] Add icons to the tabs like a magnifier for the search and gear for settings
+- [ ] Delete custom logger (if Sentry works).
+- [ ] Delete custom error boundry (if Sentry works).
+- [ ] Delete "Diagnostic data" field from user feedback form (if Sentry works).
+- [ ] Delete squirrel installer logic (if NSIS works).
 
 # 0.7.0
 
-## Parsing Overhaul
+## Styling
 
-- [ ] Fork wtf_wikipedia.
-  - [ ] Add typing.
-  - [ ] Enable parsing custom DCDB templates.
-  - [ ] Enable parsing nested templates in synopses and appearances.
+- [ ] Expanding the details box on the app page should not cause it to change size - [ ] Tabs should grow between preset min and max size as text content requires.
+- [ ] The display options bar should stick to the top of the screen when scrolling.
+- [ ] Hovering over a details to expand them should trigger the selection mouse ico
+- [ ] Text size needs to be scaled better.
+- [ ] All sizes should be in something absoulute not `px` units.
+- [ ] Add icons to the tabs like a magnifier for the search and gear for settings.
 
 # 0.8.0
 
@@ -174,5 +180,9 @@
 - [ ] Sorting by type of appearance.
 
 # 0.9.0
+
+## Security
+
+- [ ] Add true file validation in the upload component.
 
 # 1.0.0

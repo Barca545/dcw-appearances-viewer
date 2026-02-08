@@ -618,8 +618,8 @@ export class Session {
     // TODO: Confirm error report uploaded
     uploadError(err);
     // TODO: close window
-    // this.err_win?.close();
-    // this.err_win = null;
+    this.err_win?.close();
+    this.err_win = null;
   }
 
   /**Register `IPC` event handlers for communication between the renderer and main process*/
@@ -690,6 +690,10 @@ export class Session {
     // TODO: This should probably close the window once submission is done
     ipcMain.on(IPCError.Submit, (e, err: UserErrorInfo) => this.handleErrorReport(err));
     ipcMain.on(IPCError.Log, (_e, log: RendererLog) => LOGGER.writeRenderLog(log));
+    ipcMain.on(IPCError.Close, (_e, log: RendererLog) => {
+      this.err_win?.close();
+      this.err_win = null;
+    });
   }
 }
 
