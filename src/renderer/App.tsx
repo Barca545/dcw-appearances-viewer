@@ -7,9 +7,12 @@ import { TabID } from "../common/ipcAPI";
 import { SerializedAppTab } from "src/common/TypesAPI";
 import { useParams } from "react-router";
 import DisplayOptions from "./components/DisplayOptions";
+import BackToTop from "./components/BackToTop";
 
 // TODO: Solution to preserving searchbar state might just be to send it back to main
 // TODO: This should be renamed from app and App should be what is currently in the index
+
+// TODO: Weirdly this has its own scrollbar so back to top does not register movement within as real movement
 
 export default function App(): JSX.Element {
   const { ID } = useParams<Record<"ID", TabID>>();
@@ -46,6 +49,7 @@ export default function App(): JSX.Element {
         <DisplayOptions ID={ID} data={tabData} disabled={tabData.list.length <= 0} />
       </div>
       <AppResults ID={ID} data={tabData} isLoading={isPending} />
+      <BackToTop />
     </div>
   );
 }

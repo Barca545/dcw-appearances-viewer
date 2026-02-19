@@ -91,6 +91,7 @@
 - [x] Filter options fails on pages; possibly a reflow issue.
 - [x] `.vite` created in renderer folder.
 - [ ] Opening error window causes session to hallucinate a new tab.
+- [ ] Fails to close if all tabs close at once
 
 # 0.3.0 - Robustness Fixes
 

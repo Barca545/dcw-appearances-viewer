@@ -15,6 +15,8 @@ const TabBarStylesheet: React.CSSProperties = { flex: "0 0 auto", position: "sta
 
 const OutletStylesheet: React.CSSProperties = { flex: "1 1 auto", overflow: "auto", padding: "0", margin: "0", border: "0" };
 
+//
+
 export default function Layout(): ReactNode {
   const { ID } = useParams<Record<"ID", TabID>>();
   return (
@@ -22,9 +24,10 @@ export default function Layout(): ReactNode {
       <div className="tabbar-wrapper" style={TabBarStylesheet}>
         <TabBar />
       </div>
-      <div className="outlet" style={OutletStylesheet}>
-        <Outlet key={ID} />
-      </div>
+      {/* <div className="outlet" style={OutletStylesheet}>
+        <Outlet key={ID}  />
+      </div> */}
+      <Outlet key={ID} />
     </main>
   );
 }

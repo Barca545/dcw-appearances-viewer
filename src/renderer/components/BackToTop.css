@@ -1,0 +1,11 @@
+/* 
+- Must be consistently placed in the bottom left
+*/
+.BackToTop {
+  cursor: pointer;
+  position: sticky;
+  bottom: 50rem;
+  right: 5rem;
+  /* opacity: 0.55; */
+  background-color: red;
+}

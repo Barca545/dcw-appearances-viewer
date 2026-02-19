@@ -108,6 +108,6 @@ function bytesToReadable(value: number): string {
 /**Confirms if text containing a wildcard matches a pattern.*/
 // TODO: Rename
 // TODO: Implement
-function wildCardMatching(text, pattern): boolean {
-  new RegExp(accept).test(file.type);
-}
+// function wildCardMatching(text, pattern): boolean {
+//   new RegExp(accept).test(file.type);
+// }
